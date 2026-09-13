@@ -136,6 +136,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Ar
 .cccard{background:#fff;border:1.5px solid #eee;border-radius:10px;padding:.7rem;cursor:pointer;text-align:center;transition:border-color .15s}
 .cccard:hover{border-color:#888}.cccard.set{border-color:#1D9E75;background:#f5fbf8}
 .ccn{font-size:18px;font-weight:600;margin-bottom:3px}.ccc{font-size:9px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cct{font-size:9px;color:#bbb;margin-top:2px}
+
+/* ── エクセル読み込み ── */
+.impbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:.75rem .9rem;background:#f7f9fc;border:1.5px dashed #c9d4e5;border-radius:10px;margin-bottom:1rem}
+.impbar.drag{border-color:#378ADD;background:#eef5fd}
+.impbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;border:1.5px solid #378ADD;background:#378ADD;color:#fff}
+.impbtn:hover{opacity:.88}
+.implink{background:none;border:none;color:#378ADD;font-size:12px;cursor:pointer;text-decoration:underline;padding:4px 6px;font-family:inherit}
+.imphelp{font-size:11px;color:#7a869a;line-height:1.6;flex-basis:100%}
+.imphelp code{background:#eef1f6;padding:1px 5px;border-radius:4px;font-size:11px}
+.pvround{font-size:13px;font-weight:600;margin:.75rem 0 .35rem;color:#1a1a1a}
+.pvlist{display:flex;flex-direction:column;gap:3px;margin-bottom:.5rem}
+.pvrow{display:flex;gap:8px;align-items:baseline;font-size:12px;padding:6px 10px;border:1px solid #eee;border-radius:8px;background:#fafafa}
+.pvno{font-weight:600;width:56px;flex-shrink:0}
+.pvcat{color:#444;min-width:80px}
+.pvcnt{color:#888;flex-shrink:0}
+.pvteams{color:#999;font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pvwarn{font-size:11px;color:#a35a00;background:#fff8e6;border:1px solid #f3d99a;border-radius:8px;padding:8px 10px;margin-top:.75rem;line-height:1.6}
+.pvopt{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#444;margin-top:.75rem;padding:.6rem .75rem;background:#f7f7f6;border-radius:8px}
+.pvopt label{display:flex;gap:6px;align-items:center;cursor:pointer}
 </style>
 </head>
 <body>
@@ -144,6 +163,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Ar
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ─────────────────────────────────────────
 // Firebase 初期化
@@ -373,6 +393,16 @@ function _renderCreate(){
       </div>
       <div class="scard">
         <div class="slabel">コート割</div>
+        <div class="impbar" id="impbar" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="onImportDrop(event)">
+          <input type="file" id="impfile" accept=".xlsx,.xlsm,.xls,.csv" style="display:none" onchange="onImportFile(this.files[0]);this.value=''">
+          <button class="impbtn" onclick="$('impfile').click()">📄 エクセルから読み込む</button>
+          <button class="implink" onclick="downloadImportTemplate()">テンプレートをダウンロード</button>
+          <div class="imphelp">
+            コート割のエクセル（.xlsx / .csv）を選ぶか、ここにドラッグすると自動でコート割を作成します。<br>
+            ① 表形式：<code>コート</code> <code>種目</code> <code>大学名</code> <code>名前</code>（任意で <code>ラウンド</code>）の列がある表<br>
+            ② 番組形式：<code>1コート 男子初段</code> のような見出しの下に 大学名・名前 が並んだ表 ／ シートが複数あればシート名がラウンド名になります
+          </div>
+        </div>
         <div id="crtabs" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1rem">
           ${draftTD.rounds.map((r,i)=>`
             <button class="rtab${i===createRI?' on':''}" onclick="selCreateRound(${i})">${esc(r)||'未設定'}</button>`).join('')}
@@ -469,6 +499,292 @@ function saveDraftAndOpen(){
     _renderCreate();
   });
 }
+
+// ─────────────────────────────────────────
+// ── エクセルからコート割を読み込む ──
+//  対応形式
+//   A) 表形式  : ヘッダー行に「コート」「大学名/所属」「名前/氏名」等の列がある（任意で「ラウンド」「種目」「順番」）
+//   B) 番組形式: 「1コート 男子初段」「Ⅲコート」「第2コート」等の見出しセルの下に 大学名｜名前 が並ぶ
+//  シートが複数あり、かつラウンド列が無い場合はシート名をラウンド名として扱う
+// ─────────────────────────────────────────
+let importResult = null;
+
+const ROMAN_CHARS = {'Ⅰ':1,'Ⅱ':2,'Ⅲ':3,'Ⅳ':4,'Ⅴ':5,'Ⅵ':6,'Ⅶ':7,'Ⅷ':8,'Ⅸ':9,'Ⅹ':10,'Ⅺ':11,'Ⅻ':12,'I':1,'V':5,'X':10,'L':50};
+function romanToInt(str){
+  const ch=[...str.toUpperCase()].map(c=>ROMAN_CHARS[c]||0);
+  if(ch.some(v=>!v)) return null;
+  let t=0; for(let i=0;i<ch.length;i++){ if(ch[i+1]&&ch[i]<ch[i+1]&&ch[i]<10){ t-=ch[i]; } else t+=ch[i]; }
+  return t>0?t:null;
+}
+function zen2han(s){ return String(s).replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[Ａ-Ｚａ-ｚ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)); }
+function cellStr(v){
+  if(v===null||v===undefined) return '';
+  if(typeof v==='number') return Number.isInteger(v)?String(v):String(v);
+  return String(v).replace(/ /g,' ').trim();
+}
+// 「3」「３」「3コート」「第3コート」「Ⅲコート」「コート3」「3面」→ 3 ／ それ以外 → null
+function parseCourtNo(v){
+  const s=zen2han(cellStr(v)).replace(/\s+/g,'');
+  if(!s) return null;
+  let m=s.match(/^第?([0-9]{1,2})(?:コート|ｺｰﾄ|面|court)?$/i); if(m) return +m[1];
+  m=s.match(/^(?:コート|ｺｰﾄ|court)([0-9]{1,2})$/i); if(m) return +m[1];
+  m=s.match(/^第?([ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+|[IVXLivxl]{1,5})(?:コート|ｺｰﾄ|面|court)$/i); if(m) return romanToInt(m[1]);
+  return null;
+}
+// 見出しセル「1コート 男子初段」→ {no:1, cat:'男子初段'}  ／ 見出しでなければ null
+function parseCourtHeader(v){
+  const raw=cellStr(v); if(!raw) return null;
+  const s=zen2han(raw);
+  const m=s.match(/^第?\s*([0-9]{1,2}|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+|[IVXLivxl]{1,5})\s*(?:コート|ｺｰﾄ|面|court)\s*[:：\-－—・／\/]?\s*(.*)$/i);
+  if(!m) return null;
+  const no=/^[0-9]/.test(m[1])?+m[1]:romanToInt(m[1]);
+  if(!no||no>99) return null;
+  return {no, cat:m[2].replace(/^[（(]|[)）]$/g,'').trim()};
+}
+const H = {
+  court : /コート|ｺｰﾄ|面/,
+  round : /ラウンド|round|部$/i,
+  cat   : /種目|部門|カテゴリ|区分|クラス|級|段/,
+  univ  : /大学|所属|学校|団体|校名|チーム名|チーム$/,
+  name  : /氏名|名前|選手|拳士|出場者|演武者|ペア/,
+  order : /^(順番?|演武順|No\.?|番号|#)$/i,
+  skip  : /^(大学|所属|学校|氏名|名前|選手|No\.?|順番?|番号|団体|チーム)/
+};
+function isBlankRow(row){ return !row||row.every(c=>!cellStr(c)); }
+// 1セルに「東京大学 山田太郎」と入っている場合の分割
+function splitUnivName(s){
+  const t=cellStr(s); const m=t.match(/^(\S+?(?:大学|大学校|大|学院|短大|高専|専門学校))[\s　]+(.+)$/);
+  if(m) return {a:m[1],n:m[2].trim()};
+  const parts=t.split(/[\s　]+/); if(parts.length>=2) return {a:parts[0],n:parts.slice(1).join(' ')};
+  return {a:t,n:''};
+}
+
+// ── A) 表形式 ──
+function parseTableSheet(rows, sheetName){
+  let hi=-1, cols=null;
+  for(let i=0;i<Math.min(rows.length,40);i++){
+    const r=rows[i].map(cellStr);
+    const ci=r.findIndex(c=>H.court.test(c)&&c.length<=12);
+    if(ci<0) continue;
+    const hasUniv=r.some(c=>H.univ.test(c)&&c.length<=12), hasName=r.some(c=>H.name.test(c)&&c.length<=12);
+    if(!hasUniv&&!hasName) continue;
+    cols={court:ci,
+      round:r.findIndex(c=>H.round.test(c)&&c.length<=12),
+      cat  :r.findIndex((c,j)=>j!==ci&&H.cat.test(c)&&c.length<=12),
+      order:r.findIndex(c=>H.order.test(c)),
+      univ :r.findIndex(c=>H.univ.test(c)&&c.length<=12),
+      names:r.map((c,j)=>H.name.test(c)&&c.length<=12?j:-1).filter(j=>j>=0)};
+    hi=i; break;
+  }
+  if(hi<0) return null;
+  const out={}; // round -> {no -> {cat, teams:[{a,n,o}]}}
+  let curRound=null, curCourt=null, curCat='';
+  let skipped=0;
+  for(let i=hi+1;i<rows.length;i++){
+    const r=rows[i]; if(isBlankRow(r)) continue;
+    const rv=cols.round>=0?cellStr(r[cols.round]):''; if(rv) curRound=rv;
+    const cv=parseCourtNo(r[cols.court]); if(cv) curCourt=cv;
+    if(cols.cat>=0){ const cc=cellStr(r[cols.cat]); if(cc) curCat=cc; }
+    if(cv && cols.cat>=0 && !cellStr(r[cols.cat])) { /* コートが変わったが種目空欄→前の種目を引き継ぐ */ }
+    const a=cols.univ>=0?cellStr(r[cols.univ]):'';
+    const n=cols.names.map(j=>cellStr(r[j])).filter(Boolean).join('・');
+    if(!a&&!n) continue;
+    if(!curCourt){ skipped++; continue; }
+    const rk=curRound||sheetName||'';
+    out[rk]=out[rk]||{}; const ct=out[rk][curCourt]=out[rk][curCourt]||{cat:'',teams:[]};
+    if(curCat&&!ct.cat) ct.cat=curCat;
+    let team = a?{a,n}:splitUnivName(n);
+    team.o = cols.order>=0?parseFloat(zen2han(cellStr(r[cols.order]))):NaN;
+    ct.teams.push(team);
+  }
+  return {data:out, skipped, mode:'table', usedRoundCol:cols.round>=0};
+}
+
+// ── B) 番組形式（見出しブロック） ──
+function parseBlockSheet(rows, sheetName){
+  const H_ROWS=rows.length, W=Math.max(0,...rows.map(r=>r.length));
+  const heads=[]; // {r,c,no,cat}
+  for(let r=0;r<H_ROWS;r++) for(let c=0;c<(rows[r]||[]).length;c++){
+    const h=parseCourtHeader(rows[r][c]); if(!h) continue;
+    // 表形式の列見出し（「コート」単独）は除外済み（番号必須）
+    heads.push({r,c,...h});
+  }
+  if(!heads.length) return null;
+  const out={}; let skipped=0;
+  const headAt=(r,c)=>heads.find(h=>h.r===r&&h.c===c);
+  for(const h of heads){
+    // 同じ行にある次の見出し列までをこのブロックの幅にする
+    const sameRow=heads.filter(x=>x.r===h.r&&x.c>h.c).map(x=>x.c);
+    const cEnd=sameRow.length?Math.min(...sameRow):Math.min(W,h.c+4);
+    let cat=h.cat;
+    if(!cat){ const right=cellStr((rows[h.r]||[])[h.c+1]); if(right&&!parseCourtHeader(right)&&h.c+1<cEnd) cat=right; }
+    const teams=[];
+    let r=h.r+1, blank=0;
+    while(r<H_ROWS){
+      if(headAt(r,h.c)) break;
+      const seg=(rows[r]||[]).slice(h.c,cEnd).map(cellStr);
+      if(seg.every(x=>!x)){ blank++; if(blank>=1&&teams.length) break; r++; continue; }
+      blank=0;
+      const vals=seg.filter(Boolean);
+      if(vals.length===1&&!cat&&!teams.length&&!/[\s　]/.test(vals[0])&&!/大学|大|学院/.test(vals[0])){ cat=vals[0]; r++; continue; } // 見出し直下の種目名
+      if(vals.some(v=>H.skip.test(v))&&vals.every(v=>v.length<=6)){ r++; continue; } // 「大学名｜名前」などの小見出し
+      // 先頭が番号なら除去
+      if(vals.length>1&&/^[0-9０-９]{1,3}$/.test(vals[0])) vals.shift();
+      if(vals.length>=2) teams.push({a:vals[0],n:vals.slice(1).join('・'),o:NaN});
+      else teams.push({...splitUnivName(vals[0]),o:NaN});
+      r++;
+    }
+    const rk=sheetName||'';
+    out[rk]=out[rk]||{}; const ct=out[rk][h.no]=out[rk][h.no]||{cat:'',teams:[]};
+    if(cat&&!ct.cat) ct.cat=cat;
+    ct.teams.push(...teams);
+  }
+  return {data:out, skipped, mode:'block', usedRoundCol:false};
+}
+
+function parseWorkbook(wb){
+  const perSheet=[]; const warnings=[];
+  wb.SheetNames.forEach(name=>{
+    const ws=wb.Sheets[name]; if(!ws||!ws['!ref']) return;
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+    if(!rows.length) return;
+    let res=parseTableSheet(rows,name);
+    if(!res||!Object.keys(res.data).length) res=parseBlockSheet(rows,name);
+    if(!res||!Object.keys(res.data).length) return;
+    perSheet.push({name,res});
+  });
+  if(!perSheet.length) return null;
+  // ラウンド決定：ラウンド列があればその値、無ければ「シートが複数→シート名」「1枚→現在のラウンド（空キー）」
+  const multi=perSheet.length>1;
+  const merged={}; let skipped=0;
+  perSheet.forEach(({name,res})=>{
+    skipped+=res.skipped;
+    Object.entries(res.data).forEach(([rk,courts])=>{
+      let key = res.usedRoundCol && rk!==name ? rk : (multi ? name : '');
+      merged[key]=merged[key]||{};
+      Object.entries(courts).forEach(([no,ct])=>{
+        const t=merged[key][no]=merged[key][no]||{cat:'',teams:[]};
+        if(ct.cat&&!t.cat) t.cat=ct.cat;
+        t.teams.push(...ct.teams);
+      });
+    });
+  });
+  // 順番列があれば並べ替え・重複除去
+  Object.values(merged).forEach(courts=>Object.values(courts).forEach(ct=>{
+    if(ct.teams.some(t=>!isNaN(t.o))) ct.teams.sort((x,y)=>(isNaN(x.o)?1e9:x.o)-(isNaN(y.o)?1e9:y.o));
+    ct.teams=ct.teams.map(({a,n})=>({a,n}));
+  }));
+  if(skipped) warnings.push(`コート番号が読み取れなかった行を ${skipped} 行スキップしました`);
+  const noCat=[]; Object.entries(merged).forEach(([rk,courts])=>Object.entries(courts).forEach(([no,ct])=>{ if(!ct.cat) noCat.push((rk?rk+' ':'')+no+'コート'); }));
+  if(noCat.length) warnings.push('種目名が見つからないコート: '+noCat.slice(0,8).join('、')+(noCat.length>8?' ほか':''));
+  return {rounds:merged, warnings, modes:[...new Set(perSheet.map(p=>p.res.mode))]};
+}
+
+function onImportDrop(e){
+  e.preventDefault(); $('impbar')?.classList.remove('drag');
+  const f=e.dataTransfer?.files?.[0]; if(f) onImportFile(f);
+}
+function onImportFile(file){
+  if(!file) return;
+  if(typeof XLSX==='undefined'){ alert('エクセル読み込み用のライブラリを読み込めませんでした。通信状況を確認して再読み込みしてください。'); return; }
+  const fr=new FileReader();
+  fr.onload=ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',codepage:932});
+      const res=parseWorkbook(wb);
+      if(!res){ alert('コート割として読み取れる表が見つかりませんでした。\n\n「コート」「大学名」「名前」の列がある表、または「1コート 男子初段」のような見出し付きの表にしてください。\n「テンプレートをダウンロード」で書式を確認できます。'); return; }
+      importResult=res; openImportPreview(file.name);
+    }catch(err){ console.error(err); alert('ファイルを読み込めませんでした: '+err.message); }
+  };
+  fr.readAsArrayBuffer(file);
+}
+
+function openImportPreview(fname){
+  const cur=draftTD.rounds[createRI];
+  const R=importResult.rounds;
+  const totalCourts=Object.values(R).reduce((s,c)=>s+Object.keys(c).length,0);
+  const totalTeams =Object.values(R).reduce((s,c)=>s+Object.values(c).reduce((x,ct)=>x+ct.teams.length,0),0);
+  const body=Object.entries(R).map(([rk,courts])=>{
+    const title=rk?`ラウンド「${esc(rk)}」${draftTD.rounds.includes(rk)?'':'<span style="font-size:10px;color:#378ADD;margin-left:6px">新規追加</span>'}`:`現在のラウンド「${esc(cur)}」に読み込み`;
+    const rows=Object.keys(courts).map(Number).sort((a,b)=>a-b).map(no=>{const ct=courts[no];
+      return `<div class="pvrow"><span class="pvno">${no}コート</span><span class="pvcat">${esc(ct.cat)||'<span style="color:#bbb">種目未設定</span>'}</span><span class="pvcnt">${ct.teams.length}組</span><span class="pvteams">${esc(ct.teams.slice(0,3).map(t=>(t.a+' '+t.n).trim()).join('／'))}${ct.teams.length>3?' …':''}</span></div>`;}).join('');
+    return `<div class="pvround">${title}</div><div class="pvlist">${rows}</div>`;
+  }).join('');
+  $('mod').innerHTML=`
+    <div class="mhead"><div class="mtitle">読み込み内容の確認</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <div style="font-size:12px;color:#666;margin-bottom:4px">📄 ${esc(fname)}</div>
+    <div style="font-size:12px;color:#444">${totalCourts}コート・${totalTeams}組 を読み取りました${importResult.modes.includes('block')?'（番組形式）':'（表形式）'}</div>
+    ${body}
+    ${importResult.warnings.length?`<div class="pvwarn">⚠️ ${importResult.warnings.map(esc).join('<br>')}</div>`:''}
+    <div class="pvopt">
+      <label><input type="checkbox" id="impclear"> 読み込む前に、対象ラウンドの既存コート割をすべて空にする</label>
+      <div style="font-size:11px;color:#888">チェック無しの場合、ファイルにあるコートだけを上書きし、他のコートはそのまま残します。読み込み後も各コートをクリックして修正できます。</div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+      <button class="mbtn" onclick="closeModal()">キャンセル</button>
+      <button class="mbtn p" onclick="applyImport()">この内容でコート割を作成</button>
+    </div>`;
+  $('ov').classList.add('open');
+}
+
+function applyImport(){
+  if(!importResult) return;
+  const clear=$('impclear')?.checked;
+  const cur=draftTD.rounds[createRI];
+  let firstRound=null;
+  // ファイル側にラウンド名があり、今ある下書きのラウンドが全部未使用なら、下書きのラウンドを置き換える
+  const keys=Object.keys(importResult.rounds);
+  const isEmptyRound=r=>(draftTD.courts[r]||[]).every(c=>!c.cat&&!(c.teams&&c.teams.length));
+  if(keys.every(k=>k) && draftTD.rounds.every(isEmptyRound)){
+    draftTD.rounds.filter(r=>!keys.includes(r)).forEach(r=>{ delete draftTD.courts[r]; });
+    draftTD.rounds=draftTD.rounds.filter(r=>keys.includes(r));
+  }
+  Object.entries(importResult.rounds).forEach(([rk,courts])=>{
+    const rname=rk||cur;
+    if(!draftTD.rounds.includes(rname)) draftTD.rounds.push(rname);
+    ensureDraftCourts();
+    const arr=draftTD.courts[rname];
+    if(clear) arr.forEach(c=>{c.cat='';c.teams=[];});
+    Object.keys(courts).map(Number).sort((a,b)=>a-b).forEach(no=>{
+      while(arr.length<no) arr.push({id:arr.length+1,cat:'',teams:[]});
+      const c=arr.find(x=>x.id===no);
+      const src=courts[no];
+      if(src.cat) c.cat=src.cat;
+      c.teams=src.teams.filter(t=>t.a||t.n);
+    });
+    if(firstRound===null) firstRound=rname;
+  });
+  importResult=null;
+  if(firstRound!==null) createRI=Math.max(0,draftTD.rounds.indexOf(firstRound));
+  closeModal(); _renderCreate();
+}
+
+function downloadImportTemplate(){
+  if(typeof XLSX==='undefined'){ alert('ライブラリを読み込めませんでした。通信状況を確認してください。'); return; }
+  const rows=[
+    ['ラウンド','コート','種目','大学名','名前','順番'],
+    ['予選ラウンド',1,'男子初段','○○大学','山田 太郎・鈴木 一郎',1],
+    ['予選ラウンド',1,'男子初段','△△大学','佐藤 次郎・高橋 三郎',2],
+    ['予選ラウンド',2,'女子初段','□□大学','田中 花子・伊藤 良子',1],
+    ['決勝ラウンド',1,'男子初段','○○大学','山田 太郎・鈴木 一郎',1],
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:14},{wch:8},{wch:12},{wch:16},{wch:26},{wch:6}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'コート割');
+  const memo=XLSX.utils.aoa_to_sheet([
+    ['コート割エクセルの書き方'],
+    ['・「コート割」シートの1行目は見出しです。列の順番は自由で、余分な列があっても構いません。'],
+    ['・「ラウンド」列は省略できます。省略した場合、アプリで選択中のラウンドに読み込まれます。'],
+    ['・「順番」列は省略できます。あれば小さい順に並べ替えます。無ければ行の順番どおりです。'],
+    ['・同じコートが続く行は「コート」「種目」を空欄にしても構いません（前の行を引き継ぎます）。'],
+    ['・コートは「1」「1コート」「第1コート」「Ⅰコート」のどれでも読めます。'],
+    ['・別の書き方として、「1コート 男子初段」という見出しの下に 大学名｜名前 を並べた番組表もそのまま読めます。'],
+  ]);
+  memo['!cols']=[{wch:90}];
+  XLSX.utils.book_append_sheet(wb,memo,'書き方');
+  XLSX.writeFile(wb,'コート割テンプレート.xlsx');
+}
+
 
 // ─────────────────────────────────────────
 // ── ダッシュボード ──
