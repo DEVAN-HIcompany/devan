@@ -42,7 +42,7 @@
       <div class="field" style="margin:0;min-width:260px"><select id="evSel"></select></div>
       <div class="row"><button class="btn sm ghost" id="newEv">＋ 大会を追加</button><button class="btn sm ghost" id="logout">ログアウト</button></div>
     </div>
-    <div class="tabs"><button class="on" data-tab="dash">集計</button><button data-tab="ev">大会設定</button><button data-tab="univ">大学コード</button><button data-tab="door">当日券・招待券</button><button data-tab="list">チケット一覧</button></div>
+    <div class="tabs"><button class="on" data-tab="dash">集計</button><button data-tab="ev">大会設定</button><button data-tab="univ">大学コード</button><button data-tab="door">当日券・招待券</button><button data-tab="list">チケット一覧</button><button data-tab="staff">受付アカウント</button></div>
 
     <!-- 集計 -->
     <div id="tDash">
@@ -142,6 +142,25 @@
       </div>
     </div>
 
+    <!-- 受付アカウント -->
+    <div id="tStaff" class="hidden">
+      <div class="card">
+        <h2>受付アカウントの登録</h2>
+        <p class="lead">入口受付（gate.html）に入れるのは、ここで許可したアカウントだけです。進行用・管理用のアカウントでは入れません。</p>
+        <ol style="margin:0 0 8px;padding-left:20px;font-size:14px;color:var(--ink2);line-height:1.8">
+          <li>Firebase コンソール → Authentication → Users →「ユーザーを追加」で受付用のメールアドレスとパスワードを作る（例: uketsuke@kantogs.org。1つを受付スタッフ全員で共有して構いません）</li>
+          <li>そのアカウントで一度 入口受付 にログインする → 下の「許可待ち」に表示される</li>
+          <li>「受付として許可」を押す → 以後そのアカウントで入口受付が使える</li>
+        </ol>
+        <h3>許可待ち</h3>
+        <div class="tblwrap"><table class="tbl" id="pendTbl"></table></div>
+        <h3>受付として許可済み</h3>
+        <div class="tblwrap"><table class="tbl" id="staffTbl"></table></div>
+        <div class="msg" id="sMsg"></div>
+        <p class="muted" id="rolesNote" style="margin-top:8px"></p>
+      </div>
+    </div>
+
     <!-- 一覧 -->
     <div id="tList" class="hidden">
       <div class="card">
@@ -178,7 +197,7 @@
     if (u && !(await TK.isAdmin(u))) { $('lMsg').textContent = 'このアカウントは管理者ではありません。'; await auth.signOut(); return; }
     $('vLogin').classList.toggle('hidden', !!u); $('vMain').classList.toggle('hidden', !u);
     $('who').textContent = u ? (u.email||'') : '';
-    if (u) loadEvents();
+    if (u) { loadEvents(); watchStaff(); }
   });
   $('lBtn').onclick = async () => { $('lMsg').textContent=''; try { await auth.signInWithEmailAndPassword($('lEmail').value.trim(), $('lPass').value); } catch(e){ $('lMsg').textContent='ログインできませんでした。'; } };
   $('lPass').addEventListener('keydown', e => { if (e.key==='Enter') $('lBtn').click(); });
@@ -186,7 +205,7 @@
 
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x===b));
-    ['dash','ev','univ','door','list'].forEach(t => $('t'+t[0].toUpperCase()+t.slice(1)).classList.toggle('hidden', t!==b.dataset.tab));
+    ['dash','ev','univ','door','list','staff'].forEach(t => $('t'+t[0].toUpperCase()+t.slice(1)).classList.toggle('hidden', t!==b.dataset.tab));
   });
 
   /* ---- 大会 ---- */
@@ -382,6 +401,28 @@
                 copyLink: tid => navigator.clipboard.writeText(ticketUrl(EID, tid)).then(()=>alert('リンクをコピーしました。')),
                 voidT: async tid => { const t=TICKETS[tid]; const v = t.void ? null : (prompt('無効にする理由（任意）','')||'無効'); if (t.void && !confirm('無効を解除しますか？')) return; await db.ref(`tk/tickets/${EID}/${tid}`).update({ void: v?true:null, voidNote: v||null }); },
                 resetUsed: async tid => { if (!confirm('入場記録を取り消しますか？')) return; await db.ref(`tk/tickets/${EID}/${tid}`).update({ used:0, usedAt:null }); } };
+
+  /* ---- 受付アカウント（sj/roles = 'gate'） ---- */
+  let PENDING = {}, STAFF = {}, ROLES = null;
+  function watchStaff(){
+    db.ref('tk/pending').on('value', s => { PENDING = s.val()||{}; renderStaff(); }, ()=>{});
+    db.ref('tk/staff').on('value', s => { STAFF = s.val()||{}; renderStaff(); }, ()=>{});
+    db.ref('sj/roles').on('value', s => { ROLES = s.exists()? (s.val()||{}) : null; renderStaff(); }, ()=>{});
+  }
+  function renderStaff(){
+    const pend = Object.entries(PENDING).filter(([uid]) => !(ROLES && ROLES[uid]==='gate'));
+    $('pendTbl').innerHTML = '<tr><th>メールアドレス</th><th>ログイン日時</th><th></th></tr>' + pend.sort((x,y)=>(y[1].at||0)-(x[1].at||0)).map(([uid,p]) => `<tr><td>${esc(p.email||uid)}</td><td>${fmtTime(p.at)}</td><td class="row"><button class="btn xs ok" onclick="_s.allow('${uid}')">受付として許可</button><button class="btn xs ghost" onclick="_s.dismiss('${uid}')">消す</button></td></tr>`).join('') || '<tr><td class="muted">ありません。受付用アカウントで入口受付に一度ログインすると、ここに出ます。</td></tr>';
+    const gates = ROLES ? Object.entries(ROLES).filter(([,r])=>r==='gate') : [];
+    $('staffTbl').innerHTML = '<tr><th>メールアドレス</th><th>許可日時</th><th></th></tr>' + gates.map(([uid]) => { const st = STAFF[uid]||{}; return `<tr><td>${esc(st.email||uid)}</td><td>${fmtTime(st.at)}</td><td><button class="btn xs ghost" onclick="_s.revoke('${uid}')">取り消す</button></td></tr>`; }).join('') || '<tr><td class="muted">まだありません</td></tr>';
+    $('rolesNote').textContent = ROLES === null ? '注意: 役割（sj/roles）が未設定のため、今はログインできる全員が入口受付と管理に入れます。管理用アカウントを先に管理者として登録してください（FIREBASE設定手順 手順4）。' : '';
+  }
+  window._s = {
+    allow: async uid => { const p = PENDING[uid]||{}; if (ROLES && ROLES[uid]==='admin') { alert('管理者アカウントは受付にできません。'); return; }
+      try { await db.ref().update({ [`sj/roles/${uid}`]: 'gate', [`tk/staff/${uid}`]: { email:p.email||'', at:TS, by:user?(user.email||''):'' }, [`tk/pending/${uid}`]: null }); $('sMsg').className='msg ok'; $('sMsg').textContent=`${p.email||uid} を受付として許可しました。`; }
+      catch(e){ console.error(e); $('sMsg').className='msg'; $('sMsg').textContent='許可できませんでした。DBルール（sj/roles の書き込み）を最新にしてください。'; } },
+    dismiss: async uid => { await db.ref(`tk/pending/${uid}`).remove(); },
+    revoke: async uid => { const st = STAFF[uid]||{}; if (!confirm(`${st.email||uid} の受付権限を取り消しますか？`)) return; await db.ref().update({ [`sj/roles/${uid}`]: null, [`tk/staff/${uid}`]: null }); }
+  };
 
   /* ---- 集計・一覧 ---- */
   function render(){

@@ -45,7 +45,7 @@
 
   <div id="vLogin" class="card login hidden">
     <h2>受付スタッフ ログイン</h2>
-    <p class="lead">DEVAN の「進行用」または「管理用」のアカウントでログインしてください。</p>
+    <p class="lead">受付専用のアカウントでログインしてください（進行用・管理用のアカウントでは入れません）。</p>
     <div class="field"><label>メールアドレス</label><input id="lEmail" type="email" autocomplete="username"></div>
     <div class="field"><label>パスワード</label><input id="lPass" type="password" autocomplete="current-password"></div>
     <button class="btn w" id="lBtn">ログイン</button>
@@ -120,7 +120,20 @@
   const log = [];
 
   /* ---- ログイン ---- */
+  async function gateAllowed(u){
+    if (DEMO) return true;
+    const roles = await db.ref('sj/roles').once('value');
+    if (!roles.exists()) return true; // 役割が未設定の間は DEVAN 本体と同じくログインできれば可
+    return roles.child(u.uid).val() === 'gate';
+  }
   auth.onAuthStateChanged(async u => {
+    if (u && !(await gateAllowed(u))) {
+      // 受付として未登録 → 管理画面に「許可待ち」として知らせてからログアウト
+      try { await db.ref('tk/pending/' + u.uid).set({ email: u.email||'', at: TS }); } catch(_){}
+      await auth.signOut();
+      $('lMsg').innerHTML = `このアカウント（${esc(u.email||'')}）は受付として登録されていません。<br>管理者に「チケット管理 → 受付アカウント」で許可してもらってから、もう一度ログインしてください。`;
+      return;
+    }
     user = u;
     $('vLogin').classList.toggle('hidden', !!u); $('vMain').classList.toggle('hidden', !u);
     $('who').textContent = u ? (u.email||'') : '';
