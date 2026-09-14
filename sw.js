@@ -1,8 +1,8 @@
-// デバン（大会進行管理） Service Worker
+// DEVAN Service Worker
 //  ・index.html は「まずネットワーク、だめならキャッシュ」→ 更新がすぐ反映され、圏外でも直前の画面は開ける
 //  ・アイコンや設定ファイルは「まずキャッシュ」
 //  ・Firebase など外部への通信はそのまま通す
-const CACHE = 'sj-app-v3';
+const CACHE = 'sj-app-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

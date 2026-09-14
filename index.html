@@ -10,10 +10,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="デバン">
+<meta name="apple-mobile-web-app-title" content="DEVAN">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
-<title>デバン ― 出番が、わかる。｜関東学生少林寺拳法連盟</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Cormorant+Garamond:wght@600&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<title>DEVAN ― 出番が、わかる。｜関東学生少林寺拳法連盟</title>
 <style>
 :root{
   --ink:#1C1B1A;--ink2:#3D3A36;--muted:#8A857C;--line:#E7E2D9;--line2:#D8D2C6;--card:#FFFFFF;--bg:#F6F4EF;--bg2:#EFECE5;
@@ -39,7 +39,7 @@ button:active{transform:scale(.985)}
 .home-box{width:min(460px,100%);text-align:center}
 .hero{width:56px;height:1px;background:var(--gold);margin:0 auto 1.5rem}
 .org{font-size:11px;font-weight:500;letter-spacing:.28em;color:var(--muted);margin-bottom:.9rem}
-.hbrand{font-family:var(--serif);font-size:11px;letter-spacing:.42em;color:var(--gold);margin-bottom:.15rem;padding-left:.42em}
+.wordmark{font-family:'Cormorant Garamond',var(--serif);font-size:46px;font-weight:600;letter-spacing:.34em;padding-left:.34em;color:var(--ink);line-height:1.1;margin:.1rem 0 .5rem}
 .hsub2{font-size:12px;color:var(--muted);letter-spacing:.02em}
 .htitle{font-family:var(--serif);font-size:34px;font-weight:600;letter-spacing:.08em;color:var(--ink);margin-bottom:.6rem;line-height:1.25}
 .hsub{font-size:15px;color:var(--ink2);margin-bottom:2.5rem;line-height:1.9;letter-spacing:.08em;font-weight:500}
@@ -461,8 +461,7 @@ function renderHome(){
     <div class="home"><div class="home-box">
       <div class="hero"></div>
       <div class="org">関東学生少林寺拳法連盟</div>
-      <div class="hbrand">DEBAN</div>
-      <div class="htitle">デバン</div>
+      <div class="wordmark">DEVAN</div>
       <div class="hsub">出番が、わかる。<br><span class="hsub2">大会の進行状況を、その場で・リアルタイムに</span></div>
       <button class="hbtn primary" onclick="enterSpectator()">
         <div><div class="hbtn-l">観客・出場者の方</div><div class="hbtn-d">大学名や氏名で出番をさがす。ログイン不要</div></div>
@@ -485,7 +484,7 @@ function renderFedHome(){
     <div class="home"><div class="home-box">
       <div class="hero"></div>
       <div class="org">学生連盟の方</div>
-      <div class="htitle">デバン</div>
+      <div class="wordmark">DEVAN</div>
       <div class="hsub">コート割の作成と、試合進行の記録・共有</div>
       <button class="hbtn primary" onclick="enterView()">
         <div><div class="hbtn-l">閲覧用で開く</div><div class="hbtn-d">進行状況を見る。ログイン不要</div></div>
@@ -534,7 +533,7 @@ function renderAdminHome(){
     <div class="home"><div class="home-box">
       <div class="hero"></div>
       <div class="org">管理用</div>
-      <div class="htitle">デバン</div>
+      <div class="wordmark">DEVAN</div>
       <div class="hsub">${esc(auth.currentUser?.email||'')} としてログイン中</div>
       <button class="hbtn" onclick="renderNewTournament()">
         <div class="hicon">01</div>
