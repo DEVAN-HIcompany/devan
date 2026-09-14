@@ -10,10 +10,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="大会進行">
+<meta name="apple-mobile-web-app-title" content="デバン">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
-<title>少林寺拳法 大会進行管理</title>
+<title>デバン ― 出番が、わかる。｜関東学生少林寺拳法連盟</title>
 <style>
 :root{
   --ink:#1C1B1A;--ink2:#3D3A36;--muted:#8A857C;--line:#E7E2D9;--line2:#D8D2C6;--card:#FFFFFF;--bg:#F6F4EF;--bg2:#EFECE5;
@@ -39,8 +39,10 @@ button:active{transform:scale(.985)}
 .home-box{width:min(460px,100%);text-align:center}
 .hero{width:56px;height:1px;background:var(--gold);margin:0 auto 1.5rem}
 .org{font-size:11px;font-weight:500;letter-spacing:.28em;color:var(--muted);margin-bottom:.9rem}
+.hbrand{font-family:var(--serif);font-size:11px;letter-spacing:.42em;color:var(--gold);margin-bottom:.15rem;padding-left:.42em}
+.hsub2{font-size:12px;color:var(--muted);letter-spacing:.02em}
 .htitle{font-family:var(--serif);font-size:34px;font-weight:600;letter-spacing:.08em;color:var(--ink);margin-bottom:.6rem;line-height:1.25}
-.hsub{font-size:13px;color:var(--muted);margin-bottom:2.5rem;line-height:1.9;letter-spacing:.04em}
+.hsub{font-size:15px;color:var(--ink2);margin-bottom:2.5rem;line-height:1.9;letter-spacing:.08em;font-weight:500}
 .hdivider{display:none}
 .hbtn{display:flex;align-items:center;gap:16px;padding:1.15rem 1.25rem;background:var(--card);border:1px solid var(--line);border-radius:var(--r);text-align:left;width:100%;margin-bottom:.75rem;box-shadow:var(--sh)}
 .hbtn:hover{border-color:var(--gold2);box-shadow:var(--sh2)}
@@ -225,6 +227,69 @@ button:active{transform:scale(.985)}
 .ccn{font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:3px}.ccc{font-size:11px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cct{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.04em}
 .cccard:not(.set) .ccc{color:var(--muted);font-weight:400}
 
+
+/* ── 観客用 ── */
+.sbox{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:1rem}
+@media(min-width:600px){.sbox{grid-template-columns:2fr 1fr}}
+.sbox select.inp{appearance:none;-webkit-appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238A857C'/%3E%3C/svg%3E") no-repeat right 14px center}
+.shead{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--ink2);margin:.4rem 0 .5rem}
+.shead small{font-weight:400;color:var(--muted);letter-spacing:.02em;margin-left:6px}
+.shint{text-align:center;padding:2.5rem 1rem;color:var(--muted);font-size:13px;line-height:1.9;border:1px dashed var(--line2);border-radius:12px}
+.slist{display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem}
+.srow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-left:4px solid var(--line2);border-radius:12px;padding:.8rem .9rem;cursor:pointer;box-shadow:var(--sh)}
+.srow:hover{box-shadow:var(--sh2)}
+.srow.now{border-left-color:var(--run);background:var(--run-bg)}
+.srow.done{border-left-color:var(--line2);opacity:.6}
+.srow.stopped{border-left-color:var(--stop);background:var(--stop-bg)}
+.srow.wait{border-left-color:var(--gold)}
+.sleft{min-width:0}
+.swhere{font-size:10px;letter-spacing:.06em;color:var(--muted);white-space:nowrap;margin-bottom:2px}
+.scur{font-size:9px;color:var(--gold);margin-left:6px;letter-spacing:.1em}
+.scourt{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1;white-space:nowrap}
+.scourt small{font-family:var(--sans);font-size:10px;font-weight:500;color:var(--muted);margin-left:2px}
+.scat{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--ink2);margin-left:8px}
+.smid{display:flex;align-items:center;gap:10px;min-width:0}
+.sno{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink);white-space:nowrap;line-height:1}
+.sno small{font-family:var(--sans);font-size:10px;color:var(--muted);margin-left:1px}
+.suniv{font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+.sname{font-size:15px;font-weight:600;color:var(--ink);letter-spacing:.02em}
+.sright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.schip{font-size:11px;font-weight:600;letter-spacing:.06em;padding:4px 10px;border-radius:4px;white-space:nowrap}
+.schip.now{background:var(--run);color:#fff}.schip.standby{background:var(--wait-bg);color:var(--ink2);border:1px solid var(--line2)}.srow.standby{border-left-color:#CBD5E1}.schip.wait{background:var(--ink);color:#fff}.schip.done{background:var(--wait-bg);color:var(--muted)}.schip.stopped{background:var(--stop);color:#fff}
+.smin{font-size:10px;color:var(--muted);white-space:nowrap}
+.sfav{font-size:11px;padding:4px 9px;border:1px solid var(--line2);border-radius:4px;background:#fff;color:var(--ink2);white-space:nowrap}
+.sfav.on{background:var(--gold-bg);border-color:var(--gold2);color:var(--gold);font-weight:600}
+@media(max-width:480px){
+  .srow{grid-template-columns:1fr auto;padding:.7rem .75rem}
+  .sleft{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:2px}
+  .swhere{margin:0}.scourt{font-size:18px}
+  .sright{flex-direction:row;align-items:center}
+  .smin{display:none}
+}
+
+
+.sheadico{display:inline-flex;color:var(--gold);vertical-align:-3px;margin-right:6px}
+.shead{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
+.stap{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:400;color:var(--muted);margin-left:auto}
+.favempty{display:flex;align-items:center;gap:12px;padding:.85rem 1rem;background:var(--gold-bg);border:1px dashed var(--gold2);border-radius:12px;margin-bottom:1.25rem;color:var(--ink2)}
+.favempty .sheadico{margin:0;color:var(--gold)}
+.favempty b{display:block;font-size:13px;color:var(--ink)}
+.favempty span{font-size:12px;color:var(--muted)}
+.sfav{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:6px 10px;border:1px solid var(--line2);border-radius:20px;background:#fff;color:var(--ink2);white-space:nowrap}
+.sfav svg{color:var(--gold)}
+.sfav.on{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:600}
+.sfav.on svg{color:#fff}
+.guide{display:grid;gap:10px;margin-bottom:1.25rem}
+.guide.compact{padding:1rem;background:#fff;border:1px solid var(--line);border-radius:12px}
+.gstep{display:flex;align-items:center;gap:12px}
+.gnum{font-family:var(--serif);font-size:13px;font-weight:600;color:var(--gold);width:16px;flex-shrink:0}
+.gico{width:44px;height:44px;border-radius:50%;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0}
+.gtxt b{display:block;font-size:14px;color:var(--ink)}
+.gtxt span{font-size:12px;color:var(--muted);line-height:1.6}
+.glegend{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;font-size:12px;color:var(--ink2);margin:1rem 0;padding:.85rem 1rem;background:var(--bg);border-radius:10px}
+.gnote{font-size:12px;color:var(--muted);line-height:1.8}
+@media(max-width:480px){.sfav span{display:none}.sfav{padding:7px 9px}.stap{display:none}}
+
 /* ── コート割の読み込み ── */
 .impbar{display:flex;flex-direction:column;gap:10px;padding:1.1rem;background:var(--bg);border:1px dashed var(--line2);border-radius:10px;margin-bottom:1rem;transition:all .15s}
 .impbar.drag{border-color:var(--ink);background:var(--bg2)}
@@ -349,8 +414,11 @@ function setSync(ok){
 function progCS(round, courtId){
   if(!PROG_DATA.courts) PROG_DATA.courts = {};
   const k = round+'_'+courtId;
-  if(!PROG_DATA.courts[k]) PROG_DATA.courts[k] = {current:0,stopped:false,stopReason:''};
+  if(!PROG_DATA.courts[k]) PROG_DATA.courts[k] = {current:0,stopped:false,stopReason:'',started:false};
   return PROG_DATA.courts[k];
+}
+// 競技が始まっているか（古いデータは current>0 なら開始済み扱い）
+function isStarted(cs){ return !!(cs && (cs.started || cs.current>0)); 
 }
 
 // ─────────────────────────────────────────
@@ -389,13 +457,35 @@ function stopProgListener(){
 function renderHome(){
   stopProgListener();
   TD = null; PROG_DATA = null; CUR_ID = null; MODE = null; viewRound = null;
+  show(`
+    <div class="home"><div class="home-box">
+      <div class="hero"></div>
+      <div class="org">関東学生少林寺拳法連盟</div>
+      <div class="hbrand">DEBAN</div>
+      <div class="htitle">デバン</div>
+      <div class="hsub">出番が、わかる。<br><span class="hsub2">大会の進行状況を、その場で・リアルタイムに</span></div>
+      <button class="hbtn primary" onclick="enterSpectator()">
+        <div><div class="hbtn-l">観客・出場者の方</div><div class="hbtn-d">大学名や氏名で出番をさがす。ログイン不要</div></div>
+        <div class="hbtn-r">›</div>
+      </button>
+      <button class="hbtn" onclick="renderFedHome()">
+        <div><div class="hbtn-l">学生連盟の方</div><div class="hbtn-d">閲覧用・進行用・管理用</div></div>
+        <div class="hbtn-r">›</div>
+      </button>
+      ${installHintHTML()}
+    </div></div>`);
+}
+function enterSpectator(){ MODE='spectator'; viewRound=null; specQ=''; specUniv=''; specTab='search'; renderList(); }
+function renderFedHome(){
+  stopProgListener();
+  TD = null; PROG_DATA = null; CUR_ID = null; MODE = null; viewRound = null;
   const u = auth.currentUser;
   const lg = u ? '・ログイン済み' : '・要ログイン';
   show(`
     <div class="home"><div class="home-box">
       <div class="hero"></div>
-      <div class="org">関東学生少林寺拳法連盟</div>
-      <div class="htitle">大会進行管理</div>
+      <div class="org">学生連盟の方</div>
+      <div class="htitle">デバン</div>
       <div class="hsub">コート割の作成と、試合進行の記録・共有</div>
       <button class="hbtn primary" onclick="enterView()">
         <div><div class="hbtn-l">閲覧用で開く</div><div class="hbtn-d">進行状況を見る。ログイン不要</div></div>
@@ -409,8 +499,7 @@ function renderHome(){
           <div><div class="hbtn-l">管理用</div><div class="hbtn-d">運営${lg}</div></div>
         </button>
       </div>
-      ${u?`<div class="hfoot">${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button></div>`:''}
-      ${installHintHTML()}
+      <div class="hfoot"><button class="implink" onclick="renderHome()">最初の画面に戻る</button>${u?` ・ ${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button>`:''}</div>
     </div></div>`);
 }
 function enterView(){ MODE='view'; viewRound=null; renderList(); }
@@ -436,7 +525,7 @@ function renderNoAdmin(){
       <div class="htitle">権限がありません</div>
       <div class="hsub">${esc(auth.currentUser?.email||'')} は進行用のアカウントです。<br>管理用の操作には管理者アカウントでログインしてください。</div>
       <button class="hbtn" onclick="enterOperator()"><div class="hicon">02</div><div><div class="hbtn-l">進行用で開く</div><div class="hbtn-d">このままの権限で進行の操作をする</div></div><div class="hbtn-r">›</div></button>
-      <div class="hfoot"><button class="implink" onclick="renderHome()">モード選択に戻る</button> ・ <button class="implink" onclick="doLogout()">別のアカウントでログイン</button></div>
+      <div class="hfoot"><button class="implink" onclick="renderFedHome()">モード選択に戻る</button> ・ <button class="implink" onclick="doLogout()">別のアカウントでログイン</button></div>
     </div></div>`);
 }
 function renderAdminHome(){
@@ -445,7 +534,7 @@ function renderAdminHome(){
     <div class="home"><div class="home-box">
       <div class="hero"></div>
       <div class="org">管理用</div>
-      <div class="htitle">大会進行管理</div>
+      <div class="htitle">デバン</div>
       <div class="hsub">${esc(auth.currentUser?.email||'')} としてログイン中</div>
       <button class="hbtn" onclick="renderNewTournament()">
         <div class="hicon">01</div>
@@ -457,7 +546,7 @@ function renderAdminHome(){
         <div><div class="hbtn-l">大会を開く</div><div class="hbtn-d">保存済みの大会を選んで進行を記録する</div></div>
         <div class="hbtn-r">›</div>
       </button>
-      <div class="hfoot"><button class="implink" onclick="renderHome()">モード選択に戻る</button> ・ <button class="implink" onclick="doLogout()">ログアウト</button></div>
+      <div class="hfoot"><button class="implink" onclick="renderFedHome()">モード選択に戻る</button> ・ <button class="implink" onclick="doLogout()">ログアウト</button></div>
     </div></div>`);
 }
 function renderLogin(msg){
@@ -515,7 +604,7 @@ function renderList(){
     show(`
       <div class="wrap">
         <div class="phead">
-          <button class="backbtn" onclick="goHome()">← ${MODE==='admin'?'ホーム':'モード選択'}</button>
+          <button class="backbtn" onclick="goHome()">← ${MODE==='admin'?'ホーム':MODE==='spectator'?'最初の画面':'モード選択'}</button>
           <div class="ptitle">大会を選択</div>
           ${modeTag()}
         </div>
@@ -574,8 +663,8 @@ function openTournament(id){
   });
 }
 
-function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else renderHome(); }
-const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?'<span class="modetag">進行用</span>':'';
+function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
+const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?'<span class="modetag">進行用</span>':MODE==='spectator'?'<span class="modetag">観客用</span>':'';
 function deleteTournament(id){
   if(!isAdmin()) return;
   if(!confirm('この大会を削除しますか？')) return;
@@ -1131,8 +1220,144 @@ function downloadImportTemplate(){
 // ─────────────────────────────────────────
 // ── ダッシュボード ──
 // ─────────────────────────────────────────
+// ─────────────────────────────────────────
+// ── 観客用 ──
+//  大学名・氏名で出番を検索し、「あと何組で出番か」をリアルタイムに表示する。登録した出番は上に固定。
+// ─────────────────────────────────────────
+let specQ = '', specUniv = '', specTab = 'search';
+// 線画アイコン（絵文字は使わない）
+const ICO={
+  star:(f)=>`<svg viewBox="0 0 24 24" width="18" height="18" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9-4.3-4.1 5.9-.8z"/></svg>`,
+  search:`<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>`,
+  clock:`<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>`,
+  starBig:`<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9-4.3-4.1 5.9-.8z"/></svg>`,
+  tap:`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 013 0V11m0-3a1.5 1.5 0 013 0v3m0-1.5a1.5 1.5 0 013 0V15a5 5 0 01-5 5h-1.5a5 5 0 01-4.1-2.1L5 14.6a1.4 1.4 0 012.2-1.7L9 15"/></svg>`
+};
+function specGuideHTML(compact){
+  return `<div class="guide${compact?' compact':''}">
+    <div class="gstep"><div class="gnum">1</div><div class="gico">${ICO.search}</div><div class="gtxt"><b>さがす</b><span>大学名や氏名を入力すると、出番の一覧が出ます</span></div></div>
+    <div class="gstep"><div class="gnum">2</div><div class="gico">${ICO.starBig}</div><div class="gtxt"><b>お気に入りに入れる</b><span>星を押すと、その出番が画面の上に固定されます</span></div></div>
+    <div class="gstep"><div class="gnum">3</div><div class="gico">${ICO.clock}</div><div class="gtxt"><b>出番を待つ</b><span>「あと○組」が自動で減っていき、順番が来ると「演武中」になります（進行係が「競技を開始する」を押すまで、1組目は「待機中」）</span></div></div>
+  </div>`;
+}
+function openSpecGuide(){
+  $('mod').innerHTML=`
+    <div class="mhead"><div class="mtitle">使い方</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    ${specGuideHTML(false)}
+    <div class="glegend"><span class="schip standby">待機中</span><span>コートがまだ始まっていない（1組目）</span><span class="schip now">演武中</span><span>いま演武している</span><span class="schip wait">あと3組</span><span>3組あとに出番</span><span class="schip done">終了</span><span>演武が終わった</span><span class="schip stopped">停止中</span><span>コートが一時中断</span></div>
+    <div class="gnote">出番の行を押すと、そのコートの全出場組と進み具合が見られます。<br>お気に入りはこのスマホにだけ記憶されます。</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="mbtn p" onclick="closeModal()">わかりました</button></div>`;
+  $('ov').classList.add('open');
+}
+
+const MIN_PER_TEAM = 3; // 目安の分数（1組あたり）
+const normq = s => String(s||'').normalize('NFKC').toLowerCase().replace(/[\s　・･,、]/g,'');
+function favKey(){ return 'sj_fav_'+CUR_ID; }
+function getFavs(){ try{ return JSON.parse(localStorage.getItem(favKey())||'[]'); }catch(e){ return []; } }
+function setFavs(a){ try{ localStorage.setItem(favKey(), JSON.stringify(a)); }catch(e){} }
+const entryId = e => e.r+'|'+e.c+'|'+e.i;
+function isFav(e){ return getFavs().includes(entryId(e)); }
+function toggleFav(id){ let f=getFavs(); f = f.includes(id) ? f.filter(x=>x!==id) : [...f,id]; setFavs(f); renderSpectator(); }
+
+// 全出番を一覧化
+function allEntries(){
+  const out=[];
+  TD.rounds.forEach((r,ri)=>{ (TD.courts[r]||[]).forEach(c=>{ (c.teams||[]).forEach((t,i)=>{ out.push({r,ri,c:c.id,cat:c.cat||'',i,a:t.a||'',n:t.n||'',total:c.teams.length}); }); }); });
+  return out;
+}
+// 出番の状態
+function entryStatus(e){
+  const cs=progCS(e.r,e.c); const dn=Math.min(cs.current,e.total);
+  if(e.i<dn) return {k:'done',label:'終了',ahead:-1};
+  if(cs.stopped) return {k:'stopped',label:'停止中',ahead:e.i-dn};
+  if(!isStarted(cs)){ // まだ始まっていないコート：1組目は待機中、以降は「あと○組」
+    if(e.i===0) return {k:'standby',label:'待機中',ahead:0};
+    return {k:'wait',label:'あと'+e.i+'組',ahead:e.i};
+  }
+  if(e.i===dn) return {k:'now',label:'演武中',ahead:0};
+  return {k:'wait',label:'あと'+(e.i-dn)+'組',ahead:e.i-dn};
+}
+function specSortKey(e){ const s=entryStatus(e); return s.k==='now'?-1:s.k==='done'?1e6+e.ri*1000+e.i:s.ahead+e.ri*1000+(s.k==='standby'?0.5:0); }
+
+function renderSpectator(){
+  if(!TD||!PROG_DATA) return;
+  const entries=allEntries();
+  const univs=[...new Set(entries.map(e=>e.a).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const favs=getFavs();
+  const favEntries=entries.filter(e=>favs.includes(entryId(e))).sort((a,b)=>specSortKey(a)-specSortKey(b));
+  const q=normq(specQ);
+  let results=[];
+  if(q||specUniv){
+    results=entries.filter(e=>(!specUniv||e.a===specUniv)&&(!q||normq(e.a).includes(q)||normq(e.n).includes(q)));
+    results.sort((a,b)=>specSortKey(a)-specSortKey(b));
+  }
+  const row=e=>specRowHTML(e,favs);
+  const body = specTab==='courts' ? '' : `
+    <div class="sbox">
+      <input class="inp" id="specq" type="search" placeholder="大学名 か 氏名 を入力（例：明治、山田）" value="${esc(specQ)}" oninput="specQ=this.value;renderSpectatorResults()" autocomplete="off">
+      <select class="inp" id="specu" onchange="specUniv=this.value;renderSpectatorResults()">
+        <option value="">大学から選ぶ</option>${univs.map(u=>`<option value="${esc(u)}"${u===specUniv?' selected':''}>${esc(u)}</option>`).join('')}
+      </select>
+    </div>
+    <div id="specres">${renderSpectatorResultsHTML(results,favEntries,row,q)}</div>`;
+  $('app').innerHTML=`
+    <div class="dtop">
+      <div class="dhead">
+        <div><button class="backbtn" onclick="renderList()">← 一覧</button><div class="dtitle">${esc(TD.name)}</div><span class="modetag">観客用</span></div>
+        <div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div>
+      </div>
+      <div class="rtabs"><button class="rtab${specTab==='search'?' on':''}" onclick="specTab='search';renderSpectator()">出番をさがす</button><button class="rtab${specTab==='courts'?' on':''}" onclick="specTab='courts';renderSpectator()">コート一覧</button><button class="rtabadd" onclick="openSpecGuide()">使い方</button></div>
+    </div>
+    ${body}
+    <div id="speccourts"></div>`;
+  if(specTab==='courts'){ renderDashInto('speccourts'); }
+  setSync(true);
+  // 入力中はフォーカスを保つ
+  const inp=$('specq'); if(inp&&document.activeElement!==inp&&specQ){ /* 再描画後もカーソルを戻す */ }
+}
+
+function specRowHTML(e,favs){
+  const st=entryStatus(e); const fav=favs.includes(entryId(e)); const cur=e.r===PROG_DATA.currentRound;
+  const mins=st.k==='wait'&&st.ahead>0?`<span class="smin">目安 約${st.ahead*MIN_PER_TEAM}分後</span>`:'';
+  return `<div class="srow ${st.k}" onclick="viewRound='${esc(e.r)}';openCourtModal(${e.c})">
+    <div class="sleft"><div class="swhere">${esc(e.r)}${cur?'<span class="scur">進行中のラウンド</span>':''}</div><div class="scourt">${e.c}<small>コート</small><span class="scat">${esc(e.cat)}</span></div></div>
+    <div class="smid"><div class="sno">${e.i+1}<small>番</small></div><div><div class="suniv">${esc(e.a)}</div><div class="sname">${esc(e.n)}</div></div></div>
+    <div class="sright"><span class="schip ${st.k}">${st.label}</span>${mins}
+      <button class="sfav${fav?' on':''}" onclick="event.stopPropagation();toggleFav('${esc(entryId(e))}')" aria-label="お気に入り">${ICO.star(fav)}<span>${fav?'お気に入り':'お気に入りに入れる'}</span></button></div>
+  </div>`;
+}
+function renderSpectatorResultsHTML(results,favEntries,row,q){
+  const searching=!!(q||specUniv);
+  let favHTML;
+  if(favEntries.length){
+    favHTML=`<div class="shead"><span class="sheadico">${ICO.star(true)}</span>お気に入り <small>${favEntries.length}件・自動で更新されます</small></div><div class="slist">${favEntries.map(row).join('')}</div>`;
+  }else{
+    favHTML=`<div class="favempty"><span class="sheadico">${ICO.star(false)}</span><div><b>お気に入りはまだありません</b><span>${searching?'下の一覧で星を押すと、ここに固定されて見逃しません':'さがした出番の星を押すと、ここに固定されます'}</span></div></div>`;
+  }
+  let resHTML='';
+  if(!searching) resHTML=specGuideHTML(true);
+  else if(!results.length) resHTML=`<div class="shint">見つかりませんでした。<br>大学名の一部（例：明治）や、姓だけ（例：山田）でお試しください。</div>`;
+  else resHTML=`<div class="shead">見つかった出番 <small>${results.length}件</small><span class="stap">${ICO.tap} 行を押すとコートの全体が見られます</span></div><div class="slist">${results.map(row).join('')}</div>`;
+  return favHTML+resHTML;
+}
+function renderSpectatorResults(){
+  const entries=allEntries(); const favs=getFavs();
+  const favEntries=entries.filter(e=>favs.includes(entryId(e))).sort((a,b)=>specSortKey(a)-specSortKey(b));
+  const q=normq(specQ); let results=[];
+  if(q||specUniv){ results=entries.filter(e=>(!specUniv||e.a===specUniv)&&(!q||normq(e.a).includes(q)||normq(e.n).includes(q))); results.sort((a,b)=>specSortKey(a)-specSortKey(b)); }
+  const row=e=>specRowHTML(e,favs);
+  const el=$('specres'); if(el) el.innerHTML=renderSpectatorResultsHTML(results,favEntries,row,q);
+}
+// コート一覧（閲覧用と同じ表示）を指定要素に描く
+function renderDashInto(id){
+  const el=$(id); if(!el) return;
+  const rHTML = TD.rounds.map(r=>`<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`).join('');
+  el.innerHTML=`<div class="rtabs" style="margin:-.25rem 0 1rem">${rHTML}</div><div class="sumbar">${buildSummary()}</div><div class="alertwrap">${buildAlerts()}</div><div class="cgrid">${buildGrid()}</div>`;
+}
+
 function renderDash(){
   if(!TD||!PROG_DATA) return;
+  if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
   ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}`:'');
@@ -1171,9 +1396,9 @@ function setRound(r){
 function courtStatus(c, cs){
   const t=(c.teams||[]).length; if(!t)return 'inactive';
   if(cs.stopped)return 'stopped'; if(cs.current>=t)return 'done';
-  const rem=t-cs.current;
-  if(cs.current>0&&rem===1)return 'last1'; if(cs.current>0&&rem<=3)return 'last3';
-  if(cs.current>0)return 'running'; return 'waiting';
+  const st=isStarted(cs), rem=t-cs.current;
+  if(st&&rem===1)return 'last1'; if(st&&rem<=3)return 'last3';
+  if(st)return 'running'; return 'waiting';
 }
 
 function buildSummary(){
@@ -1218,7 +1443,7 @@ function buildGrid(){
       return `<div class="tdot" style="background:${bg};${brd}"></div>`;}).join(''):'';
     // 次に演武する組（進行中・待機・残りわずか）
     let next='';
-    if(t&&st!=='done'&&st!=='stopped'&&dn<t){ const nt=c.teams[dn]; next=`<div class="cnext${dn>0?' now':''}"><span class="lab">${dn>0?'演武中':'次'}</span><b>${esc(nt.a)}</b> ${esc(nt.n)}</div>`; }
+    if(t&&st!=='done'&&st!=='stopped'&&dn<t){ const nt=c.teams[dn]; next=`<div class="cnext${isStarted(cs)?' now':''}"><span class="lab">${isStarted(cs)?'演武中':'次'}</span><b>${esc(nt.a)}</b> ${esc(nt.n)}</div>`; }
     else if(st==='stopped'){ next=`<div class="cnext stop">${esc(cs.stopReason||'停止中')}</div>`; }
     else if(st==='done'){ next=`<div class="cnext fin">全 ${t} 組 終了</div>`; }
     return `<div class="ccard ${st}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
@@ -1289,7 +1514,7 @@ function drawModal(){
   const c=(TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId);
   if(!c)return;
   const cs=progCS(curRound(),modalCourtId);
-  if(MODE==='view'){
+  if(MODE==='view'||MODE==='spectator'){
     $('mod').innerHTML=`
       <div class="mhead"><div class="mtitle">${c.id}コート<span>${esc(c.cat)||'種目未設定'}</span></div><button class="xbtn" onclick="closeModal()">×</button></div>
       ${drawViewTab(c,cs)}`;
@@ -1324,11 +1549,11 @@ function drawViewTab(c,cs){
     const isDn=i<dn,isCur=!cs.stopped&&i===dn&&dn<t;
     return `<div class="teamrow${isDn?' done':isCur?' cur':''}" style="cursor:default">
       <span class="ti">${i+1}</span><span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>
-      ${isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${PAL.run};flex-shrink:0">演武中</span>`:''}
+      ${isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?'演武中':'待機中'}</span>`:''}
     </div>`;}).join('');
   const sBanner=cs.stopped?`<div class="stopbanner"><div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div></div>`:'';
   const done=dn>=t;
-  const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:rem<=3&&dn>0?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
+  const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
   return `${sBanner}
     <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
     <div class="teamlist">${rows}</div>`;
@@ -1341,7 +1566,7 @@ function drawProgTab(c,cs){
     const isDn=i<dn,isCur=!cs.stopped&&i===dn&&dn<t;
     return `<div class="teamrow${isDn?' done':isCur?' cur':''}" onclick="toggleTeam(${i})">
       <span class="ti">${i+1}</span><span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>
-      ${isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${PAL.run};flex-shrink:0">演武中</span>`:''}
+      ${isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?'演武中':'待機中'}</span>`:''}
     </div>`;}).join('');
   const sBanner=cs.stopped?`<div class="stopbanner">
     <div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div>
@@ -1354,12 +1579,12 @@ function drawProgTab(c,cs){
       <button class="mbtn" style="flex:1;justify-content:center" onclick="stopFormOpen=false;drawModal()">キャンセル</button>
     </div></div>`:'';
   const done=dn>=t;
-  const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:rem<=3&&dn>0?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
+  const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
   return `${sBanner}
     <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
     <div class="macts">
-      <button class="mbtn" onclick="prevTeam()" ${dn<=0?'disabled':''}>戻す</button>
-      <button class="mbtn p" onclick="nextTeam()" ${done||cs.stopped?'disabled':''}>${done?'終了':'次の組へ'}</button>
+      <button class="mbtn" onclick="prevTeam()" ${dn<=0&&!isStarted(cs)?'disabled':''}>戻す</button>
+      <button class="mbtn p" onclick="nextTeam()" ${done||cs.stopped?'disabled':''}>${done?'終了':!isStarted(cs)?'競技を開始する':'次の組へ'}</button>
       ${!cs.stopped&&!stopFormOpen&&!done?`<button class="mbtn d" onclick="stopFormOpen=true;drawModal()">競技を停止する</button>`:''}
     </div>${sSec}<div class="teamlist">${rows}</div>`;
 }
@@ -1435,17 +1660,20 @@ function nextTeam(){
   if(!canOperate()) return;
   const cs=progCS(curRound(),modalCourtId);
   const c=(TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId);
-  if(c&&cs.current<c.teams.length){ cs.current++; saveProg(); drawModal(); renderDash(); }
+  if(!c||!c.teams.length) return;
+  if(!isStarted(cs)){ cs.started=true; saveProg(); drawModal(); renderDash(); return; } // 最初の1回は「競技を開始する」
+  if(cs.current<c.teams.length){ cs.current++; saveProg(); drawModal(); renderDash(); }
 }
 function prevTeam(){
   if(!canOperate()) return;
   const cs=progCS(curRound(),modalCourtId);
-  if(cs.current>0){ cs.current--; saveProg(); drawModal(); renderDash(); }
+  if(cs.current>0){ cs.current--; cs.started=true; saveProg(); drawModal(); renderDash(); }
+  else if(isStarted(cs)){ cs.started=false; saveProg(); drawModal(); renderDash(); } // 開始前に戻す
 }
 function toggleTeam(idx){
   if(!canOperate()) return;
   const cs=progCS(curRound(),modalCourtId);
-  cs.current=idx<cs.current?idx:idx+1;
+  cs.current=idx<cs.current?idx:idx+1; cs.started=true;
   saveProg(); drawModal(); renderDash();
 }
 

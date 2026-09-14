@@ -1,7 +1,7 @@
 {
-  "name": "大会進行管理 - 関東学生少林寺拳法連盟",
-  "short_name": "大会進行",
-  "description": "コート割の作成と、試合進行の記録・共有",
+  "name": "デバン ― 出番が、わかる。",
+  "short_name": "デバン",
+  "description": "大会の出番と進行状況が、その場でわかる。関東学生少林寺拳法連盟",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
