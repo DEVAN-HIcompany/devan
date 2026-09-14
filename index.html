@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4EF">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="大会進行">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
 <title>少林寺拳法 大会進行管理</title>
@@ -42,6 +49,8 @@ button:active{transform:scale(.985)}
 .hbtn-d{font-size:12px;color:var(--muted)}
 .hbtn-r{font-size:18px;color:var(--line2);margin-left:auto;flex-shrink:0}
 .hfoot{margin-top:1.25rem;font-size:12px;color:var(--muted);letter-spacing:.03em}
+.installbar{margin-top:1.5rem;padding:.7rem 1rem;border:1px dashed var(--line2);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.8}
+.installbar b{color:var(--ink)}
 .modetag{font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--gold);border:1px solid var(--gold2);border-radius:4px;padding:3px 7px;white-space:nowrap;flex-shrink:0}
 
 /* ── 共通 ── */
@@ -395,6 +404,7 @@ function renderHome(){
         <div class="hbtn-r">›</div>
       </button>
       ${u?`<div class="hfoot">${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button></div>`:''}
+      ${installHintHTML()}
     </div></div>`);
 }
 function enterView(){ MODE='view'; viewRound=null; renderList(); }
@@ -1436,6 +1446,21 @@ function toggleTeam(idx){
 // ─────────────────────────────────────────
 // 起動
 // ─────────────────────────────────────────
+// ── アプリとして追加（PWA） ──
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; const b=$('installbar'); if(b) b.hidden=false; });
+function installHintHTML(){
+  if(isStandalone()) return '';
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if(ios) return `<div class="installbar" id="installbar">ホーム画面に追加するとアプリとして使えます。<br>下の <b>共有</b> ボタン → <b>「ホーム画面に追加」</b></div>`;
+  return `<div class="installbar" id="installbar" ${installPrompt?'':'hidden'}><button class="implink" onclick="doInstall()">アプリとしてホーム画面に追加する</button></div>`;
+}
+async function doInstall(){ if(!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice; installPrompt=null; const b=$('installbar'); if(b) b.hidden=true; }
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(e=>console.warn('sw',e)); });
+}
+
 let _booted=false;
 show('<div class="loading">読み込み中...</div>');
 auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; renderHome(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
