@@ -48,6 +48,15 @@ button:active{transform:scale(.985)}
 .hbtn-l{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:2px;letter-spacing:.03em}
 .hbtn-d{font-size:12px;color:var(--muted)}
 .hbtn-r{font-size:18px;color:var(--line2);margin-left:auto;flex-shrink:0}
+.hbtn.primary{background:var(--ink);border-color:var(--ink);padding:1.35rem 1.4rem;margin-bottom:1rem}
+.hbtn.primary .hbtn-l{color:#fff;font-size:18px;letter-spacing:.06em}
+.hbtn.primary .hbtn-d{color:rgba(255,255,255,.7)}
+.hbtn.primary .hbtn-r{color:rgba(255,255,255,.5)}
+.hbtn.primary:hover{background:#000;border-color:#000}
+.hsmall{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hbtn.mini{padding:.85rem 1rem;margin:0;gap:0}
+.hbtn.mini .hbtn-l{font-size:14px}
+.hbtn.mini .hbtn-d{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hfoot{margin-top:1.25rem;font-size:12px;color:var(--muted);letter-spacing:.03em}
 .installbar{margin-top:1.5rem;padding:.7rem 1rem;border:1px dashed var(--line2);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.8}
 .installbar b{color:var(--ink)}
@@ -381,28 +390,25 @@ function renderHome(){
   stopProgListener();
   TD = null; PROG_DATA = null; CUR_ID = null; MODE = null; viewRound = null;
   const u = auth.currentUser;
-  const lg = u ? '（ログイン済み）' : '（ログインが必要です）';
+  const lg = u ? '・ログイン済み' : '・要ログイン';
   show(`
     <div class="home"><div class="home-box">
       <div class="hero"></div>
       <div class="org">関東学生少林寺拳法連盟</div>
       <div class="htitle">大会進行管理</div>
       <div class="hsub">コート割の作成と、試合進行の記録・共有</div>
-      <button class="hbtn" onclick="enterAdmin()">
-        <div class="hicon">01</div>
-        <div><div class="hbtn-l">管理用</div><div class="hbtn-d">大会の作成・コート割・進行、すべての操作${lg}</div></div>
+      <button class="hbtn primary" onclick="enterView()">
+        <div><div class="hbtn-l">閲覧用で開く</div><div class="hbtn-d">進行状況を見る。ログイン不要</div></div>
         <div class="hbtn-r">›</div>
       </button>
-      <button class="hbtn" onclick="enterOperator()">
-        <div class="hicon">02</div>
-        <div><div class="hbtn-l">進行用</div><div class="hbtn-d">次の組へ・戻す・競技停止と再開の操作だけ${lg}</div></div>
-        <div class="hbtn-r">›</div>
-      </button>
-      <button class="hbtn" onclick="enterView()">
-        <div class="hicon">03</div>
-        <div><div class="hbtn-l">閲覧用</div><div class="hbtn-d">進行状況を見るだけ。操作はできません</div></div>
-        <div class="hbtn-r">›</div>
-      </button>
+      <div class="hsmall">
+        <button class="hbtn mini" onclick="enterOperator()">
+          <div><div class="hbtn-l">進行用</div><div class="hbtn-d">進行係${lg}</div></div>
+        </button>
+        <button class="hbtn mini" onclick="enterAdmin()">
+          <div><div class="hbtn-l">管理用</div><div class="hbtn-d">運営${lg}</div></div>
+        </button>
+      </div>
       ${u?`<div class="hfoot">${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button></div>`:''}
       ${installHintHTML()}
     </div></div>`);
