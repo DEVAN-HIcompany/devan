@@ -92,6 +92,19 @@
         <p class="lead">大学名を1行に1つずつ貼り付けて「追加」を押すと、6文字のコードが自動で作られます。上限を変えたい大学は「大学名,上限」の形で書けます。</p>
         <div class="field"><textarea id="uBulk" rows="5" placeholder="明治大学&#10;早稲田大学,150&#10;日本大学"></textarea></div>
         <div class="row"><button class="btn" id="uAdd">追加する</button><button class="btn ghost" id="uCsv">コード一覧をCSVで保存</button><span class="msg" id="uMsg"></span></div>
+        <hr class="sep">
+        <h3>連盟サイトのエントリー状況から読み込む</h3>
+        <p class="lead">kantogs.org の「全大学エントリー状況」ページ（…/state_of_entry/）から大学名と合計選手数を取り込み、無料発行の上限を選手数に合わせます。登録済みの大学は上限だけ更新し、新しい大学はコードを発行します。</p>
+        <div class="row"><input id="kUrl" placeholder="https://kantogs.org/contests/2026shinjin/state_of_entry/" style="flex:1;min-width:240px;border:1px solid var(--line2);border-radius:8px;padding:9px 10px;font-size:14px"><button class="btn sm" id="kFetch">URLから読み込む</button></div>
+        <div class="muted" style="margin-top:6px">URLから読み込めないときは、そのページをブラウザで開き「ファイル → 別名で保存」（Safari は .webarchive、Chrome は「ウェブページ、完全」の .html）して、
+          <label class="btn xs ghost" style="cursor:pointer">保存したファイルを選ぶ<input type="file" id="kFile" accept=".html,.htm,.webarchive,.txt" hidden></label></div>
+        <div class="msg" id="kMsg"></div>
+        <div id="kPrev" class="hidden" style="margin-top:10px">
+          <div class="row between"><div><b id="kTitle"></b><span class="muted" id="kSum" style="margin-left:8px"></span></div>
+            <div class="field inline" style="margin:0"><label>上限の余裕（＋人）</label><input id="kMargin" type="number" value="0" min="0" style="width:80px"></div></div>
+          <div class="tblwrap" style="max-height:320px;overflow:auto;margin:8px 0"><table class="tbl" id="kTbl"></table></div>
+          <div class="row"><button class="btn" id="kApply">この内容で登録・更新する</button><button class="btn ghost sm" id="kCancel">取り消し</button></div>
+        </div>
       </div>
       <div class="card">
         <h2>登録済みの大学</h2>
@@ -245,6 +258,73 @@
     const u = UNIVS[uid]; if (!confirm(`${u.name} を削除しますか？（発行済みチケットは残ります）`)) return;
     await db.ref().update({ [`tk/events/${EID}/codes/${u.code}`]: null, [`tk/events/${EID}/univs/${uid}`]: null });
   }
+  /* ---- 連盟サイト（kantogs.org）のエントリー状況から大学名と選手数を取り込む ---- */
+  //  ページ内の `var data = {...}` に univs（大学）と people（選手。univ_id 付き）が JSON で埋め込まれている
+  let kRows = null;
+  function parseEntryHtml(html){
+    const m = html.match(/var\s+data\s*=\s*(\{[\s\S]*?\});\s*[\r\n]/); if (!m) return null;
+    let d; try { d = JSON.parse(m[1]); } catch(e){ return null; }
+    if (!d || !Array.isArray(d.univs) || !Array.isArray(d.people)) return null;
+    const cnt = {}; d.people.forEach(p => { cnt[p.univ_id] = (cnt[p.univ_id]||0) + 1; });
+    const rows = d.univs.map(u => ({ name: String(u.name||'').trim(), n: cnt[u.id]||0 })).filter(r => r.name).sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+    const tm = html.match(/<title>([\s\S]*?)<\/title>/i);
+    const title = tm ? tm[1].replace(/\s+/g,' ').trim() : '';
+    return { rows, title };
+  }
+  const norm = s => String(s||'').normalize('NFKC').replace(/\s+/g,'').trim();
+  function showEntryPreview(res, src){
+    kRows = res.rows;
+    const byName = {}; Object.entries(UNIVS).forEach(([id,u]) => byName[norm(u.name)] = {id, ...u});
+    $('kTitle').textContent = res.title || src || '';
+    const total = res.rows.reduce((a,r)=>a+r.n,0), zero = res.rows.filter(r=>!r.n).length;
+    $('kSum').textContent = `${res.rows.length}校・選手 ${total}名${zero?`（選手0名の${zero}校は登録しません）`:''}`;
+    const margin = Number($('kMargin').value||0);
+    $('kTbl').innerHTML = '<tr><th>大学名</th><th>選手数</th><th>上限（登録後）</th><th>現在</th><th>処理</th></tr>' + res.rows.map(r => {
+      const ex = byName[norm(r.name)];
+      const cap = r.n + margin;
+      const st = !r.n ? '<span class="muted">登録しない</span>' : ex ? (ex.cap===cap ? '<span class="muted">変更なし</span>' : '<span class="tag info">上限を更新</span>') : '<span class="tag ok">新規・コード発行</span>';
+      return `<tr${!r.n?' style="opacity:.5"':''}><td>${esc(r.name)}</td><td>${r.n}</td><td>${r.n?cap:'-'}</td><td>${ex?`上限 ${ex.cap}`:'<span class="muted">未登録</span>'}</td><td>${st}</td></tr>`;
+    }).join('');
+    $('kPrev').classList.remove('hidden');
+  }
+  $('kMargin').addEventListener('input', () => { if (kRows) showEntryPreview({rows:kRows, title:$('kTitle').textContent}); });
+  $('kCancel').onclick = () => { kRows=null; $('kPrev').classList.add('hidden'); };
+  $('kFile').onchange = () => {
+    const f = $('kFile').files[0]; if (!f) return;
+    const fr = new FileReader();
+    fr.onload = ev => {
+      const res = parseEntryHtml(String(ev.target.result));
+      if (!res) { $('kMsg').className='msg'; $('kMsg').textContent='このファイルからエントリー状況を見つけられませんでした。連盟サイトの「全大学エントリー状況」ページ（…/state_of_entry/）を保存したファイルを選んでください。'; return; }
+      $('kMsg').textContent=''; showEntryPreview(res, f.name);
+    };
+    fr.readAsText(f, 'utf-8'); $('kFile').value='';
+  };
+  $('kFetch').onclick = async () => {
+    const url = $('kUrl').value.trim() || $('kUrl').placeholder;
+    $('kMsg').className='msg'; $('kMsg').textContent='読み込んでいます…';
+    try {
+      const r = await fetch(url, { mode:'cors' }); const html = await r.text();
+      const res = parseEntryHtml(html); if (!res) throw new Error('parse');
+      $('kMsg').textContent=''; showEntryPreview(res, url);
+    } catch(e) {
+      console.warn(e);
+      $('kMsg').innerHTML = 'URLから直接は読み込めませんでした（連盟サイトの設定上、ブラウザからの取得が許可されていません）。<br>ページを「別名で保存」して、上の「保存したファイルを選ぶ」から読み込んでください。';
+    }
+  };
+  $('kApply').onclick = async () => {
+    if (!kRows || !EID) return;
+    const margin = Number($('kMargin').value||0);
+    const byName = {}; Object.entries(UNIVS).forEach(([id,u]) => byName[norm(u.name)] = {id, ...u});
+    const upd = {}; let added=0, updated=0;
+    for (const r of kRows) {
+      if (!r.n) continue;
+      const cap = r.n + margin, ex = byName[norm(r.name)];
+      if (ex) { if (ex.cap !== cap) { upd[`tk/events/${EID}/univs/${ex.id}/cap`] = cap; updated++; } }
+      else { const uid = 'u' + newTid().slice(0,8), code = newCode(); upd[`tk/events/${EID}/univs/${uid}`] = { name:r.name, code, cap, created:TS, entry:r.n }; upd[`tk/events/${EID}/codes/${code}`] = uid; added++; }
+    }
+    try { if (Object.keys(upd).length) await db.ref().update(upd); $('uMsg').className='msg ok'; $('uMsg').textContent=`エントリー状況から ${added}校を新規登録、${updated}校の上限を更新しました。`; $('kPrev').classList.add('hidden'); kRows=null; }
+    catch(e){ console.error(e); $('kMsg').className='msg'; $('kMsg').textContent='登録できませんでした。'; }
+  };
   function guideText(u){
     return `【${PUB.name} 入場チケットについて】\n${u.name} 主将・主務 各位\n\n本大会より観客の入場を有料（前売・当日 ${Number(PUB.price||0).toLocaleString()}円）としますが、学生連盟に所属する拳士および出場拳士は無料です。\n部員の皆さんは下記ページで「大学コード」と氏名を入力し、各自のQRチケットを発行してください（お一人1枚）。\n\n▼チケットページ\n${pubUrl()}\n\n▼${u.name} の大学コード\n${u.code}\n\n・コードは部員以外に教えないでください。\n・当日は入口でQR画面（スクリーンショット可）を見せて入場します。\n・ご家族・OBOGの方は同ページから前売券をご購入いただくか、当日券をお求めください。\n\n${PUB.name} 運営`;
   }
@@ -302,7 +382,7 @@
     const fu = {}; Object.values(TICKETS).forEach(t => { if (t.kind==='free' && t.univ) { fu[t.univ]=fu[t.univ]||{n:0,u:0}; fu[t.univ].n++; fu[t.univ].u+=Number(t.used||0);} });
     $('univStat').innerHTML = '<tr><th>大学</th><th>発行</th><th>入場</th><th>上限</th></tr>' + us.map(([id,u]) => `<tr><td>${esc(u.name)}</td><td>${(fu[id]||{}).n||0}</td><td>${(fu[id]||{}).u||0}</td><td>${u.cap}</td></tr>`).join('') || '<tr><td class="muted">大学が未登録です</td></tr>';
     // 大学コード表
-    $('uTbl').innerHTML = '<tr><th>大学</th><th>コード</th><th>発行済み/上限</th><th></th></tr>' + us.map(([id,u]) => `<tr><td>${esc(u.name)}</td><td class="code">${esc(u.code)}</td><td>${COUNTS[id]||0} / ${u.cap}</td><td class="row"><button class="btn xs ghost" onclick="_u.copyGuide('${id}')">案内文</button><button class="btn xs ghost" onclick="_u.setCap('${id}')">上限</button><button class="btn xs ghost" onclick="_u.regen('${id}')">再発行</button><button class="btn xs ghost" onclick="_u.delUniv('${id}')">削除</button></td></tr>`).join('') || '<tr><td class="muted">まだありません</td></tr>';
+    $('uTbl').innerHTML = '<tr><th>大学</th><th>コード</th><th>発行済み/上限</th><th></th></tr>' + us.map(([id,u]) => `<tr><td>${esc(u.name)}</td><td class="code">${esc(u.code)}</td><td>${COUNTS[id]||0} / ${u.cap}${u.entry?`<span class="muted">（選手${u.entry}名）</span>`:''}</td><td class="row"><button class="btn xs ghost" onclick="_u.copyGuide('${id}')">案内文</button><button class="btn xs ghost" onclick="_u.setCap('${id}')">上限</button><button class="btn xs ghost" onclick="_u.regen('${id}')">再発行</button><button class="btn xs ghost" onclick="_u.delUniv('${id}')">削除</button></td></tr>`).join('') || '<tr><td class="muted">まだありません</td></tr>';
     // 当日券の束
     const batches = {}; Object.entries(TICKETS).forEach(([tid,t]) => { if (t.kind==='door' && t.batch){ batches[t.batch]=batches[t.batch]||{n:0,u:0,at:t.created}; batches[t.batch].n++; if (t.used) batches[t.batch].u++; } });
     $('dTbl').innerHTML = '<tr><th>束</th><th>作成</th><th>枚数</th><th>入場済み</th><th></th></tr>' + Object.entries(batches).sort((a,b)=>b[1].at-a[1].at).map(([b,x]) => `<tr><td>${esc(b)}</td><td>${fmtTime(x.at)}</td><td>${x.n}</td><td>${x.u}</td><td class="row"><button class="btn xs ghost" onclick="_d.printBatch('${b}')">再印刷</button><button class="btn xs ghost" onclick="_d.delBatch('${b}')">削除</button></td></tr>`).join('') || '<tr><td class="muted">まだありません</td></tr>';
