@@ -2,7 +2,7 @@
 //  ・index.html は「まずネットワーク、だめならキャッシュ」→ 更新がすぐ反映され、圏外でも直前の画面は開ける
 //  ・アイコンや設定ファイルは「まずキャッシュ」
 //  ・Firebase など外部への通信はそのまま通す
-const CACHE = 'sj-app-v5';
+const CACHE = 'sj-app-v6';
 const SHELL = ['./', './index.html'];
 
 self.addEventListener('install', e => {
