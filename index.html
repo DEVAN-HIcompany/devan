@@ -2,159 +2,241 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F6F4EF">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
 <title>少林寺拳法 大会進行管理</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;background:#f7f7f6;color:#1a1a1a;min-height:100vh}
-.app{max-width:1100px;margin:0 auto;padding:1.25rem}
+:root{
+  --ink:#1C1B1A;--ink2:#3D3A36;--muted:#8A857C;--line:#E7E2D9;--line2:#D8D2C6;--card:#FFFFFF;--bg:#F6F4EF;--bg2:#EFECE5;
+  --gold:#A8894F;--gold2:#C9AE7A;--gold-bg:#F7F1E4;
+  --done:#2E6B4E;--done-bg:#EDF4EF;--run:#2E4A7A;--run-bg:#EBF0F7;--stop:#9E3B3B;--stop-bg:#F8ECEC;
+  --l1:#A8552B;--l1-bg:#F9EFE8;--l3:#9A7A2E;--l3-bg:#F7F2E4;--wait:#8A857C;--wait-bg:#F3F1EC;--unused:#B9B3A8;
+  --r:12px;--sh:0 1px 2px rgba(28,27,26,.04),0 6px 20px rgba(28,27,26,.05);--sh2:0 2px 4px rgba(28,27,26,.06),0 14px 34px rgba(28,27,26,.10);
+  --serif:'Shippori Mincho','Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',serif;
+  --sans:'Noto Sans JP','Hiragino Sans','Hiragino Kaku Gothic ProN',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{overflow-x:hidden;font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.55;font-weight:400;letter-spacing:.01em}
+button,input,textarea{font-family:inherit}
+button{cursor:pointer;transition:background .15s,border-color .15s,color .15s,box-shadow .15s,opacity .15s,transform .1s}
+button:active{transform:scale(.985)}
+.app{max-width:1120px;margin:0 auto;padding:1rem}
+@media(min-width:700px){.app{padding:1.5rem 2rem}}
+.serif{font-family:var(--serif)}
 
 /* ── ホーム ── */
-.home{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
-.home-box{width:min(400px,100%)}
-.org{font-size:11px;font-weight:500;letter-spacing:.12em;color:#999;text-transform:uppercase;margin-bottom:1.25rem}
-.htitle{font-size:26px;font-weight:700;letter-spacing:-.02em;color:#111;margin-bottom:.4rem}
-.hsub{font-size:13px;color:#999;margin-bottom:2.5rem;line-height:1.6}
-.hdivider{height:1px;background:#e8e8e6;margin-bottom:2rem}
-.hbtn{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.1rem;background:#fff;border:1px solid #e5e5e3;border-radius:10px;cursor:pointer;transition:border-color .15s;text-align:left;width:100%;margin-bottom:.6rem}
-.hbtn:hover{border-color:#999}
-.hbtn-l{font-size:14px;font-weight:600;color:#111;margin-bottom:2px}
-.hbtn-d{font-size:11px;color:#aaa}
-.hbtn-r{font-size:18px;color:#ccc;margin-left:1rem;flex-shrink:0}
+.home{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem 1.25rem}
+.home-box{width:min(460px,100%);text-align:center}
+.hero{width:56px;height:1px;background:var(--gold);margin:0 auto 1.5rem}
+.org{font-size:11px;font-weight:500;letter-spacing:.28em;color:var(--muted);margin-bottom:.9rem}
+.htitle{font-family:var(--serif);font-size:34px;font-weight:600;letter-spacing:.08em;color:var(--ink);margin-bottom:.6rem;line-height:1.25}
+.hsub{font-size:13px;color:var(--muted);margin-bottom:2.5rem;line-height:1.9;letter-spacing:.04em}
+.hdivider{display:none}
+.hbtn{display:flex;align-items:center;gap:16px;padding:1.15rem 1.25rem;background:var(--card);border:1px solid var(--line);border-radius:var(--r);text-align:left;width:100%;margin-bottom:.75rem;box-shadow:var(--sh)}
+.hbtn:hover{border-color:var(--gold2);box-shadow:var(--sh2)}
+.hicon{font-family:var(--serif);font-size:15px;letter-spacing:.06em;color:var(--gold);width:40px;flex-shrink:0;border-right:1px solid var(--line);text-align:left}
+.hbtn-l{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:2px;letter-spacing:.03em}
+.hbtn-d{font-size:12px;color:var(--muted)}
+.hbtn-r{font-size:18px;color:var(--line2);margin-left:auto;flex-shrink:0}
+.hfoot{margin-top:1.25rem;font-size:12px;color:var(--muted);letter-spacing:.03em}
+.modetag{font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--gold);border:1px solid var(--gold2);border-radius:4px;padding:3px 7px;white-space:nowrap;flex-shrink:0}
 
 /* ── 共通 ── */
-.wrap{padding:1rem}
-.phead{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap}
-.ptitle{font-size:17px;font-weight:700}
-.backbtn{background:none;border:1px solid #e0e0de;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#555;white-space:nowrap;transition:all .15s}
-.backbtn:hover{background:#f0f0ee;border-color:#aaa}
-.loading{text-align:center;padding:4rem;color:#aaa;font-size:13px}
-.empty{text-align:center;padding:3rem;color:#ccc;font-size:13px}
+.wrap{padding:.25rem 0}
+.phead{display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;flex-wrap:wrap}
+.ptitle{font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:.06em}
+.backbtn{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:500;color:var(--ink2);white-space:nowrap;letter-spacing:.04em}
+.backbtn:hover{border-color:var(--line2);background:#fff}
+.loading{text-align:center;padding:4rem;color:var(--muted);font-size:13px;letter-spacing:.06em}
+.empty{text-align:center;padding:3rem;color:var(--muted);font-size:13px}
 
 /* ── 大会リスト ── */
-.tlist{display:flex;flex-direction:column;gap:6px}
-.titem{background:#fff;border:1px solid #e8e8e6;border-radius:10px;padding:.9rem 1.1rem;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;gap:10px}
-.titem:hover{border-color:#aaa}
+.tlist{display:flex;flex-direction:column;gap:8px}
+.titem{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.15rem;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:var(--sh)}
+.titem:hover{border-color:var(--gold2);box-shadow:var(--sh2)}
+.ticon{font-family:var(--serif);font-size:14px;color:var(--gold);letter-spacing:.06em;width:34px;flex-shrink:0;border-right:1px solid var(--line)}
 .tinfo{flex:1;min-width:0}
-.tname{font-size:14px;font-weight:600;color:#111}
-.tmeta{font-size:11px;color:#aaa;margin-top:2px}
-.tdel{background:none;border:1px solid #fdd;border-radius:6px;padding:3px 8px;cursor:pointer;color:#c44;font-size:11px;flex-shrink:0}
-.tdel:hover{background:#fff5f5}
-.tarr{color:#ccc;font-size:18px;flex-shrink:0}
+.tname{font-size:15px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em}
+.tmeta{font-size:11.5px;color:var(--muted);margin-top:3px;letter-spacing:.03em}
+.tdel{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--muted);font-size:11.5px;flex-shrink:0}
+.tdel:hover{border-color:var(--stop);color:var(--stop)}
+.tarr{color:var(--line2);font-size:18px;flex-shrink:0}
 
 /* ── 作成画面 ── */
-.scard{background:#fff;border:1px solid #eee;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
-.slabel{font-size:11px;font-weight:600;color:#888;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.06em}
-.flabel{font-size:12px;color:#666;font-weight:500;margin-bottom:.3rem;display:block}
-.inp{width:100%;padding:9px 12px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff;transition:border-color .15s}
-.inp:focus{outline:none;border-color:#1a1a1a}
-.rrow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.scard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1.4rem;margin-bottom:1rem;box-shadow:var(--sh)}
+.slabel{font-size:11px;font-weight:600;color:var(--gold);margin-bottom:1rem;letter-spacing:.22em}
+.flabel{font-size:12px;color:var(--ink2);font-weight:500;margin-bottom:.4rem;display:block;letter-spacing:.04em}
+.inp{width:100%;padding:12px 14px;border:1px solid var(--line2);border-radius:8px;font-size:15px;color:var(--ink);background:#fff;transition:border-color .15s,box-shadow .15s}
+.inp:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(28,27,26,.06)}
+.rrow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .rrow .inp{flex:1}
-.delbtn{background:none;border:1px solid #fecaca;border-radius:6px;padding:6px 10px;cursor:pointer;color:#E24B4A;font-size:13px;flex-shrink:0}
-.addbtn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1.5px dashed #ddd;border-radius:8px;font-size:12px;color:#888;cursor:pointer;background:none;transition:all .15s}
-.addbtn:hover{border-color:#888;color:#444}
-.cfooter{display:flex;gap:8px;justify-content:flex-end;margin-top:1.5rem}
-.btn{padding:9px 18px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;border:1.5px solid #ddd;background:#fff;color:#1a1a1a}
-.btn:hover{background:#f5f5f5}
-.btnp{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
-.btnp:hover{opacity:.85}
+.delbtn{background:#fff;border:1px solid var(--line2);border-radius:8px;padding:10px 12px;color:var(--muted);font-size:12px;flex-shrink:0}
+.delbtn:hover{border-color:var(--stop);color:var(--stop)}
+.addbtn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:1px dashed var(--line2);border-radius:8px;font-size:12.5px;font-weight:500;color:var(--ink2);background:none;letter-spacing:.03em}
+.addbtn:hover{border-color:var(--ink);color:var(--ink)}
+.cfooter{display:flex;gap:10px;justify-content:flex-end;margin-top:1.25rem;flex-wrap:wrap}
+.btn{padding:12px 22px;border-radius:8px;font-size:14px;font-weight:500;border:1px solid var(--line2);background:#fff;color:var(--ink);letter-spacing:.04em}
+.btn:hover{border-color:var(--ink)}
+.btnp{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btnp:hover{background:#000}
 
 /* ── ダッシュボード ── */
-.dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
-.dtitle{font-size:15px;font-weight:600}
-.syncpill{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#888;padding:4px 10px;background:#fff;border:1px solid #eee;border-radius:20px}
-.sdot{width:7px;height:7px;border-radius:50%;background:#ccc;transition:background .4s}
-.sdot.ok{background:#1D9E75}.sdot.err{background:#E24B4A}
-.rtabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
-.rtab{padding:6px 12px;border:1px solid #ddd;border-radius:8px;font-size:12px;cursor:pointer;background:#fff;color:#666;white-space:nowrap;transition:all .15s}
-.rtab.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
-.rtabadd{padding:5px 10px;border:1.5px dashed #ddd;border-radius:8px;font-size:12px;cursor:pointer;background:none;color:#aaa;transition:all .15s}
-.rtabadd:hover{border-color:#888;color:#444}
-.sumbar{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:1rem}
-.sumcard{background:#fff;border-radius:8px;padding:.6rem;text-align:center;border:1px solid #eee}
-.sumn{font-size:20px;font-weight:600}
-.suml{font-size:9px;color:#888;margin-top:1px}
-.legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:.75rem;padding:.5rem .75rem;background:#fff;border-radius:8px;border:1px solid #eee;align-items:center}
-.legitem{display:flex;align-items:center;gap:5px;font-size:11px;color:#666}
-.legdot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-.alertwrap{margin-bottom:.75rem}
-.alertrow{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff5f5;border:1px solid #E24B4A;border-radius:8px;font-size:12px;color:#a32d2d;margin-bottom:4px}
-.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.ccard{background:#fff;border:1px solid #eee;border-radius:12px;padding:.85rem;cursor:pointer;transition:all .15s}
-.ccard:hover{border-color:#bbb;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.ccard.stopped{border:2px solid #E24B4A;background:#fff8f8}
-.ccard.done{border-color:#1D9E75;background:#f5fbf8}
-.ccard.last1{border:2px solid #BA7517;background:#fffbf0}
-.ccard.last3{border:1.5px solid #EF9F27;background:#fffdf5}
-.ctop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px}
-.cnum{font-size:20px;font-weight:600;line-height:1}
-.badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;margin-top:2px;white-space:nowrap}
-.brun{background:#fff3cd;color:#856404}.bdone{background:#d1fae5;color:#065f46}
-.bstop{background:#E24B4A;color:#fff}.bwait{background:#f0f0f0;color:#666}
-.bl1{background:#BA7517;color:#fff}.bl3{background:#EF9F27;color:#5a3200}
-.bedit{background:#e0e7ff;color:#3730a3}
-.ccat{font-size:10px;color:#888;margin-bottom:7px;line-height:1.4;min-height:28px}
-.barwrap{background:#f0f0f0;border-radius:3px;height:5px;margin-bottom:4px;overflow:hidden}
-.barfill{height:5px;border-radius:3px}
-.ccount{font-size:10px;color:#999;display:flex;justify-content:space-between}
-.tdots{display:flex;flex-wrap:wrap;gap:2px;margin-top:5px}
-.tdot{width:8px;height:8px;border-radius:1px;flex-shrink:0}
-.edithint{font-size:9px;color:#a5b4fc;margin-top:6px}
+.dtop{position:sticky;top:0;z-index:20;margin:-1rem -1rem 1rem;padding:.8rem 1rem .7rem;background:rgba(246,244,239,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+@media(min-width:700px){.dtop{margin:-1.5rem -2rem 1.25rem;padding:1rem 2rem .8rem}}
+.dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:nowrap;gap:10px}
+.dhead>div:first-child{flex:1;min-width:0;display:flex;align-items:center;gap:12px}
+.dtitle{font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@media(max-width:480px){.dtitle{font-size:16px}.backbtn{padding:7px 10px;font-size:11.5px}}
+.syncpill{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:500;color:var(--muted);padding:6px 11px;background:#fff;border:1px solid var(--line);border-radius:20px;flex-shrink:0;white-space:nowrap;letter-spacing:.06em}
+@media(max-width:480px){.syncpill span:last-child{display:none}.syncpill{padding:8px}}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--line2);transition:background .4s}
+.sdot.ok{background:var(--done)}.sdot.err{background:var(--stop)}
+.rtabs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;align-items:center;padding-bottom:2px;scrollbar-width:none}
+.rtabs::-webkit-scrollbar{display:none}
+@media(min-width:700px){.rtabs{flex-wrap:wrap}}
+.rtab{padding:9px 16px;border:1px solid var(--line2);border-radius:8px;font-size:13px;font-weight:500;background:#fff;color:var(--ink2);white-space:nowrap;letter-spacing:.04em}
+.rtab:hover{border-color:var(--ink)}
+.rtab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rtabadd{padding:9px 13px;border:1px dashed var(--line2);border-radius:8px;font-size:12.5px;font-weight:500;background:none;color:var(--muted);white-space:nowrap;letter-spacing:.03em}
+.rtabadd:hover{border-color:var(--ink);color:var(--ink)}
+.sumbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:1rem}
+@media(max-width:480px){.sumbar{gap:5px}}
+.sumcard{min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:.8rem .3rem .7rem;text-align:center;box-shadow:var(--sh);position:relative}
+.sumcard::after{content:'';position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:28px;height:2px;background:var(--sc,var(--line2));border-radius:2px 2px 0 0}
+.sumn{font-family:var(--serif);font-size:28px;font-weight:600;line-height:1.1;color:var(--ink)}
+.suml{font-size:10px;font-weight:500;color:var(--muted);margin-top:4px;white-space:nowrap;letter-spacing:.08em;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:480px){.sumn{font-size:22px}.suml{font-size:9px;letter-spacing:.04em}}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;margin-bottom:1rem;padding:.55rem .9rem;background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:10px;align-items:center}
+@media(max-width:480px){.legend{display:none}}
+.legitem{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.04em}
+.legdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.alertwrap{margin-bottom:1rem}
+.alertrow{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--stop-bg);border:1px solid var(--stop);border-left:4px solid var(--stop);border-radius:10px;font-size:13px;color:var(--stop);margin-bottom:6px;cursor:pointer;font-weight:500}
+.alertrow:hover{background:#F3E2E2}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+@media(max-width:400px){.cgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+.ccard{min-width:0}
+.ccard{--c:var(--line2);background:#fff;border:1px solid var(--line);border-top:3px solid var(--c);border-radius:var(--r);padding:.9rem 1rem 1rem;cursor:pointer;box-shadow:var(--sh);position:relative;min-height:140px;display:flex;flex-direction:column;transition:box-shadow .15s,border-color .15s}
+.ccard:hover{box-shadow:var(--sh2)}
+.ccard.running{--c:var(--run)}
+.ccard.waiting{--c:var(--line2)}
+.ccard.done{--c:var(--done);background:var(--done-bg)}
+.ccard.stopped{--c:var(--stop);border-color:var(--stop);background:var(--stop-bg)}
+.ccard.last1{--c:var(--l1);border-color:#D9B7A4;background:var(--l1-bg)}
+.ccard.last3{--c:var(--l3);border-color:#DCCFA6;background:var(--l3-bg)}
+.ccard.inactive{--c:transparent;background:transparent;box-shadow:none;border:1px dashed var(--line2)}
+.ctop{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px;gap:6px}
+.cnum{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1;letter-spacing:.02em}
+.cnum small{font-family:var(--sans);font-size:11px;font-weight:500;color:var(--muted);margin-left:3px;letter-spacing:.08em}
+.badge{font-size:10.5px;padding:4px 9px;border-radius:4px;font-weight:600;white-space:nowrap;flex-shrink:0;letter-spacing:.08em}
+.brun{background:var(--run);color:#fff}.bdone{background:var(--done);color:#fff}
+.bstop{background:var(--stop);color:#fff}.bwait{background:var(--wait-bg);color:var(--muted);border:1px solid var(--line)}
+.bl1{background:var(--l1);color:#fff}.bl3{background:var(--l3);color:#fff}
+.bedit{background:transparent;color:var(--unused);border:1px solid var(--line)}
+.ccat{font-size:13px;font-weight:600;color:var(--ink);margin:.35rem 0 .55rem;line-height:1.35;min-height:1.35em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em}
+.cnext{font-size:12px;color:var(--ink2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 0;margin-bottom:.6rem;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cnext b{color:var(--ink);font-weight:600}
+.cnext .lab{font-size:10px;letter-spacing:.14em;color:var(--gold);margin-right:6px;font-weight:600}
+.cnext.now .lab{color:var(--run)}
+.ccard.last1 .cnext.now .lab{color:var(--l1)}.ccard.last3 .cnext.now .lab{color:var(--l3)}
+.cnext.stop{color:var(--stop);border-color:#E7CACA}.cnext.fin{color:var(--done);border-color:#CFE0D6}
+.barwrap{background:var(--bg2);border-radius:2px;height:4px;margin-bottom:6px;overflow:hidden;margin-top:auto}
+.ccard.done .barwrap,.ccard.stopped .barwrap,.ccard.last1 .barwrap,.ccard.last3 .barwrap{background:rgba(0,0,0,.06)}
+.barfill{height:4px;border-radius:2px;transition:width .4s}
+.ccount{font-size:11.5px;font-weight:500;color:var(--muted);display:flex;justify-content:space-between;letter-spacing:.04em}
+.ccount span:first-child{color:var(--ink2)}
+.tdots{display:flex;flex-wrap:wrap;gap:3px;margin-top:7px}
+.tdot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.edithint{font-size:11.5px;color:var(--muted);margin-top:auto;letter-spacing:.04em}
 
 /* ── モーダル ── */
-.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:5vh 8px 8px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(28,27,26,.45);z-index:100;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 .overlay.open{display:flex}
-.modal{background:#fff;border-radius:14px;padding:1.25rem;width:min(480px,100%);max-height:88vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
-.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.mtitle{font-size:16px;font-weight:600}
-.xbtn{background:none;border:none;cursor:pointer;color:#999;font-size:22px;padding:0 4px;line-height:1}
-.tabbar{display:flex;gap:4px;margin-bottom:1rem;border-bottom:1px solid #eee;padding-bottom:.75rem}
-.mtab{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid transparent;color:#888;background:none}
-.mtab.on{background:#1a1a1a;color:#fff}
-.teamlist{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem}
-.teamrow{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #eee;transition:background .15s}
-.teamrow:hover{background:#f8f8f8}
-.teamrow.done{opacity:.5}.teamrow.cur{background:#eff6ff;border-color:#93c5fd}
-.teamrow.done .tn{text-decoration:line-through;color:#aaa}
-.ti{font-size:11px;color:#aaa;width:20px;flex-shrink:0}.ta{font-size:10px;color:#888;min-width:60px}.tn{flex:1;font-size:12px}
-.macts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem}
-.mbtn{padding:8px 14px;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;color:#1a1a1a;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
-.mbtn:hover{background:#f5f5f5}
-.mbtn.d{border-color:#E24B4A;color:#E24B4A}.mbtn.d:hover{background:#fff5f5}
-.mbtn.s{border-color:#1D9E75;color:#1D9E75}.mbtn.s:hover{background:#f0fdf4}
-.mbtn.p{background:#1a1a1a;color:#fff;border-color:#1a1a1a}.mbtn.p:hover{opacity:.85}
-.stopform{border:1.5px solid #E24B4A;border-radius:10px;padding:.85rem;background:#fff8f8;margin-bottom:1rem}
-.stopform textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;margin-bottom:8px}
-.stopbanner{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#fff5f5;border:1.5px solid #E24B4A;border-radius:10px;margin-bottom:12px;font-size:12px;color:#a32d2d}
-.stopbanner-l{font-weight:600;color:#E24B4A;margin-bottom:2px}
-.eplabel{font-size:11px;color:#666;font-weight:600;margin-bottom:6px;display:block}
+.modal{background:#fff;border-radius:16px 16px 0 0;padding:1.2rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom));width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.15);animation:up .2s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media(min-width:700px){.overlay{align-items:flex-start;padding:6vh 16px 16px}.modal{border-radius:14px;width:min(540px,100%);max-height:88vh;padding:1.6rem;animation:pop .18s ease-out}}
+@keyframes pop{from{transform:translateY(6px);opacity:.5}to{transform:none;opacity:1}}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:8px}
+.mtitle{font-family:var(--serif);font-size:20px;font-weight:600;line-height:1.3;letter-spacing:.05em}
+.mtitle span{font-family:var(--sans);color:var(--muted);font-weight:500;font-size:13px;letter-spacing:.06em;margin-left:8px}
+.xbtn{background:none;border:1px solid var(--line);color:var(--muted);font-size:20px;width:34px;height:34px;border-radius:50%;line-height:1;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
+.xbtn:hover{border-color:var(--ink);color:var(--ink)}
+.tabbar{display:flex;gap:0;margin-bottom:1.1rem;border-bottom:1px solid var(--line)}
+.mtab{flex:1;padding:10px 12px;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13px;font-weight:500;color:var(--muted);background:none;letter-spacing:.08em;border-radius:0}
+.mtab.on{color:var(--ink);border-bottom-color:var(--ink)}
+.mstat{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:.8rem;flex-wrap:wrap;letter-spacing:.04em}
+.mstat .big{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--ink);margin-right:2px}
+.teamlist{display:flex;flex-direction:column;gap:5px;margin-bottom:.5rem}
+.teamrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid var(--line);background:#fff;transition:background .15s,border-color .15s}
+.teamrow:hover{border-color:var(--line2);background:#FCFBF9}
+.teamrow.done{background:var(--bg);border-color:transparent}
+.teamrow.cur{background:var(--run-bg);border-color:var(--run)}
+.teamrow.done .tn,.teamrow.done .ta{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line2)}
+.ti{font-family:var(--serif);font-size:13px;font-weight:600;color:var(--muted);width:22px;flex-shrink:0;text-align:right}
+.teamrow.cur .ti{color:var(--run)}.teamrow.done .ti{color:var(--done)}
+.ta{font-size:11.5px;font-weight:500;color:var(--muted);min-width:64px;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em}
+.tn{flex:1;font-size:14.5px;font-weight:600;color:var(--ink);min-width:0;letter-spacing:.02em}
+.macts{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:1rem;position:sticky;top:-1.2rem;background:#fff;padding:.4rem 0;z-index:2}
+@media(min-width:700px){.macts{top:-1.6rem}}
+.macts .mbtn{justify-content:center;font-size:15px;padding:14px 12px}
+.macts .mbtn.d{grid-column:1/-1;padding:10px;font-size:13px}
+.mbtn{padding:11px 16px;border:1px solid var(--line2);border-radius:8px;font-size:13.5px;font-weight:500;background:#fff;color:var(--ink);display:inline-flex;align-items:center;gap:6px;letter-spacing:.04em}
+.mbtn:hover{border-color:var(--ink)}
+.mbtn:disabled{opacity:.35;cursor:default}
+.mbtn.d{border-color:var(--line2);color:var(--stop);background:#fff}.mbtn.d:hover{border-color:var(--stop);background:var(--stop-bg)}
+.mbtn.s{border-color:var(--done);color:#fff;background:var(--done)}.mbtn.s:hover{opacity:.9}
+.mbtn.p{background:var(--ink);color:#fff;border-color:var(--ink)}.mbtn.p:hover{background:#000}
+.stopform{border:1px solid var(--stop);border-radius:10px;padding:1rem;background:var(--stop-bg);margin-bottom:1rem}
+.stopform textarea{width:100%;padding:10px 12px;border:1px solid var(--line2);border-radius:8px;font-size:14px;resize:vertical;min-height:64px;margin-bottom:8px;background:#fff}
+.stopform textarea:focus{outline:none;border-color:var(--stop)}
+.stopbanner{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--stop-bg);border:1px solid var(--stop);border-left:4px solid var(--stop);border-radius:10px;margin-bottom:12px;font-size:13px;color:var(--ink2);flex-wrap:wrap}
+.stopbanner-l{font-weight:600;color:var(--stop);margin-bottom:2px;font-size:13px;letter-spacing:.08em}
+.eplabel{font-size:12px;color:var(--ink2);font-weight:500;margin-bottom:8px;display:block;letter-spacing:.04em}
 .erow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.erow input{padding:7px 10px;border:1.5px solid #e5e5e5;border-radius:7px;font-size:12px;font-family:inherit;color:#1a1a1a;background:#fff}
-.erow input:focus{outline:none;border-color:#1a1a1a}
-.ea{flex:1;min-width:0}.en{flex:1.2;min-width:0}.ei{font-size:11px;color:#bbb;width:18px;flex-shrink:0;text-align:right}
-.ccgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
-.cccard{background:#fff;border:1.5px solid #eee;border-radius:10px;padding:.7rem;cursor:pointer;text-align:center;transition:border-color .15s}
-.cccard:hover{border-color:#888}.cccard.set{border-color:#1D9E75;background:#f5fbf8}
-.ccn{font-size:18px;font-weight:600;margin-bottom:3px}.ccc{font-size:9px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cct{font-size:9px;color:#bbb;margin-top:2px}
+.erow input{padding:10px 11px;border:1px solid var(--line2);border-radius:8px;font-size:14px;color:var(--ink);background:#fff}
+.erow input:focus{outline:none;border-color:var(--ink)}
+.ea{flex:1;min-width:0}.en{flex:1.2;min-width:0}.ei{font-family:var(--serif);font-size:12px;color:var(--muted);width:20px;flex-shrink:0;text-align:right}
+.ccgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.cccard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:.85rem .5rem;cursor:pointer;text-align:center;transition:border-color .15s,box-shadow .15s}
+.cccard:hover{border-color:var(--ink);box-shadow:var(--sh)}
+.cccard.set{border-color:var(--gold2);background:var(--gold-bg)}
+.ccn{font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:3px}.ccc{font-size:11px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cct{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.04em}
+.cccard:not(.set) .ccc{color:var(--muted);font-weight:400}
 
-/* ── エクセル読み込み ── */
-.impbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:.75rem .9rem;background:#f7f9fc;border:1.5px dashed #c9d4e5;border-radius:10px;margin-bottom:1rem}
-.impbar.drag{border-color:#378ADD;background:#eef5fd}
-.impbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;border:1.5px solid #378ADD;background:#378ADD;color:#fff}
-.impbtn:hover{opacity:.88}
-.implink{background:none;border:none;color:#378ADD;font-size:12px;cursor:pointer;text-decoration:underline;padding:4px 6px;font-family:inherit}
-.imphelp{font-size:11px;color:#7a869a;line-height:1.6;flex-basis:100%}
-.imphelp code{background:#eef1f6;padding:1px 5px;border-radius:4px;font-size:11px}
-.pvround{font-size:13px;font-weight:600;margin:.75rem 0 .35rem;color:#1a1a1a}
-.pvlist{display:flex;flex-direction:column;gap:3px;margin-bottom:.5rem}
-.pvrow{display:flex;gap:8px;align-items:baseline;font-size:12px;padding:6px 10px;border:1px solid #eee;border-radius:8px;background:#fafafa}
-.pvno{font-weight:600;width:56px;flex-shrink:0}
-.pvcat{color:#444;min-width:80px}
-.pvcnt{color:#888;flex-shrink:0}
-.pvteams{color:#999;font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pvwarn{font-size:11px;color:#a35a00;background:#fff8e6;border:1px solid #f3d99a;border-radius:8px;padding:8px 10px;margin-top:.75rem;line-height:1.6}
-.pvopt{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#444;margin-top:.75rem;padding:.6rem .75rem;background:#f7f7f6;border-radius:8px}
-.pvopt label{display:flex;gap:6px;align-items:center;cursor:pointer}
+/* ── コート割の読み込み ── */
+.impbar{display:flex;flex-direction:column;gap:10px;padding:1.1rem;background:var(--bg);border:1px dashed var(--line2);border-radius:10px;margin-bottom:1rem;transition:all .15s}
+.impbar.drag{border-color:var(--ink);background:var(--bg2)}
+.improw{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.impbtn{display:inline-flex;align-items:center;gap:6px;padding:11px 18px;border-radius:8px;font-size:13.5px;font-weight:500;border:1px solid var(--ink);background:var(--ink);color:#fff;letter-spacing:.04em}
+.impbtn:hover{background:#000}.impbtn:disabled{opacity:.5;cursor:default}
+.impnote{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.implink{background:none;border:none;color:var(--gold);font-size:12px;font-weight:500;text-decoration:underline;text-underline-offset:3px;padding:0}
+.imphelp{font-size:12px;color:var(--ink2);line-height:1.8}
+.imphelp summary{cursor:pointer;color:var(--muted);font-size:12px;list-style:none;display:inline-flex;align-items:center;gap:6px;letter-spacing:.04em}
+.imphelp summary::-webkit-details-marker{display:none}
+.imphelp summary::before{content:'＋';font-size:11px}
+.imphelp[open] summary::before{content:'－'}
+.imphelp summary:hover{color:var(--ink)}
+.imphelp dl{margin:.6rem 0 0;padding:.8rem 1rem;background:#fff;border:1px solid var(--line);border-radius:8px}
+.imphelp dt{font-weight:600;color:var(--ink);margin-top:.6rem;letter-spacing:.04em}.imphelp dt:first-child{margin-top:0}
+.imphelp dd{margin:0;color:var(--ink2)}
+.imphelp code{background:var(--bg);border:1px solid var(--line);padding:0 6px;border-radius:4px;font-size:11px;color:var(--ink)}
+.pvround{font-size:13px;font-weight:600;margin:1rem 0 .4rem;color:var(--ink);letter-spacing:.04em}
+.pvlist{display:flex;flex-direction:column;gap:4px;margin-bottom:.5rem}
+.pvrow{display:flex;gap:10px;align-items:baseline;font-size:12px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.pvno{font-family:var(--serif);font-weight:600;width:58px;flex-shrink:0}
+.pvcat{color:var(--ink);font-weight:500;min-width:80px}
+.pvcnt{color:var(--muted);flex-shrink:0}
+.pvteams{color:var(--muted);font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pvwarn{font-size:12px;color:#7A5A1E;background:var(--l3-bg);border:1px solid #DCCFA6;border-left:3px solid var(--l3);border-radius:8px;padding:9px 12px;margin-top:.75rem;line-height:1.7}
+.pvopt{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--ink);margin-top:.75rem;padding:.75rem .9rem;background:var(--bg);border-radius:8px}
+.pvopt label{display:flex;gap:8px;align-items:center;cursor:pointer;font-weight:500}
+.pvopt input{width:16px;height:16px;accent-color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;padding:12px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:all .3s;z-index:200;max-width:90vw;box-shadow:var(--sh2);letter-spacing:.04em}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -163,6 +245,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Ar
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ─────────────────────────────────────────
@@ -178,6 +261,31 @@ firebase.initializeApp({
   appId:             "1:214167530097:web:8decc086a778b07e2e89d0"
 });
 const db = firebase.database();
+const auth = firebase.auth();
+
+// ─────────────────────────────────────────
+// モード: 'admin'（管理用・ログイン必須・すべて操作可） / 'view'（閲覧用・見るだけ）
+// ─────────────────────────────────────────
+let MODE = null;      // 'admin' | 'operator' | 'view'
+let ROLE = null;      // ログイン後の権限: 'admin' | 'operator'
+let viewRound = null; // 進行用・閲覧用で見ているラウンド（端末内だけ。共有の currentRound は管理用だけが変える）
+let isAdmin = () => MODE==='admin' && ROLE==='admin' && !!auth.currentUser;
+let canOperate = () => (MODE==='admin'||MODE==='operator') && !!auth.currentUser;
+const ROLES = db.ref('sj/roles');
+// 権限の判定: sj/roles が無ければログイン済み全員を管理者扱い（初期状態）。あれば sj/roles/{uid} が 'admin' の人だけ管理者
+async function loadRole(){
+  const u=auth.currentUser; if(!u){ ROLE=null; return null; }
+  try{
+    const snap=await ROLES.once('value'); const roles=snap.val();
+    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : 'operator');
+  }catch(e){ console.error('roles',e); ROLE='operator'; }
+  return ROLE;
+}
+function curRound(){
+  if(!TD||!PROG_DATA) return '';
+  if(MODE!=='admin' && viewRound && TD.rounds.includes(viewRound)) return viewRound;
+  return PROG_DATA.currentRound;
+}
 
 // ─────────────────────────────────────────
 // Firebase パス
@@ -196,6 +304,7 @@ let PROG_DATA = null; // 現在の進行状態
 let CUR_ID = null; // 現在開いている大会ID
 let progListener = null; // リアルタイムリスナー
 
+const PAL={done:'#2E6B4E',run:'#2E4A7A',stop:'#9E3B3B',l1:'#A8552B',l3:'#9A7A2E',wait:'#D8D2C6',unused:'#E7E2D9',gold:'#A8894F'};
 let modalCourtId = null;
 let modalTab = 'prog';
 let stopFormOpen = false;
@@ -228,8 +337,8 @@ function progCS(round, courtId){
 // ─────────────────────────────────────────
 // 保存
 // ─────────────────────────────────────────
-function saveMeta(){ META(CUR_ID).set(TD).catch(e=>console.error('meta save',e)); }
-function saveProg(){ PROG(CUR_ID).set(PROG_DATA).catch(e=>console.error('prog save',e)); }
+function saveMeta(){ if(!isAdmin()) return; META(CUR_ID).set(TD).catch(e=>{ console.error('meta save',e); showToast('保存できませんでした（管理者としてログインしているか確認してください）'); }); }
+function saveProg(){ if(!canOperate()) return; PROG(CUR_ID).set(PROG_DATA).catch(e=>{ console.error('prog save',e); showToast('保存できませんでした（管理者としてログインしているか確認してください）'); }); }
 
 // ─────────────────────────────────────────
 // リアルタイムリスナー（進行状態のみ）
@@ -260,23 +369,123 @@ function stopProgListener(){
 // ─────────────────────────────────────────
 function renderHome(){
   stopProgListener();
-  TD = null; PROG_DATA = null; CUR_ID = null;
+  TD = null; PROG_DATA = null; CUR_ID = null; MODE = null; viewRound = null;
+  const u = auth.currentUser;
+  const lg = u ? '（ログイン済み）' : '（ログインが必要です）';
   show(`
     <div class="home"><div class="home-box">
+      <div class="hero"></div>
       <div class="org">関東学生少林寺拳法連盟</div>
       <div class="htitle">大会進行管理</div>
-      <div class="hsub">コート割の作成・管理と試合進行の記録を行います</div>
-      <div class="hdivider"></div>
+      <div class="hsub">コート割の作成と、試合進行の記録・共有</div>
+      <button class="hbtn" onclick="enterAdmin()">
+        <div class="hicon">01</div>
+        <div><div class="hbtn-l">管理用</div><div class="hbtn-d">大会の作成・コート割・進行、すべての操作${lg}</div></div>
+        <div class="hbtn-r">›</div>
+      </button>
+      <button class="hbtn" onclick="enterOperator()">
+        <div class="hicon">02</div>
+        <div><div class="hbtn-l">進行用</div><div class="hbtn-d">次の組へ・戻す・競技停止と再開の操作だけ${lg}</div></div>
+        <div class="hbtn-r">›</div>
+      </button>
+      <button class="hbtn" onclick="enterView()">
+        <div class="hicon">03</div>
+        <div><div class="hbtn-l">閲覧用</div><div class="hbtn-d">進行状況を見るだけ。操作はできません</div></div>
+        <div class="hbtn-r">›</div>
+      </button>
+      ${u?`<div class="hfoot">${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button></div>`:''}
+    </div></div>`);
+}
+function enterView(){ MODE='view'; viewRound=null; renderList(); }
+let pendingMode = null; // ログイン後に入るモード
+async function enterAdmin(){
+  if(!auth.currentUser){ pendingMode='admin'; renderLogin(); return; }
+  show('<div class="loading">確認中...</div>');
+  await loadRole();
+  if(ROLE!=='admin'){ renderNoAdmin(); return; }
+  MODE='admin'; renderAdminHome();
+}
+async function enterOperator(){
+  if(!auth.currentUser){ pendingMode='operator'; renderLogin(); return; }
+  show('<div class="loading">確認中...</div>');
+  await loadRole();
+  MODE='operator'; viewRound=null; renderList();
+}
+function renderNoAdmin(){
+  show(`
+    <div class="home"><div class="home-box">
+      <div class="hero"></div>
+      <div class="org">管理用</div>
+      <div class="htitle">権限がありません</div>
+      <div class="hsub">${esc(auth.currentUser?.email||'')} は進行用のアカウントです。<br>管理用の操作には管理者アカウントでログインしてください。</div>
+      <button class="hbtn" onclick="enterOperator()"><div class="hicon">02</div><div><div class="hbtn-l">進行用で開く</div><div class="hbtn-d">このままの権限で進行の操作をする</div></div><div class="hbtn-r">›</div></button>
+      <div class="hfoot"><button class="implink" onclick="renderHome()">モード選択に戻る</button> ・ <button class="implink" onclick="doLogout()">別のアカウントでログイン</button></div>
+    </div></div>`);
+}
+function renderAdminHome(){
+  stopProgListener(); TD=null; PROG_DATA=null; CUR_ID=null; MODE='admin';
+  show(`
+    <div class="home"><div class="home-box">
+      <div class="hero"></div>
+      <div class="org">管理用</div>
+      <div class="htitle">大会進行管理</div>
+      <div class="hsub">${esc(auth.currentUser?.email||'')} としてログイン中</div>
       <button class="hbtn" onclick="renderNewTournament()">
-        <div><div class="hbtn-l">新規作成</div><div class="hbtn-d">大会名・ラウンド・コート割を入力して作成</div></div>
+        <div class="hicon">01</div>
+        <div><div class="hbtn-l">新規作成</div><div class="hbtn-d">大会名・ラウンド・コート割を設定する</div></div>
         <div class="hbtn-r">›</div>
       </button>
       <button class="hbtn" onclick="renderList()">
-        <div><div class="hbtn-l">大会を選択</div><div class="hbtn-d">保存済みの大会から選んで開始</div></div>
+        <div class="hicon">02</div>
+        <div><div class="hbtn-l">大会を開く</div><div class="hbtn-d">保存済みの大会を選んで進行を記録する</div></div>
         <div class="hbtn-r">›</div>
       </button>
+      <div class="hfoot"><button class="implink" onclick="renderHome()">モード選択に戻る</button> ・ <button class="implink" onclick="doLogout()">ログアウト</button></div>
     </div></div>`);
 }
+function renderLogin(msg){
+  show(`
+    <div class="home"><div class="home-box">
+      <div class="hero"></div>
+      <div class="org">${pendingMode==='operator'?'進行用':'管理用'}</div>
+      <div class="htitle">ログイン</div>
+      <div class="hsub">${pendingMode==='operator'?'進行用':'管理者'}のメールアドレスとパスワードを入力してください</div>
+      <div class="scard" style="text-align:left">
+        <label class="flabel">メールアドレス</label>
+        <input class="inp" id="lemail" type="email" autocomplete="username" placeholder="admin@example.com" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')$('lpass').focus()">
+        <label class="flabel">パスワード</label>
+        <input class="inp" id="lpass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        ${msg?`<div class="pvwarn" style="margin-top:12px">${esc(msg)}</div>`:''}
+        <div class="cfooter" style="margin-top:1rem">
+          <button class="btn" onclick="renderHome()">戻る</button>
+          <button class="btn btnp" id="lbtn" onclick="doLogin()">ログイン</button>
+        </div>
+      </div>
+      <div class="hfoot">閲覧だけなら <button class="implink" onclick="enterView()">閲覧用で開く</button></div>
+    </div></div>`);
+  setTimeout(()=>$('lemail')?.focus(),50);
+}
+async function doLogin(){
+  const email=($('lemail')?.value||'').trim(), pass=$('lpass')?.value||'';
+  if(!email||!pass){ renderLogin('メールアドレスとパスワードを入力してください'); $('lemail').value=email; return; }
+  const btn=$('lbtn'); if(btn){ btn.disabled=true; btn.textContent='確認中…'; }
+  try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.signInWithEmailAndPassword(email,pass);
+    if(pendingMode==='operator') await enterOperator(); else await enterAdmin();
+  }catch(e){
+    console.error('login',e);
+    const m={
+      'auth/configuration-not-found':'FirebaseのAuthentication（ログイン機能）がまだ設定されていません。設定手順（FIREBASE設定手順.md）の手順1・2を行ってください。',
+      'auth/operation-not-allowed':'Firebaseで「メール／パスワード」のログインがまだ有効になっていません。設定手順（FIREBASE設定手順.md）をご確認ください。',
+      'auth/invalid-credential':'メールアドレスまたはパスワードが違います。','auth/wrong-password':'メールアドレスまたはパスワードが違います。',
+      'auth/user-not-found':'このメールアドレスの管理者は登録されていません。','auth/invalid-email':'メールアドレスの形式が正しくありません。',
+      'auth/too-many-requests':'試行回数が多すぎます。しばらく待ってからお試しください。','auth/network-request-failed':'通信エラーです。接続を確認してください。'
+    }[e.code]||('ログインできませんでした（'+(e.code||e.message)+'）');
+    renderLogin(m); $('lemail').value=email;
+  }
+}
+function doLogout(){ auth.signOut().finally(()=>renderHome()); }
 
 // ─────────────────────────────────────────
 // ── 大会リスト ──
@@ -289,19 +498,21 @@ function renderList(){
     show(`
       <div class="wrap">
         <div class="phead">
-          <button class="backbtn" onclick="renderHome()">← ホーム</button>
+          <button class="backbtn" onclick="goHome()">← ${MODE==='admin'?'ホーム':'モード選択'}</button>
           <div class="ptitle">大会を選択</div>
+          ${modeTag()}
         </div>
         <div class="tlist">
           ${list.length===0
             ? '<div class="empty">保存された大会がありません</div>'
-            : list.map(td=>`
+            : list.map((td,i)=>`
                 <div class="titem" onclick="openTournament('${esc(td.id)}')">
+                  <div class="ticon">${String(i+1).padStart(2,'0')}</div>
                   <div class="tinfo">
                     <div class="tname">${esc(td.name)}</div>
-                    <div class="tmeta">${td.rounds.length}ラウンド · 最大16コート</div>
+                    <div class="tmeta">${td.rounds.length}ラウンド ・ ${esc(td.rounds.join(' / '))}</div>
                   </div>
-                  <button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>
+                  ${MODE==='admin'?`<button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>`:''}
                   <div class="tarr">›</div>
                 </div>`).join('')}
         </div>
@@ -309,9 +520,9 @@ function renderList(){
   }).catch(e=>{
     console.error('renderList error:', e);
     show(`<div class="wrap">
-      <div class="phead"><button class="backbtn" onclick="renderHome()">← ホーム</button><div class="ptitle">大会を選択</div></div>
+      <div class="phead"><button class="backbtn" onclick="goHome()">← ホーム</button><div class="ptitle">大会を選択</div></div>
       <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:1.5rem;font-size:13px;line-height:1.8">
-        <div style="font-weight:600;color:#E24B4A;margin-bottom:.75rem">⚠️ Firebase読み込みエラー</div>
+        <div style="font-weight:600;color:#DC2626;margin-bottom:.75rem">読み込みエラー</div>
         <div style="color:#666">エラー内容：<code style="background:#f5f5f3;padding:2px 6px;border-radius:4px">${esc(String(e))}</code></div>
       </div>
     </div>`);
@@ -346,7 +557,10 @@ function openTournament(id){
   });
 }
 
+function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else renderHome(); }
+const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?'<span class="modetag">進行用</span>':'';
 function deleteTournament(id){
+  if(!isAdmin()) return;
   if(!confirm('この大会を削除しますか？')) return;
   META(id).remove();
   PROG(id).remove();
@@ -357,6 +571,7 @@ function deleteTournament(id){
 // ── 新規作成 ──
 // ─────────────────────────────────────────
 function renderNewTournament(){
+  if(!isAdmin()){ renderLogin('管理用の操作にはログインが必要です'); return; }
   draftTD = { id:'t'+Date.now(), name:'', rounds:['予選ラウンド'], courts:{} };
   ensureDraftCourts();
   createRI = 0;
@@ -374,7 +589,7 @@ function _renderCreate(){
   show(`
     <div class="wrap">
       <div class="phead">
-        <button class="backbtn" onclick="renderHome()">← ホーム</button>
+        <button class="backbtn" onclick="goHome()">← ホーム</button>
         <div class="ptitle">新規大会を作成</div>
       </div>
       <div class="scard">
@@ -387,21 +602,19 @@ function _renderCreate(){
         ${draftTD.rounds.map((r,i)=>`
           <div class="rrow">
             <input class="inp" value="${esc(r)}" placeholder="ラウンド名" onchange="updateDraftRound(${i},this.value)" />
-            ${draftTD.rounds.length>1?`<button class="delbtn" onclick="delDraftRound(${i})">✕</button>`:''}
+            ${draftTD.rounds.length>1?`<button class="delbtn" onclick="delDraftRound(${i})">削除</button>`:''}
           </div>`).join('')}
         <button class="addbtn" onclick="addDraftRound()">＋ ラウンドを追加</button>
       </div>
       <div class="scard">
         <div class="slabel">コート割</div>
         <div class="impbar" id="impbar" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="onImportDrop(event)">
-          <input type="file" id="impfile" accept=".xlsx,.xlsm,.xls,.csv" style="display:none" onchange="onImportFile(this.files[0]);this.value=''">
-          <button class="impbtn" onclick="$('impfile').click()">📄 エクセルから読み込む</button>
-          <button class="implink" onclick="downloadImportTemplate()">テンプレートをダウンロード</button>
-          <div class="imphelp">
-            コート割のエクセル（.xlsx / .csv）を選ぶか、ここにドラッグすると自動でコート割を作成します。<br>
-            ① 表形式：<code>コート</code> <code>種目</code> <code>大学名</code> <code>名前</code>（任意で <code>ラウンド</code>）の列がある表<br>
-            ② 番組形式：<code>1コート 男子初段</code> のような見出しの下に 大学名・名前 が並んだ表 ／ シートが複数あればシート名がラウンド名になります
+          <input type="file" id="impfile" accept=".xlsx,.xlsm,.xls,.csv,.html,.htm,.webarchive,.pdf" style="display:none" onchange="onImportFile(this.files[0]);this.value=''">
+          <div class="improw">
+            <button class="impbtn" onclick="$('impfile').click()">ファイルから読み込む</button>
+            <span class="impnote">名簿PDF・連盟サイトを保存したページ・エクセル に対応。ここにドラッグしても読み込めます。</span>
           </div>
+          <details class="imphelp"><summary>対応ファイルの詳しい説明</summary>${importHelpHTML()}</details>
         </div>
         <div id="crtabs" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1rem">
           ${draftTD.rounds.map((r,i)=>`
@@ -410,8 +623,8 @@ function _renderCreate(){
         <div id="ccarea"></div>
       </div>
       <div class="cfooter">
-        <button class="btn" onclick="renderHome()">キャンセル</button>
-        <button class="btn btnp" onclick="saveDraftAndOpen()">作成して開始 →</button>
+        <button class="btn" onclick="goHome()">キャンセル</button>
+        <button class="btn btnp" onclick="saveDraftAndOpen()">作成して開始</button>
       </div>
     </div>`);
   _renderCreateCourts();
@@ -431,7 +644,7 @@ function _renderCreateCourts(){
       <div class="cccard${c.cat||c.teams.length?' set':''}" onclick="openCCModal(${createRI},${c.id})">
         <div class="ccn">${c.id}</div>
         <div class="ccc">${esc(c.cat)||'未設定'}</div>
-        <div class="cct">${c.teams.length}チーム</div>
+        <div class="cct">${c.teams.length}組</div>
       </div>`).join('')}
     </div>`;
 }
@@ -480,8 +693,9 @@ function delDraftRound(i){
 }
 
 function saveDraftAndOpen(){
+  if(!isAdmin()){ alert('管理者としてログインしていません'); return; }
   const el=$('dname'); if(el) draftTD.name=el.value.trim();
-  if(!draftTD.name){ alert('大会名を入力してください'); return; }
+  if(!draftTD.name){ alert('大会名を入力してください'); $('dname')?.focus(); return; }
   draftTD.rounds.forEach(r=>{
     (draftTD.courts[r]||[]).forEach(c=>{ c.teams=c.teams.filter(t=>t.a||t.n); });
   });
@@ -508,6 +722,7 @@ function saveDraftAndOpen(){
 //  シートが複数あり、かつラウンド列が無い場合はシート名をラウンド名として扱う
 // ─────────────────────────────────────────
 let importResult = null;
+let importTarget = 'draft'; // 'draft'=新規作成画面 / 'live'=開いている大会
 
 const ROMAN_CHARS = {'Ⅰ':1,'Ⅱ':2,'Ⅲ':3,'Ⅳ':4,'Ⅴ':5,'Ⅵ':6,'Ⅶ':7,'Ⅷ':8,'Ⅸ':9,'Ⅹ':10,'Ⅺ':11,'Ⅻ':12,'I':1,'V':5,'X':10,'L':50};
 function romanToInt(str){
@@ -680,13 +895,34 @@ function parseWorkbook(wb){
   return {rounds:merged, warnings, modes:[...new Set(perSheet.map(p=>p.res.mode))]};
 }
 
-function onImportDrop(e){
+function onImportDrop(e, target){
   e.preventDefault(); $('impbar')?.classList.remove('drag');
-  const f=e.dataTransfer?.files?.[0]; if(f) onImportFile(f);
+  const f=e.dataTransfer?.files?.[0]; if(f) onImportFile(f, target);
 }
-function onImportFile(file){
+function onImportFile(file, target){
   if(!file) return;
+  importTarget = target==='live' ? 'live' : 'draft';
   if(typeof XLSX==='undefined'){ alert('エクセル読み込み用のライブラリを読み込めませんでした。通信状況を確認して再読み込みしてください。'); return; }
+  if(/\.pdf$/i.test(file.name)||file.type==='application/pdf'){
+    const btns=document.querySelectorAll('.impbtn'); btns.forEach(b=>{ b.disabled=true; b.dataset.t=b.textContent; b.textContent='PDFを解析中…'; });
+    const done=()=>btns.forEach(b=>{ b.disabled=false; if(b.dataset.t) b.textContent=b.dataset.t; });
+    file.arrayBuffer().then(buf=>parseRosterPdf(buf)).then(res=>{
+      done();
+      if(!res){ alert('このPDFからコート割を読み取れませんでした。\n\n対応しているのは、連盟の「名簿」PDF（各ページの上に「本選 A 1 コート ○○の部」と書かれ、出番・所属・選手氏名の表があるもの）です。\n印刷したコート割ページのPDFは文字が取り出せないため読めません。'); return; }
+      importResult=res; openImportPreview(file.name);
+    }).catch(err=>{ done(); console.error(err); alert('PDFを読み込めませんでした: '+err.message); });
+    return;
+  }
+  if(/\.(html?|txt|webarchive|mht|mhtml)$/i.test(file.name)){
+    const fr=new FileReader();
+    fr.onload=ev=>{
+      // .webarchive（Safariの保存形式）はバイナリだが、HTML本体のバイト列がそのまま入っているので文字列として探せる
+      const res=parseKantogsHtml(String(ev.target.result));
+      if(!res){ alert('このファイルからコート割を見つけられませんでした。\n\n連盟サイトのコート割ページ（…/rc_groups_print/）を開き、ブラウザの「別名で保存」で保存したファイルを使ってください。'); return; }
+      importResult=res; openImportPreview(file.name);
+    };
+    fr.readAsText(file,'utf-8'); return;
+  }
   const fr=new FileReader();
   fr.onload=ev=>{
     try{
@@ -699,51 +935,104 @@ function onImportFile(file){
   fr.readAsArrayBuffer(file);
 }
 
+
+// ── 連盟サイト（kantogs.org）のコート割ページ ──
+//  ページ内の `var data = {...}` に 種目(events)・ラウンド(rounds)・コート(courts)・割当(rcs) がJSONで埋め込まれている
+function parseKantogsHtml(html){
+  const m=html.match(/var\s+data\s*=\s*(\{[\s\S]*?\});\s*[\r\n]/);
+  if(!m) return null;
+  let d; try{ d=JSON.parse(m[1]); }catch(e){ return null; }
+  if(!d||!Array.isArray(d.rcs)||!Array.isArray(d.rounds)||!Array.isArray(d.courts)) return null;
+  let phaseDict={prelim:'予選',final:'本選'};
+  const pm=html.match(/var\s+phase_choices_dict\s*=\s*(\{[^\n]*\});/); if(pm){ try{ phaseDict=Object.assign(phaseDict,JSON.parse(pm[1])); }catch(e){} }
+  const byId=arr=>Object.fromEntries((arr||[]).map(x=>[x.id,x]));
+  const R=byId(d.rounds), C=byId(d.courts), E=byId(d.events);
+  const roundName=r=>((phaseDict[r.phase]||r.phase||'')+' '+String(r.name)+'ラウンド').trim();
+  const out={}; const warnings=[];
+  const roundsSorted=[...d.rounds].sort((a,b)=>(a.index||0)-(b.index||0));
+  roundsSorted.forEach(r=>{ out[roundName(r)]={}; });
+  d.rcs.forEach(rc=>{
+    const r=R[rc.round_id], c=C[rc.court_id]; if(!r||!c) return;
+    const no=parseCourtNo(c.name); if(!no) return;
+    const ev=E[rc.event_id]; const cat=ev?ev.name:'';
+    const groups=[...(rc.groups||[])];
+    if(groups.some(g=>g.index!==undefined)) groups.sort((a,b)=>(a.index||0)-(b.index||0));
+    const teams=groups.map(g=>({a:(g.univ&&g.univ.name)||'', n:(g.people||[]).map(p=>p.surname||'').filter(Boolean).join('・')})).filter(t=>t.a||t.n);
+    const rk=roundName(r); out[rk]=out[rk]||{};
+    const ct=out[rk][no]=out[rk][no]||{cat:'',teams:[]};
+    if(cat&&!ct.cat) ct.cat=cat; ct.teams.push(...teams);
+  });
+  Object.keys(out).forEach(k=>{ if(!Object.keys(out[k]).length) delete out[k]; });
+  if(!Object.keys(out).length) return null;
+  const empty=[]; Object.entries(out).forEach(([rk,cs])=>Object.entries(cs).forEach(([no,ct])=>{ if(!ct.teams.length) empty.push(rk+' '+no+'コート'); }));
+  if(empty.length) warnings.push('出場組がまだ登録されていないコート（種目名のみ設定）: '+empty.slice(0,6).join('、')+(empty.length>6?' ほか'+(empty.length-6)+'件':''));
+  return {rounds:out, warnings, modes:['web']};
+}
+
+function _impTD(){ return importTarget==='live' ? TD : draftTD; }
+function _impCurRound(){ return importTarget==='live' ? curRound() : draftTD.rounds[createRI]; }
+
 function openImportPreview(fname){
-  const cur=draftTD.rounds[createRI];
+  const live=importTarget==='live';
+  const td=_impTD(), cur=_impCurRound();
   const R=importResult.rounds;
   const totalCourts=Object.values(R).reduce((s,c)=>s+Object.keys(c).length,0);
   const totalTeams =Object.values(R).reduce((s,c)=>s+Object.values(c).reduce((x,ct)=>x+ct.teams.length,0),0);
+  // 進行中の記録があるコート（開いている大会のみ）
+  let inProg=0;
+  if(live){
+    Object.entries(R).forEach(([rk,courts])=>{ const rname=rk||cur;
+      Object.keys(courts).forEach(no=>{ const cs=(PROG_DATA.courts||{})[rname+'_'+no]; if(cs&&(cs.current>0||cs.stopped)) inProg++; }); });
+  }
   const body=Object.entries(R).map(([rk,courts])=>{
-    const title=rk?`ラウンド「${esc(rk)}」${draftTD.rounds.includes(rk)?'':'<span style="font-size:10px;color:#378ADD;margin-left:6px">新規追加</span>'}`:`現在のラウンド「${esc(cur)}」に読み込み`;
+    const exists=td.rounds.includes(rk);
+    const tag=t=>`<span style="font-size:10px;color:#A8894F;margin-left:6px">${t}</span>`;
+    const title=rk?`ラウンド「${esc(rk)}」${exists?(live?tag('更新'):''):tag('新規追加')}`:`現在のラウンド「${esc(cur)}」に読み込み`;
     const rows=Object.keys(courts).map(Number).sort((a,b)=>a-b).map(no=>{const ct=courts[no];
-      return `<div class="pvrow"><span class="pvno">${no}コート</span><span class="pvcat">${esc(ct.cat)||'<span style="color:#bbb">種目未設定</span>'}</span><span class="pvcnt">${ct.teams.length}組</span><span class="pvteams">${esc(ct.teams.slice(0,3).map(t=>(t.a+' '+t.n).trim()).join('／'))}${ct.teams.length>3?' …':''}</span></div>`;}).join('');
+      const rname=rk||cur; const cs=live?(PROG_DATA.courts||{})[rname+'_'+no]:null;
+      const pm=cs&&(cs.current>0||cs.stopped)?`<span style="font-size:10px;color:#A8552B">進行${cs.current}組済</span>`:'';
+      return `<div class="pvrow"><span class="pvno">${no}コート</span><span class="pvcat">${esc(ct.cat)||'<span style="color:#bbb">種目未設定</span>'}</span><span class="pvcnt">${ct.teams.length}組</span>${pm}<span class="pvteams">${esc(ct.teams.slice(0,3).map(t=>(t.a+' '+t.n).trim()).join('／'))}${ct.teams.length>3?' …':''}</span></div>`;}).join('');
     return `<div class="pvround">${title}</div><div class="pvlist">${rows}</div>`;
   }).join('');
   $('mod').innerHTML=`
     <div class="mhead"><div class="mtitle">読み込み内容の確認</div><button class="xbtn" onclick="closeModal()">×</button></div>
-    <div style="font-size:12px;color:#666;margin-bottom:4px">📄 ${esc(fname)}</div>
-    <div style="font-size:12px;color:#444">${totalCourts}コート・${totalTeams}組 を読み取りました${importResult.modes.includes('block')?'（番組形式）':'（表形式）'}</div>
+    <div style="font-size:12px;color:#8A857C;margin-bottom:4px">${esc(fname)}</div>
+    <div style="font-size:12px;color:#3D3A36">${totalCourts}コート・${totalTeams}組 を読み取りました${importResult.modes.includes('pdf')?'（名簿PDF）':importResult.modes.includes('web')?'（連盟サイトのコート割）':importResult.modes.includes('block')?'（番組形式）':'（表形式）'}</div>
+    ${live?`<div style="font-size:12px;color:#3D3A36;margin-top:2px">大会「${esc(TD.name)}」に追加・更新します。ラウンドが無ければタブとして追加されます。</div>`:''}
     ${body}
-    ${importResult.warnings.length?`<div class="pvwarn">⚠️ ${importResult.warnings.map(esc).join('<br>')}</div>`:''}
+    ${importResult.warnings.length?`<div class="pvwarn">${importResult.warnings.map(esc).join('<br>')}</div>`:''}
+    ${live&&inProg?`<div class="pvwarn">進行中の記録がある ${inProg} コートが含まれています。記録（何組目まで完了か）はそのまま残し、組数が減った場合は末尾に合わせます。</div>`:''}
     <div class="pvopt">
       <label><input type="checkbox" id="impclear"> 読み込む前に、対象ラウンドの既存コート割をすべて空にする</label>
       <div style="font-size:11px;color:#888">チェック無しの場合、ファイルにあるコートだけを上書きし、他のコートはそのまま残します。読み込み後も各コートをクリックして修正できます。</div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
       <button class="mbtn" onclick="closeModal()">キャンセル</button>
-      <button class="mbtn p" onclick="applyImport()">この内容でコート割を作成</button>
+      <button class="mbtn p" onclick="applyImport()">${live?'この内容で大会に反映':'この内容でコート割を作成'}</button>
     </div>`;
   $('ov').classList.add('open');
 }
 
 function applyImport(){
   if(!importResult) return;
+  const live=importTarget==='live';
+  const td=_impTD(), cur=_impCurRound();
   const clear=$('impclear')?.checked;
-  const cur=draftTD.rounds[createRI];
-  let firstRound=null;
-  // ファイル側にラウンド名があり、今ある下書きのラウンドが全部未使用なら、下書きのラウンドを置き換える
+  let firstRound=null; const added=[];
   const keys=Object.keys(importResult.rounds);
-  const isEmptyRound=r=>(draftTD.courts[r]||[]).every(c=>!c.cat&&!(c.teams&&c.teams.length));
-  if(keys.every(k=>k) && draftTD.rounds.every(isEmptyRound)){
-    draftTD.rounds.filter(r=>!keys.includes(r)).forEach(r=>{ delete draftTD.courts[r]; });
-    draftTD.rounds=draftTD.rounds.filter(r=>keys.includes(r));
+  if(!live){
+    // 新規作成時：ファイル側にラウンド名があり、下書きのラウンドが全部未使用なら置き換える
+    const isEmptyRound=r=>(td.courts[r]||[]).every(c=>!c.cat&&!(c.teams&&c.teams.length));
+    if(keys.every(k=>k) && td.rounds.every(isEmptyRound)){
+      td.rounds.filter(r=>!keys.includes(r)).forEach(r=>{ delete td.courts[r]; });
+      td.rounds=td.rounds.filter(r=>keys.includes(r));
+    }
   }
   Object.entries(importResult.rounds).forEach(([rk,courts])=>{
     const rname=rk||cur;
-    if(!draftTD.rounds.includes(rname)) draftTD.rounds.push(rname);
-    ensureDraftCourts();
-    const arr=draftTD.courts[rname];
+    if(!td.rounds.includes(rname)){ td.rounds.push(rname); added.push(rname); }
+    if(!td.courts[rname]) td.courts[rname]=Array.from({length:16},(_,i)=>({id:i+1,cat:'',teams:[]}));
+    const arr=td.courts[rname];
     if(clear) arr.forEach(c=>{c.cat='';c.teams=[];});
     Object.keys(courts).map(Number).sort((a,b)=>a-b).forEach(no=>{
       while(arr.length<no) arr.push({id:arr.length+1,cat:'',teams:[]});
@@ -751,12 +1040,48 @@ function applyImport(){
       const src=courts[no];
       if(src.cat) c.cat=src.cat;
       c.teams=src.teams.filter(t=>t.a||t.n);
+      if(live){ const cs=(PROG_DATA.courts||{})[rname+'_'+no]; if(cs&&cs.current>c.teams.length) cs.current=c.teams.length; }
     });
     if(firstRound===null) firstRound=rname;
   });
   importResult=null;
-  if(firstRound!==null) createRI=Math.max(0,draftTD.rounds.indexOf(firstRound));
-  closeModal(); _renderCreate();
+  if(live){
+    saveMeta(); saveProg(); closeModal(); renderDash();
+    showToast(added.length?`読み込みました。ラウンド「${added.join('」「')}」を追加しました（上のタブから開けます）`:'コート割を更新しました');
+  }else{
+    if(firstRound!==null) createRI=Math.max(0,td.rounds.indexOf(firstRound));
+    closeModal(); _renderCreate();
+  }
+}
+
+// ── 開いている大会への読み込み ──
+function openLiveImport(){
+  if(!isAdmin()) return;
+  $('mod').innerHTML=`
+    <div class="mhead"><div class="mtitle">コート割を読み込む</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <div style="font-size:12px;color:#666;line-height:1.7;margin-bottom:12px">本選など新しいラウンドはタブとして追加されます。すでにあるラウンドは、ファイルにあるコートだけを上書きし、進行中の記録は残します。</div>
+    <div class="impbar" id="impbar" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="onImportDrop(event,'live')">
+      <input type="file" id="impfile" accept=".xlsx,.xlsm,.xls,.csv,.html,.htm,.webarchive,.pdf" style="display:none" onchange="onImportFile(this.files[0],'live');this.value=''">
+      <div class="improw">
+        <button class="impbtn" onclick="$('impfile').click()">ファイルを選ぶ</button>
+        <span class="impnote">名簿PDF・保存したページ・エクセル。ここにドラッグでも可。</span>
+      </div>
+      <details class="imphelp"><summary>対応ファイルの詳しい説明</summary>${importHelpHTML()}</details>
+    </div>
+    <div style="display:flex;justify-content:flex-end"><button class="mbtn" onclick="closeModal()">閉じる</button></div>`;
+  $('ov').classList.add('open');
+}
+function importHelpHTML(){
+  return `<dl>
+    <dt>名簿PDF</dt><dd>連盟の「本選全RC 名簿」のように、各ページに「本選A 1コート ○○の部」の見出しと、出番・所属・選手氏名の表があるPDF。コート割ページを印刷したPDFは文字が取り出せないため読めません。</dd>
+    <dt>連盟サイトのコート割ページ</dt><dd>kantogs.org のコート割ページをブラウザで開き「ファイル → 別名で保存」したファイル（Safariは .webarchive、Chromeは .html）。</dd>
+    <dt>エクセル（.xlsx / .csv）</dt><dd><code>コート</code> <code>種目</code> <code>大学名</code> <code>名前</code>（任意で <code>ラウンド</code>）の列がある表、または「1コート 男子初段」の見出しの下に大学名・名前が並ぶ表。シートが複数あればシート名がラウンド名になります。<button class="implink" onclick="downloadImportTemplate()">テンプレートをダウンロード</button></dd>
+  </dl>`;
+}
+function showToast(msg){
+  let t=$('toast'); if(!t){ t=document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('show'),5000);
 }
 
 function downloadImportTemplate(){
@@ -792,33 +1117,37 @@ function downloadImportTemplate(){
 function renderDash(){
   if(!TD||!PROG_DATA) return;
   const rHTML = TD.rounds.map(r=>
-    `<button class="rtab${r===PROG_DATA.currentRound?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + `<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド追加</button>`;
+    `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
+  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>`:'');
 
   $('app').innerHTML=`
-    <div class="dhead">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <button class="backbtn" onclick="renderHome()">← ホーム</button>
-        <div class="dtitle">${esc(TD.name)}</div>
+    <div class="dtop">
+      <div class="dhead">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <button class="backbtn" onclick="renderList()">← 一覧</button>
+          <div class="dtitle">${esc(TD.name)}</div>
+          ${modeTag()}
+        </div>
+        <div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div>
       </div>
-      <div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel" style="font-size:11px;color:#888">接続中...</span></div>
+      <div class="rtabs">${rHTML}</div>
     </div>
-    <div class="rtabs">${rHTML}</div>
     <div class="sumbar">${buildSummary()}</div>
     <div class="legend">
-      <div class="legitem"><div class="legdot" style="background:#1D9E75"></div>完了</div>
-      <div class="legitem"><div class="legdot" style="background:#378ADD"></div>進行中</div>
-      <div class="legitem"><div class="legdot" style="background:#E24B4A"></div>停止</div>
-      <div class="legitem"><div class="legdot" style="background:#BA7517"></div>残り1組</div>
-      <div class="legitem"><div class="legdot" style="background:#EF9F27"></div>残り2〜3組</div>
-      <div class="legitem"><div class="legdot" style="background:#e5e5e5"></div>待機</div>
-      <div class="legitem"><div class="legdot" style="background:#a5b4fc"></div>未使用</div>
+      <div class="legitem"><div class="legdot" style="background:${PAL.done}"></div>完了</div>
+      <div class="legitem"><div class="legdot" style="background:${PAL.run}"></div>進行中</div>
+      <div class="legitem"><div class="legdot" style="background:${PAL.l3}"></div>残り2〜3組</div>
+      <div class="legitem"><div class="legdot" style="background:${PAL.l1}"></div>残り1組</div>
+      <div class="legitem"><div class="legdot" style="background:${PAL.stop}"></div>停止</div>
+      <div class="legitem"><div class="legdot" style="background:#D8D2C6"></div>待機</div>
+      <div class="legitem"><div class="legdot" style="background:#fff;border:1px solid #D8D2C6"></div>未使用</div>
     </div>
     <div class="alertwrap">${buildAlerts()}</div>
     <div class="cgrid">${buildGrid()}</div>`;
 }
 
 function setRound(r){
+  if(MODE!=='admin'){ viewRound=r; renderDash(); return; }
   PROG_DATA.currentRound=r; saveProg(); renderDash();
 }
 
@@ -831,52 +1160,57 @@ function courtStatus(c, cs){
 }
 
 function buildSummary(){
-  const courts = TD.courts[PROG_DATA.currentRound]||[];
+  const courts = TD.courts[curRound()]||[];
   let T=0,D=0,R=0,W=0,ST=0;
   courts.forEach(c=>{
     if(!c.teams) c.teams=[];
     if(!c.teams.length)return; T++;
-    const st=courtStatus(c,progCS(PROG_DATA.currentRound,c.id));
+    const st=courtStatus(c,progCS(curRound(),c.id));
     if(st==='stopped')ST++; else if(st==='done')D++;
     else if(st==='last1'||st==='last3'){R++;W++;} else if(st==='running')R++;
   });
-  return [{n:T,l:'使用コート',c:'#1a1a1a'},{n:D,l:'完了',c:'#1D9E75'},{n:R,l:'進行中',c:'#378ADD'},{n:W,l:'残り1〜3組',c:'#BA7517'},{n:ST,l:'停止中',c:'#E24B4A'}]
-    .map(s=>`<div class="sumcard"><div class="sumn" style="color:${s.c}">${s.n}</div><div class="suml">${s.l}</div></div>`).join('');
+  return [{n:T,l:'使用コート',c:PAL.gold},{n:D,l:'完了',c:PAL.done},{n:R,l:'進行中',c:PAL.run},{n:W,l:'残りわずか',c:PAL.l1},{n:ST,l:'停止中',c:PAL.stop}]
+    .map(s=>`<div class="sumcard" style="--sc:${s.c}"><div class="sumn">${s.n}</div><div class="suml">${s.l}</div></div>`).join('');
 }
 
 function buildAlerts(){
-  return (TD.courts[PROG_DATA.currentRound]||[])
-    .filter(c=>c.teams.length&&progCS(PROG_DATA.currentRound,c.id).stopped)
-    .map(c=>{const cs=progCS(PROG_DATA.currentRound,c.id);
-      return `<div class="alertrow">⚠️ <strong>${c.id}コート（${esc(c.cat)}）</strong>：${esc(cs.stopReason||'停止中')}</div>`;}).join('');
+  return (TD.courts[curRound()]||[])
+    .filter(c=>c.teams.length&&progCS(curRound(),c.id).stopped)
+    .map(c=>{const cs=progCS(curRound(),c.id);
+      return `<div class="alertrow" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">停止</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート（${esc(c.cat)}）</strong> ${esc(cs.stopReason||'停止中')}</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`;}).join('');
 }
 
 function buildGrid(){
-  return (TD.courts[PROG_DATA.currentRound]||[]).map(c=>{
+  return (TD.courts[curRound()]||[]).map(c=>{
     if(!c.teams) c.teams=[];
-    const cs=progCS(PROG_DATA.currentRound,c.id);
+    const cs=progCS(curRound(),c.id);
     const t=c.teams.length,dn=Math.min(cs.current,t),pct=t?Math.round(dn/t*100):0,rem=t-dn;
     const st=courtStatus(c,cs);
-    const bc={stopped:'#E24B4A',done:'#1D9E75',last1:'#BA7517',last3:'#EF9F27',running:'#378ADD'}[st]||'#378ADD';
+    const bc={stopped:PAL.stop,done:PAL.done,last1:PAL.l1,last3:PAL.l3,running:PAL.run}[st]||PAL.run;
     let badge='';
     if(st==='stopped')badge='<span class="badge bstop">停止</span>';
-    else if(st==='done')badge='<span class="badge bdone">✓ 完了</span>';
+    else if(st==='done')badge='<span class="badge bdone">完了</span>';
     else if(st==='last1')badge='<span class="badge bl1">残り1組</span>';
     else if(st==='last3')badge=`<span class="badge bl3">残り${rem}組</span>`;
     else if(st==='running')badge='<span class="badge brun">進行中</span>';
     else if(st==='waiting')badge='<span class="badge bwait">待機</span>';
     else badge='<span class="badge bedit">未使用</span>';
     const dots=t?c.teams.map((_,i)=>{
-      const bg=i<dn?(st==='stopped'?'#E24B4A':'#1D9E75'):i===dn&&dn<t?'#378ADD':'#e5e5e5';
-      const brd=i===dn&&dn<t&&st!=='stopped'?'outline:1.5px solid #378ADD;':'';
+      const bg=i<dn?(st==='stopped'?PAL.stop:PAL.done):i===dn&&dn<t?PAL.run:'#E7E2D9';
+      const brd=i===dn&&dn<t&&st!=='stopped'?`outline:1.5px solid ${PAL.run};outline-offset:1px;`:'';
       return `<div class="tdot" style="background:${bg};${brd}"></div>`;}).join(''):'';
-    const cls='ccard'+(['stopped','done','last1','last3'].includes(st)?' '+st:'');
-    return `<div class="${cls}" onclick="openCourtModal(${c.id})">
-      <div class="ctop"><div class="cnum">${c.id}</div>${badge}</div>
-      <div class="ccat">${esc(c.cat)||'（未設定）'}</div>
+    // 次に演武する組（進行中・待機・残りわずか）
+    let next='';
+    if(t&&st!=='done'&&st!=='stopped'&&dn<t){ const nt=c.teams[dn]; next=`<div class="cnext${dn>0?' now':''}"><span class="lab">${dn>0?'演武中':'次'}</span><b>${esc(nt.a)}</b> ${esc(nt.n)}</div>`; }
+    else if(st==='stopped'){ next=`<div class="cnext stop">${esc(cs.stopReason||'停止中')}</div>`; }
+    else if(st==='done'){ next=`<div class="cnext fin">全 ${t} 組 終了</div>`; }
+    return `<div class="ccard ${st}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
+      <div class="ctop"><div class="cnum">${c.id}<small>コート</small></div>${badge}</div>
+      <div class="ccat">${esc(c.cat)||'（種目未設定）'}</div>
+      ${next}
       ${t?`<div class="barwrap"><div class="barfill" style="background:${bc};width:${pct}%"></div></div>
-      <div class="ccount"><span>${dn}/${t}</span><span>${pct}%</span></div>
-      <div class="tdots">${dots}</div>`:'<div class="edithint">クリックして設定・編集</div>'}
+      <div class="ccount"><span>${dn} / ${t} 組</span><span>${pct}%</span></div>
+      <div class="tdots">${dots}</div>`:`<div class="edithint">${MODE==='admin'?'未使用 ― タップして設定':'未使用'}</div>`}
     </div>`;}).join('');
 }
 
@@ -884,6 +1218,7 @@ function buildGrid(){
 // ── ラウンド追加 ──
 // ─────────────────────────────────────────
 function openAddRoundModal(){
+  if(!isAdmin()) return;
   $('mod').innerHTML=`
     <div class="mhead"><div class="mtitle">ラウンドを追加</div><button class="xbtn" onclick="closeModal()">×</button></div>
     <label class="flabel" style="margin-top:.5rem">ラウンド名</label>
@@ -895,6 +1230,7 @@ function openAddRoundModal(){
   $('ov').classList.add('open');
 }
 function doAddRound(){
+  if(!isAdmin()) return;
   const n=($('newround').value||'').trim();
   if(!n){alert('ラウンド名を入力してください');return;}
   if(TD.rounds.includes(n)){alert('同じ名前が既にあります');return;}
@@ -915,16 +1251,30 @@ function closeModal(){
   $('ov').classList.remove('open'); modalCourtId=null; stopFormOpen=false;
 }
 $('ov').addEventListener('click',e=>{ if(e.target===$('ov')) closeModal(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('ov').classList.contains('open')) closeModal(); });
 
 function drawModal(){
-  const c=(TD.courts[PROG_DATA.currentRound]||[]).find(x=>x.id===modalCourtId);
+  const c=(TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId);
   if(!c)return;
-  const cs=progCS(PROG_DATA.currentRound,modalCourtId);
+  const cs=progCS(curRound(),modalCourtId);
+  if(MODE==='view'){
+    $('mod').innerHTML=`
+      <div class="mhead"><div class="mtitle">${c.id}コート<span>${esc(c.cat)||'種目未設定'}</span></div><button class="xbtn" onclick="closeModal()">×</button></div>
+      ${drawViewTab(c,cs)}`;
+    return;
+  }
+  if(MODE==='operator'){
+    modalTab='prog';
+    $('mod').innerHTML=`
+      <div class="mhead"><div class="mtitle">${c.id}コート<span>${esc(c.cat)||'種目未設定'}</span></div><button class="xbtn" onclick="closeModal()">×</button></div>
+      ${drawProgTab(c,cs)}`;
+    return;
+  }
   $('mod').innerHTML=`
-    <div class="mhead"><div class="mtitle">${c.id}コート — ${esc(c.cat)||'未設定'}</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <div class="mhead"><div class="mtitle">${c.id}コート<span>${esc(c.cat)||'種目未設定'}</span></div><button class="xbtn" onclick="closeModal()">×</button></div>
     <div class="tabbar">
-      <button class="mtab${modalTab==='prog'?' on':''}" onclick="switchMTab('prog')">▶ 進行管理</button>
-      <button class="mtab${modalTab==='edit'?' on':''}" onclick="switchMTab('edit')">✏️ コート編集</button>
+      <button class="mtab${modalTab==='prog'?' on':''}" onclick="switchMTab('prog')">進行</button>
+      <button class="mtab${modalTab==='edit'?' on':''}" onclick="switchMTab('edit')">編集</button>
     </div>
     ${modalTab==='prog' ? drawProgTab(c,cs) : drawEditTab(c)}`;
 }
@@ -934,32 +1284,51 @@ function switchMTab(t){
   modalTab=t; drawModal();
 }
 
+// 閲覧用：見るだけ（操作ボタンなし）
+function drawViewTab(c,cs){
+  const t=c.teams.length,dn=Math.min(cs.current,t),rem=t-dn;
+  if(!t) return `<div style="text-align:center;padding:2rem 1rem;color:#8A857C;font-size:13px">このコートは使用していません</div>`;
+  const rows=c.teams.map((tm,i)=>{
+    const isDn=i<dn,isCur=!cs.stopped&&i===dn&&dn<t;
+    return `<div class="teamrow${isDn?' done':isCur?' cur':''}" style="cursor:default">
+      <span class="ti">${i+1}</span><span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>
+      ${isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${PAL.run};flex-shrink:0">演武中</span>`:''}
+    </div>`;}).join('');
+  const sBanner=cs.stopped?`<div class="stopbanner"><div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div></div>`:'';
+  const done=dn>=t;
+  const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:rem<=3&&dn>0?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
+  return `${sBanner}
+    <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
+    <div class="teamlist">${rows}</div>`;
+}
+
 function drawProgTab(c,cs){
   const t=c.teams.length,dn=cs.current,rem=t-dn;
-  if(!t) return `<div style="text-align:center;padding:2rem;color:#bbb;font-size:13px">チームが設定されていません。<br><button class="mbtn" style="margin-top:.75rem" onclick="switchMTab('edit')">✏️ 設定する</button></div>`;
+  if(!t) return `<div style="text-align:center;padding:2rem 1rem;color:#8A857C;font-size:13px">まだ出場組が登録されていません${MODE==='admin'?`<br><button class="mbtn p" style="margin-top:1rem" onclick="switchMTab('edit')">出場組を登録する</button>`:''}</div>`;
   const rows=c.teams.map((tm,i)=>{
     const isDn=i<dn,isCur=!cs.stopped&&i===dn&&dn<t;
     return `<div class="teamrow${isDn?' done':isCur?' cur':''}" onclick="toggleTeam(${i})">
       <span class="ti">${i+1}</span><span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>
-      ${isDn?'<span style="color:#1D9E75">✓</span>':isCur?'<span style="color:#378ADD">▶</span>':''}
+      ${isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${PAL.run};flex-shrink:0">演武中</span>`:''}
     </div>`;}).join('');
-  const sBanner=cs.stopped?`<div class="stopbanner"><span style="font-size:18px;flex-shrink:0">⚠️</span>
-    <div><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div>
-    <button class="mbtn s" style="margin-left:auto;flex-shrink:0" onclick="doResume()">▶ 再開</button></div>`:'';
+  const sBanner=cs.stopped?`<div class="stopbanner">
+    <div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div>
+    <button class="mbtn s" style="flex-shrink:0" onclick="doResume()">再開する</button></div>`:'';
   const sSec=!cs.stopped&&stopFormOpen?`<div class="stopform">
-    <div style="font-size:12px;font-weight:600;color:#E24B4A;margin-bottom:8px">⏸ 競技停止理由（省略可）</div>
+    <div style="font-size:12px;font-weight:600;color:${PAL.stop};margin-bottom:8px;letter-spacing:.06em">停止の理由（省略できます）</div>
     <textarea id="stopinp" placeholder="例：選手の体調不良"></textarea>
-    <div style="display:flex;gap:6px">
-      <button class="mbtn d" onclick="doStop()">✓ 停止を確定</button>
-      <button class="mbtn" onclick="stopFormOpen=false;drawModal()">キャンセル</button>
+    <div style="display:flex;gap:8px">
+      <button class="mbtn d" style="flex:1;justify-content:center" onclick="doStop()">停止を確定</button>
+      <button class="mbtn" style="flex:1;justify-content:center" onclick="stopFormOpen=false;drawModal()">キャンセル</button>
     </div></div>`:'';
-  const remTxt=!cs.stopped&&dn>0&&rem>0&&rem<=3?`<span style="font-weight:600;color:${rem===1?'#BA7517':'#EF9F27'}">（残り${rem}組）</span>`:'';
+  const done=dn>=t;
+  const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:rem<=3&&dn>0?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
   return `${sBanner}
-    <div style="font-size:12px;color:#999;margin-bottom:10px">${esc(PROG_DATA.currentRound)} ／ ${dn}/${t} 完了 ${remTxt}</div>
+    <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
     <div class="macts">
-      <button class="mbtn" onclick="prevTeam()">← 前へ</button>
-      <button class="mbtn p" onclick="nextTeam()">次へ →</button>
-      ${!cs.stopped&&!stopFormOpen?`<button class="mbtn d" onclick="stopFormOpen=true;drawModal()">⏸ 停止</button>`:''}
+      <button class="mbtn" onclick="prevTeam()" ${dn<=0?'disabled':''}>戻す</button>
+      <button class="mbtn p" onclick="nextTeam()" ${done||cs.stopped?'disabled':''}>${done?'終了':'次の組へ'}</button>
+      ${!cs.stopped&&!stopFormOpen&&!done?`<button class="mbtn d" onclick="stopFormOpen=true;drawModal()">競技を停止する</button>`:''}
     </div>${sSec}<div class="teamlist">${rows}</div>`;
 }
 
@@ -974,17 +1343,18 @@ function drawEditTab(c){
     <button class="addbtn" style="margin:.5rem 0" onclick="addERow('et','etrows')">＋ 行を追加</button>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem">
       <button class="mbtn" onclick="closeModal()">キャンセル</button>
-      <button class="mbtn p" onclick="saveEdit()">保存</button>
+      <button class="mbtn p" onclick="saveEdit()">保存する</button>
     </div></div>`;
 }
 
 function commitEdit(){
-  const c=(TD.courts[PROG_DATA.currentRound]||[]).find(x=>x.id===modalCourtId); if(!c)return;
+  const c=(TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId); if(!c)return;
   const el=$('etcat'); if(el) c.cat=el.value.trim();
   const teams=collectERows('et'); c.teams=teams;
-  const cs=progCS(PROG_DATA.currentRound,modalCourtId); if(cs.current>teams.length) cs.current=teams.length;
+  const cs=progCS(curRound(),modalCourtId); if(cs.current>teams.length) cs.current=teams.length;
 }
 function saveEdit(){
+  if(!isAdmin()) return;
   commitEdit(); saveMeta(); saveProg(); modalTab='prog'; drawModal(); renderDash();
 }
 
@@ -1017,27 +1387,32 @@ function collectERows(p){
 // 進行操作
 // ─────────────────────────────────────────
 function doStop(){
+  if(!canOperate()) return;
   const inp=$('stopinp');
-  const cs=progCS(PROG_DATA.currentRound,modalCourtId);
+  const cs=progCS(curRound(),modalCourtId);
   cs.stopped=true; cs.stopReason=(inp?inp.value.trim():'')||'競技停止中';
   saveProg(); drawModal(); renderDash();
 }
 function doResume(){
-  const cs=progCS(PROG_DATA.currentRound,modalCourtId);
+  if(!canOperate()) return;
+  const cs=progCS(curRound(),modalCourtId);
   cs.stopped=false; cs.stopReason='';
   saveProg(); drawModal(); renderDash();
 }
 function nextTeam(){
-  const cs=progCS(PROG_DATA.currentRound,modalCourtId);
-  const c=(TD.courts[PROG_DATA.currentRound]||[]).find(x=>x.id===modalCourtId);
+  if(!canOperate()) return;
+  const cs=progCS(curRound(),modalCourtId);
+  const c=(TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId);
   if(c&&cs.current<c.teams.length){ cs.current++; saveProg(); drawModal(); renderDash(); }
 }
 function prevTeam(){
-  const cs=progCS(PROG_DATA.currentRound,modalCourtId);
+  if(!canOperate()) return;
+  const cs=progCS(curRound(),modalCourtId);
   if(cs.current>0){ cs.current--; saveProg(); drawModal(); renderDash(); }
 }
 function toggleTeam(idx){
-  const cs=progCS(PROG_DATA.currentRound,modalCourtId);
+  if(!canOperate()) return;
+  const cs=progCS(curRound(),modalCourtId);
   cs.current=idx<cs.current?idx:idx+1;
   saveProg(); drawModal(); renderDash();
 }
@@ -1045,7 +1420,9 @@ function toggleTeam(idx){
 // ─────────────────────────────────────────
 // 起動
 // ─────────────────────────────────────────
-renderHome();
+let _booted=false;
+show('<div class="loading">読み込み中...</div>');
+auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; renderHome(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
 </script>
 </body>
 </html>
