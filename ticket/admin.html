@@ -25,7 +25,7 @@
 <div class="wrap wide">
   <div class="top">
     <div><span class="mark">DEVAN<small>チケット管理</small></span></div>
-    <div class="role" id="who"></div>
+    <div class="role"><a href="../" style="color:var(--muted);text-decoration:none">‹ DEVANへ戻る</a><span id="who" style="margin-left:10px"></span></div>
   </div>
 
   <div id="vLogin" class="card login hidden">
@@ -40,7 +40,7 @@
   <div id="vMain" class="hidden">
     <div class="row between" style="margin-bottom:10px">
       <div class="field" style="margin:0;min-width:260px"><select id="evSel"></select></div>
-      <div class="row"><button class="btn sm ghost" id="newEv">新しい大会を作る</button><button class="btn sm ghost" id="logout">ログアウト</button></div>
+      <div class="row"><button class="btn sm ghost" id="newEv">＋ 大会を追加</button><button class="btn sm ghost" id="logout">ログアウト</button></div>
     </div>
     <div class="tabs"><button class="on" data-tab="dash">集計</button><button data-tab="ev">大会設定</button><button data-tab="univ">大学コード</button><button data-tab="door">当日券・招待券</button><button data-tab="list">チケット一覧</button></div>
 
@@ -64,7 +64,13 @@
     <!-- 大会設定 -->
     <div id="tEv" class="hidden">
       <div class="card">
-        <h2>大会の設定</h2>
+        <h2>登録されている大会</h2>
+        <p class="lead">編集したい大会の「選択」を押すと下の設定欄に表示されます。別の大会を作るときは「＋ 新しい大会を追加」を押してから入力してください（既存の大会の名前を書き換えると、その大会が上書きされます）。</p>
+        <div class="tblwrap"><table class="tbl" id="evTbl"></table></div>
+        <div class="row" style="margin-top:10px"><button class="btn" id="newEv2">＋ 新しい大会を追加</button></div>
+      </div>
+      <div class="card">
+        <h2 id="evFormTitle">大会の設定</h2>
         <div class="grid2">
           <div class="field"><label>大会名</label><input id="eName"></div>
           <div class="field"><label>大会ID（URLに使う英数字。作成後は変更不可）</label><input id="eId" placeholder="例: zennihon60"></div>
@@ -81,7 +87,7 @@
           <label class="switch"><input type="checkbox" id="eSaleOpen" checked> 前売券の販売と無料発行を受け付ける</label>
           <label class="switch"><input type="checkbox" id="eCurrent"> この大会を「現在の大会」にする（URLに大会IDが無いときに表示される）</label>
         </div>
-        <div class="row"><button class="btn" id="eSave">保存する</button><span class="msg" id="eMsg"></span></div>
+        <div class="row"><button class="btn" id="eSave">保存する</button><button class="btn ghost" id="eDelete">この大会を削除</button><span class="msg" id="eMsg"></span></div>
       </div>
     </div>
 
@@ -164,7 +170,7 @@
 (function(){
   const {db, auth, TS, KIND, esc, qrSvg, ticketUrl, ticketNo, fmtTime, newTid, newCode, download, csv, baseUrl} = TK;
   const $ = id => document.getElementById(id);
-  let EID = null, PUB = {}, UNIVS = {}, TICKETS = {}, COUNTS = {}, CURRENT = null, user = null;
+  let EID = null, PUB = {}, UNIVS = {}, TICKETS = {}, COUNTS = {}, CURRENT = null, user = null, EVENTS = [];
   const refs = [];
 
   auth.onAuthStateChanged(async u => {
@@ -188,17 +194,31 @@
     const [evs, cur] = await Promise.all([db.ref('tk/events').once('value'), db.ref('tk/config/currentEvent').once('value')]);
     CURRENT = cur.val();
     const list = []; evs.forEach(s => list.push({ id:s.key, pub:s.child('pub').val()||{} }));
+    EVENTS = list; renderEvTable();
     $('evSel').innerHTML = list.map(e => `<option value="${esc(e.id)}">${esc(e.pub.name||e.id)}${e.id===CURRENT?'（現在の大会）':''}</option>`).join('') || '<option value="">大会がありません（「新しい大会を作る」）</option>';
     const want = keep || EID || CURRENT || (list[0]&&list[0].id);
     if (want && list.some(e=>e.id===want)) $('evSel').value = want;
     selectEvent($('evSel').value);
   }
   $('evSel').onchange = () => selectEvent($('evSel').value);
-  $('newEv').onclick = () => { selectEvent(null); document.querySelector('.tabs button[data-tab=ev]').click(); $('eId').value=''; $('eName').focus(); };
+  const startNew = () => { selectEvent(null); document.querySelector('.tabs button[data-tab=ev]').click(); $('eId').value=''; $('eMsg').textContent=''; $('evFormTitle').textContent='新しい大会を作成'; $('eDelete').classList.add('hidden'); $('eName').focus(); window.scrollTo({top:$('evFormTitle').offsetTop-80, behavior:'smooth'}); };
+  $('newEv').onclick = startNew; $('newEv2').onclick = startNew;
+  function renderEvTable(){
+    $('evTbl').innerHTML = '<tr><th>大会名</th><th>ID</th><th>日付</th><th>受付</th><th></th></tr>' + EVENTS.map(e => `<tr${e.id===EID?' style="background:var(--gold-bg)"':''}><td>${esc(e.pub.name||'')}${e.id===CURRENT?' <span class="tag gold">現在の大会</span>':''}</td><td>${esc(e.id)}</td><td>${esc(e.pub.date||'')}</td><td>${e.pub.saleOpen===false?'<span class="tag">停止中</span>':'<span class="tag ok">受付中</span>'}</td><td><button class="btn xs ghost" onclick="_e.pick('${esc(e.id)}')">${e.id===EID?'編集中':'選択'}</button></td></tr>`).join('') || '<tr><td class="muted">まだありません。「＋ 新しい大会を追加」から作成してください。</td></tr>';
+  }
+  window._e = { pick: id => { $('evSel').value = id; selectEvent(id); $('evFormTitle').textContent = '大会の設定'; $('eDelete').classList.remove('hidden'); renderEvTable(); } };
+  $('eDelete').onclick = async () => {
+    if (!EID) return; const e = EVENTS.find(x=>x.id===EID); const n = Object.keys(TICKETS).length;
+    if (prompt(`大会「${e?e.pub.name:EID}」を削除します。大学コードとチケット（${n}件）もすべて消えます。\n確認のため 削除 と入力してください。`) !== '削除') return;
+    const upd = { [`tk/events/${EID}`]: null, [`tk/tickets/${EID}`]: null, [`tk/counts/${EID}`]: null }; if (CURRENT===EID) upd['tk/config/currentEvent'] = null;
+    try { await db.ref().update(upd); EID = null; await loadEvents(); document.querySelector('.tabs button[data-tab=ev]').click(); }
+    catch(err){ console.error(err); $('eMsg').className='msg'; $('eMsg').textContent='削除できませんでした。'; }
+  };
   function selectEvent(eid){
     refs.forEach(r => r.off()); refs.length = 0;
     EID = eid; PUB={}; UNIVS={}; TICKETS={}; COUNTS={};
     $('eId').disabled = !!eid;
+    $('evFormTitle').textContent = eid ? '大会の設定' : '新しい大会を作成'; $('eDelete').classList.toggle('hidden', !eid); renderEvTable();
     if (!eid) { fillEvForm({}); render(); return; }
     const sub = (path, fn) => { const r = db.ref(path); r.on('value', s => { fn(s.val()||{}); render(); }); refs.push(r); };
     sub(`tk/events/${eid}/pub`, v => { PUB = v; fillEvForm(v); });
