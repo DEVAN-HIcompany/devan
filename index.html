@@ -228,6 +228,9 @@ button:active{transform:scale(.985)}
 .cccard:not(.set) .ccc{color:var(--muted);font-weight:400}
 
 
+.statline{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:.55rem .9rem;background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:10px;margin-bottom:.9rem;letter-spacing:.03em}
+.statline b{font-family:var(--serif);font-size:15px;color:var(--ink);margin-right:2px}
+.statlab{font-size:10px;letter-spacing:.14em;color:var(--gold);font-weight:600}
 /* ── 観客用 ── */
 .sbox{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:1rem}
 @media(min-width:600px){.sbox{grid-template-columns:2fr 1fr}}
@@ -356,6 +359,35 @@ let viewRound = null; // 進行用・閲覧用で見ているラウンド（端�
 let isAdmin = () => MODE==='admin' && ROLE==='admin' && !!auth.currentUser;
 let canOperate = () => (MODE==='admin'||MODE==='operator') && !!auth.currentUser;
 const ROLES = db.ref('sj/roles');
+
+// ─────────────────────────────────────────
+// 観客用の閲覧数カウンタ（sj/stats/{大会id}）: opens=開いた回数, devices=端末数, searches=検索回数, favs=お気に入り登録, courtViews=コート詳細
+//  ・観客用でしか数えない。失敗しても画面には影響させない
+// ─────────────────────────────────────────
+const STATS = id => db.ref('sj/stats/'+id);
+function deviceId(){ try{ let d=localStorage.getItem('sj_dev'); if(!d){ d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); localStorage.setItem('sj_dev',d); } return d; }catch(e){ return 'd'+Math.random().toString(36).slice(2,10); } }
+function stat(key){
+  if(MODE!=='spectator'||!CUR_ID) return;
+  try{ STATS(CUR_ID).child(key).transaction(v=>(v||0)+1).catch(()=>{}); }catch(e){}
+}
+function statDevice(){
+  if(MODE!=='spectator'||!CUR_ID) return;
+  try{ STATS(CUR_ID).child('devices/'+deviceId()).set(Date.now()).catch(()=>{}); }catch(e){}
+}
+let statSearchTimer=null, statLastQ='';
+function statSearch(q){
+  clearTimeout(statSearchTimer);
+  statSearchTimer=setTimeout(()=>{ const n=(q||'').trim(); if(n&&n!==statLastQ){ statLastQ=n; stat('searches'); } },800);
+}
+let STATS_CACHE=null;
+function loadStats(id){
+  return STATS(id).once('value').then(sn=>{ const v=sn.val()||{}; STATS_CACHE={opens:v.opens||0, devices:v.devices?Object.keys(v.devices).length:0, searches:v.searches||0, favs:v.favs||0, courtViews:v.courtViews||0}; return STATS_CACHE; }).catch(()=>{ STATS_CACHE=null; });
+}
+function statsLineHTML(){
+  if(MODE!=='admin'||!STATS_CACHE) return '';
+  const c=STATS_CACHE;
+  return `<div class="statline"><span class="statlab">観客用の利用</span><span><b>${c.devices}</b> 台</span><span><b>${c.opens}</b> 回表示</span><span><b>${c.searches}</b> 回検索</span><span><b>${c.favs}</b> お気に入り</span><span><b>${c.courtViews}</b> コート詳細</span><button class="implink" onclick="loadStats(CUR_ID).then(renderDash)">更新</button></div>`;
+}
 // 権限の判定: sj/roles が無ければログイン済み全員を管理者扱い（初期状態）。あれば sj/roles/{uid} が 'admin' の人だけ管理者
 async function loadRole(){
   const u=auth.currentUser; if(!u){ ROLE=null; return null; }
@@ -653,6 +685,9 @@ function openTournament(id){
       TD.courts[r].forEach(c=>{ if(!c.teams) c.teams=[]; });
     });
     PROG_DATA = { currentRound: TD.rounds[0], courts: {} };
+    STATS_CACHE=null;
+    if(MODE==='spectator'){ stat('opens'); statDevice(); }
+    if(MODE==='admin'){ loadStats(id).then(()=>renderDash()); }
     renderDash();
     startProgListener(id);
   }).catch(e=>{
@@ -1256,7 +1291,7 @@ function getFavs(){ try{ return JSON.parse(localStorage.getItem(favKey())||'[]')
 function setFavs(a){ try{ localStorage.setItem(favKey(), JSON.stringify(a)); }catch(e){} }
 const entryId = e => e.r+'|'+e.c+'|'+e.i;
 function isFav(e){ return getFavs().includes(entryId(e)); }
-function toggleFav(id){ let f=getFavs(); f = f.includes(id) ? f.filter(x=>x!==id) : [...f,id]; setFavs(f); renderSpectator(); }
+function toggleFav(id){ let f=getFavs(); const add=!f.includes(id); f = add ? [...f,id] : f.filter(x=>x!==id); setFavs(f); if(add) stat('favs'); renderSpectator(); }
 
 // 全出番を一覧化
 function allEntries(){
@@ -1293,7 +1328,7 @@ function renderSpectator(){
   const row=e=>specRowHTML(e,favs);
   const body = specTab==='courts' ? '' : `
     <div class="sbox">
-      <input class="inp" id="specq" type="search" placeholder="大学名 か 氏名 を入力（例：明治、山田）" value="${esc(specQ)}" oninput="specQ=this.value;renderSpectatorResults()" autocomplete="off">
+      <input class="inp" id="specq" type="search" placeholder="大学名 か 氏名 を入力（例：明治、山田）" value="${esc(specQ)}" oninput="specQ=this.value;renderSpectatorResults();statSearch(this.value)" autocomplete="off">
       <select class="inp" id="specu" onchange="specUniv=this.value;renderSpectatorResults()">
         <option value="">大学から選ぶ</option>${univs.map(u=>`<option value="${esc(u)}"${u===specUniv?' selected':''}>${esc(u)}</option>`).join('')}
       </select>
@@ -1373,6 +1408,7 @@ function renderDash(){
       </div>
       <div class="rtabs">${rHTML}</div>
     </div>
+    ${statsLineHTML()}
     <div class="sumbar">${buildSummary()}</div>
     <div class="legend">
       <div class="legitem"><div class="legdot" style="background:${PAL.done}"></div>完了</div>
@@ -1501,6 +1537,7 @@ function doAddRound(){
 // ─────────────────────────────────────────
 function openCourtModal(id){
   modalCourtId=id; modalTab='prog'; stopFormOpen=false;
+  if(MODE==='spectator') stat('courtViews');
   drawModal(); $('ov').classList.add('open');
 }
 function closeModal(){
