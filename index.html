@@ -509,6 +509,10 @@ function renderHome(){
         <div><div class="hbtn-l">学生連盟の方</div><div class="hbtn-d">閲覧用・進行用・管理用</div></div>
         <div class="hbtn-r">›</div>
       </button>
+      <button class="hbtn" onclick="location.href='./ticket/'">
+        <div><div class="hbtn-l">入場チケット</div><div class="hbtn-d">前売券の購入・拳士の無料チケット・お持ちのチケット</div></div>
+        <div class="hbtn-r">›</div>
+      </button>
       ${installHintHTML()}
       <div class="credit"><a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">Produced by <b>H.I. Company</b></a><span>店舗・団体のAI業務自動化</span></div>
     </div></div>`);
@@ -535,6 +539,12 @@ function renderFedHome(){
         </button>
         <button class="hbtn mini" onclick="enterAdmin()">
           <div><div class="hbtn-l">管理用</div><div class="hbtn-d">運営${lg}</div></div>
+        </button>
+        <button class="hbtn mini" onclick="location.href='./ticket/gate.html'">
+          <div><div class="hbtn-l">入口受付</div><div class="hbtn-d">チケットのQR読み取り${lg}</div></div>
+        </button>
+        <button class="hbtn mini" onclick="location.href='./ticket/admin.html'">
+          <div><div class="hbtn-l">チケット管理</div><div class="hbtn-d">大会設定・集計${lg}</div></div>
         </button>
       </div>
       <div class="hfoot"><button class="implink" onclick="renderHome()">最初の画面に戻る</button>${u?` ・ ${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button>`:''}</div>
