@@ -2,7 +2,7 @@
 //  ・index.html は「まずネットワーク、だめならキャッシュ」→ 更新がすぐ反映され、圏外でも直前の画面は開ける
 //  ・アイコンや設定ファイルは「まずキャッシュ」
 //  ・Firebase など外部への通信はそのまま通す
-const CACHE = 'sj-app-v7';
+const CACHE = 'sj-app-v8';
 const SHELL = ['./', './index.html'];
 
 self.addEventListener('install', e => {
@@ -16,6 +16,11 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Firebase・CDN はそのまま
+  if (url.pathname.includes('/ticket/')) { // チケット画面は「まずネットワーク」。圏外なら直前に開いた同じURLを返す
+    e.respondWith(fetch(req).then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res; })
+      .catch(() => caches.match(req)));
+    return;
+  }
   const isPage = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('index.html');
   if (isPage) {
     e.respondWith(fetch(req).then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', copy)); return res; })
