@@ -102,6 +102,7 @@ button:active{transform:scale(.985)}
 .rtab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .rtabadd{padding:9px 13px;border:1px dashed var(--line2);border-radius:8px;font-size:12.5px;font-weight:500;background:none;color:var(--muted);white-space:nowrap;letter-spacing:.03em}
 .rtabadd:hover{border-color:var(--ink);color:var(--ink)}
+.rtabadd.del{color:var(--stop);border-color:#E7CACA}.rtabadd.del:hover{background:var(--stop-bg);border-color:var(--stop);color:var(--stop)}
 .sumbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:1rem}
 @media(max-width:480px){.sumbar{gap:5px}}
 .sumcard{min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:.8rem .3rem .7rem;text-align:center;box-shadow:var(--sh);position:relative}
@@ -1118,7 +1119,7 @@ function renderDash(){
   if(!TD||!PROG_DATA) return;
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>`:'');
+  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -1228,6 +1229,21 @@ function openAddRoundModal(){
       <button class="mbtn p" onclick="doAddRound()">追加</button>
     </div>`;
   $('ov').classList.add('open');
+}
+// 表示中のラウンドを削除（コート割と進行記録をまとめて消す）
+function deleteCurrentRound(){
+  if(!isAdmin()) return;
+  const r=curRound(); if(!r) return;
+  if(TD.rounds.length<=1){ alert('ラウンドは最低1つ必要です'); return; }
+  const courts=(TD.courts[r]||[]).filter(c=>c.teams&&c.teams.length).length;
+  if(!confirm(`ラウンド「${r}」を削除しますか？\n\nこのラウンドのコート割（使用中 ${courts} コート）と進行の記録がすべて消えます。元に戻せません。`)) return;
+  TD.rounds=TD.rounds.filter(x=>x!==r);
+  delete TD.courts[r];
+  Object.keys(PROG_DATA.courts||{}).forEach(k=>{ if(k.startsWith(r+'_')) delete PROG_DATA.courts[k]; });
+  if(PROG_DATA.currentRound===r) PROG_DATA.currentRound=TD.rounds[0];
+  viewRound=null;
+  saveMeta(); saveProg(); closeModal(); renderDash();
+  showToast(`ラウンド「${r}」を削除しました`);
 }
 function doAddRound(){
   if(!isAdmin()) return;
