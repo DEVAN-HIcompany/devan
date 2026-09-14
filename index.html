@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4EF">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest?v=devan2">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=devan2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=devan2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -60,6 +60,11 @@ button:active{transform:scale(.985)}
 .hbtn.mini .hbtn-l{font-size:14px}
 .hbtn.mini .hbtn-d{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hfoot{margin-top:1.25rem;font-size:12px;color:var(--muted);letter-spacing:.03em}
+.credit{margin-top:2.2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:11px;color:var(--muted);letter-spacing:.06em;display:flex;flex-direction:column;gap:2px;align-items:center}
+.credit a{color:var(--muted);text-decoration:none}
+.credit a:hover{color:var(--ink)}
+.credit b{font-family:'Cormorant Garamond',var(--serif);font-size:14px;letter-spacing:.12em;color:var(--ink);font-weight:600}
+.credit span{font-size:10px;color:#B5B0A6}
 .installbar{margin-top:1.5rem;padding:.7rem 1rem;border:1px dashed var(--line2);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.8}
 .installbar b{color:var(--ink)}
 .modetag{font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--gold);border:1px solid var(--gold2);border-radius:4px;padding:3px 7px;white-space:nowrap;flex-shrink:0}
@@ -504,6 +509,7 @@ function renderHome(){
         <div class="hbtn-r">›</div>
       </button>
       ${installHintHTML()}
+      <div class="credit"><a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">Produced by <b>H.I. Company</b></a><span>店舗・団体のAI業務自動化</span></div>
     </div></div>`);
 }
 function enterSpectator(){ MODE='spectator'; viewRound=null; specQ=''; specUniv=''; specTab='search'; renderList(); }
@@ -531,6 +537,7 @@ function renderFedHome(){
         </button>
       </div>
       <div class="hfoot"><button class="implink" onclick="renderHome()">最初の画面に戻る</button>${u?` ・ ${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button>`:''}</div>
+      <div class="credit"><a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">Produced by <b>H.I. Company</b></a><span>店舗・団体のAI業務自動化</span></div>
     </div></div>`);
 }
 function enterView(){ MODE='view'; viewRound=null; renderList(); }
@@ -1280,6 +1287,7 @@ function openSpecGuide(){
     ${specGuideHTML(false)}
     <div class="glegend"><span class="schip standby">待機中</span><span>コートがまだ始まっていない（1組目）</span><span class="schip now">演武中</span><span>いま演武している</span><span class="schip wait">あと3組</span><span>3組あとに出番</span><span class="schip done">終了</span><span>演武が終わった</span><span class="schip stopped">停止中</span><span>コートが一時中断</span></div>
     <div class="gnote">出番の行を押すと、そのコートの全出場組と進み具合が見られます。<br>お気に入りはこのスマホにだけ記憶されます。</div>
+    <div class="gnote" style="margin-top:.6rem;font-size:11px">このアプリ「DEVAN」は H.I. Company が開発・提供しています。大会運営でのご利用のご相談は <a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener" style="color:var(--gold)">hi-companyjapan.jp</a> まで。</div>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="mbtn p" onclick="closeModal()">わかりました</button></div>`;
   $('ov').classList.add('open');
 }
@@ -1728,7 +1736,7 @@ function installHintHTML(){
 }
 async function doInstall(){ if(!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice; installPrompt=null; const b=$('installbar'); if(b) b.hidden=true; }
 if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
-  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(e=>console.warn('sw',e)); });
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{ try{ r.update(); }catch(e){} }).catch(e=>console.warn('sw',e)); });
 }
 
 let _booted=false;

@@ -2,8 +2,8 @@
 //  ・index.html は「まずネットワーク、だめならキャッシュ」→ 更新がすぐ反映され、圏外でも直前の画面は開ける
 //  ・アイコンや設定ファイルは「まずキャッシュ」
 //  ・Firebase など外部への通信はそのまま通す
-const CACHE = 'sj-app-v4';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+const CACHE = 'sj-app-v5';
+const SHELL = ['./', './index.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
