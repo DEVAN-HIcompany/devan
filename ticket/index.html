@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>入場チケット ― DEVAN</title>
+<meta name="description" content="少林寺拳法 学生大会の入場チケット。前売券の購入、学生連盟拳士・出場拳士の無料チケット発行、チケットの表示。">
+<link rel="icon" href="../devan-192.png">
+<link rel="apple-touch-icon" href="../devan-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Cormorant+Garamond:wght@600&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .hero{padding:6px 0 4px}
+  .hero .sub{font-family:var(--serif);font-size:13px;color:var(--gold);letter-spacing:.24em;margin-bottom:6px}
+  .choice{display:grid;gap:12px}
+  .choice .card{margin:0}
+  .choice .card .head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+  .choice .card .head h2{border:0;padding:0;margin:0}
+  .mine .list li{cursor:pointer}
+  .mine .list li:hover{background:var(--bg2);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:8px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 4px}
+  .steps div{background:var(--bg2);border-radius:10px;padding:10px 8px;font-size:12px;color:var(--ink2);text-align:center;line-height:1.5}
+  .steps div b{display:block;font-family:var(--serif);font-size:15px;color:var(--gold);margin-bottom:2px}
+  .tk-actions{display:grid;gap:8px;margin-top:14px}
+  .center{text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><span class="mark">DEVAN<small>入場チケット</small></span></div>
+    <div class="role" id="topRole">学生連盟</div>
+  </div>
+
+  <!-- 読み込み中 -->
+  <div id="vLoading" class="card center"><p class="muted" id="loadingMsg">読み込んでいます…</p></div>
+
+  <!-- 大会ページ -->
+  <div id="vEvent" class="hidden">
+    <div class="hero">
+      <div class="sub">ENTRANCE TICKET</div>
+      <div class="ev"><h1 class="name" id="evName"></h1><div class="meta" id="evMeta"></div></div>
+    </div>
+
+    <div class="mine card hidden" id="mineCard">
+      <h2>お持ちのチケット</h2>
+      <p class="lead">この端末で発行・購入したチケットです。タップすると表示します。</p>
+      <ul class="list" id="mineList"></ul>
+    </div>
+
+    <div class="choice">
+      <div class="card">
+        <div class="head"><h2>観客の方</h2><span class="tag info">前売券</span></div>
+        <p class="lead">ご家族・OBOG・一般の方はこちら。オンラインでお支払いいただくと、その場でQRチケットが表示されます。</p>
+        <div class="row between" style="margin:8px 0 12px">
+          <div class="price" id="evPrice"></div>
+          <div class="muted" id="evPriceNote">1名につき</div>
+        </div>
+        <div id="buyWrap">
+          <a class="btn w gold" id="buyBtn" href="#">前売券を購入する</a>
+          <p class="muted" style="margin:8px 0 0">クレジットカード等でお支払いいただけます（決済は Stripe の安全なページで行います）。購入後、この画面に戻るとチケットが表示されます。</p>
+        </div>
+        <div id="buyClosed" class="note hidden"></div>
+        <hr class="sep">
+        <h3>当日券</h3>
+        <p class="lead" style="margin:0"><span id="evDoorPrice"></span> 会場入口の受付でお買い求めください（現金）。<span id="evDoorNote"></span></p>
+      </div>
+
+      <div class="card">
+        <div class="head"><h2>拳士の方</h2><span class="tag ok">無料</span></div>
+        <p class="lead">学生連盟に所属する拳士、および本大会に出場する拳士は入場無料です。所属大学の「大学コード」を入力して、ご自身のチケットを発行してください。</p>
+        <div class="steps"><div><b>1</b>大学コードを入力</div><div><b>2</b>氏名を入力</div><div><b>3</b>入口でQRを見せる</div></div>
+        <form id="freeForm" autocomplete="off">
+          <div class="field"><label>大学コード</label><input id="fCode" placeholder="例: ABC234" maxlength="8" style="text-transform:uppercase;letter-spacing:.2em" inputmode="latin"><div class="hint">主将・主務から連絡されている6文字のコードです。分からない場合は所属大学の幹部にお尋ねください。</div></div>
+          <div class="field" id="fUnivWrap" style="display:none"><label>所属</label><div id="fUniv" style="font-size:16px;font-weight:600;padding:4px 0"></div></div>
+          <div class="field"><label>氏名（フルネーム）</label><input id="fName" placeholder="例: 少林 太郎" maxlength="40"></div>
+          <button class="btn w ok" type="submit" id="fBtn">無料チケットを発行する</button>
+          <div class="msg" id="fMsg"></div>
+        </form>
+        <p class="muted" style="margin-top:10px">お一人1枚です。発行されたチケットはこの端末に保存されます。入口で本人確認をお願いする場合があります。</p>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:14px">
+      <b>ご注意</b><br>
+      ・チケットは入場時に1回だけ有効です。他の方への譲渡・転売はご遠慮ください。<br>
+      ・QRコードはスクリーンショットでも入場できます。電波の弱い場所に備えて保存をおすすめします。<br>
+      ・未就学児は無料です。
+    </div>
+  </div>
+
+  <!-- チケット表示 -->
+  <div id="vTicket" class="hidden">
+    <div class="ticket" id="tkCard">
+      <div class="stamp hidden" id="tkStamp">入場済</div>
+      <div class="head">
+        <div class="kind" id="tkKind"></div>
+        <div class="ev" id="tkEv"></div>
+        <div class="meta" id="tkMeta"></div>
+      </div>
+      <div class="body">
+        <div class="who" id="tkWho"></div>
+        <div class="qr" id="tkQr"></div>
+        <div class="no" id="tkNo"></div>
+        <div class="state" id="tkState"></div>
+      </div>
+      <div class="foot">入口の係にこの画面をお見せください。画面の明るさを上げると読み取りが速くなります。</div>
+    </div>
+    <div class="tk-actions">
+      <button class="btn ghost" id="tkSave">この端末に保存する</button>
+      <a class="btn ghost" id="tkBack" href="./">大会ページへ戻る</a>
+    </div>
+  </div>
+
+  <!-- 決済後 -->
+  <div id="vClaim" class="card center hidden">
+    <h2 style="border:0">お支払いを確認しています…</h2>
+    <p class="muted" id="claimMsg">数秒お待ちください。</p>
+    <div id="claimRetry" class="hidden"><button class="btn ghost" onclick="location.reload()">もう一度確認する</button></div>
+  </div>
+
+  <div id="vError" class="card hidden"><h2>表示できません</h2><p id="errMsg" class="lead"></p><a class="btn ghost" href="./">大会ページへ</a></div>
+
+  <div class="foot"><a href="../">DEVAN ― 出番が、わかる。</a>　Produced by <a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">H.I. Company</a></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="common.js"></script>
+<script>
+(function(){
+  const {db, TS, KIND, Q, esc, qrSvg, ticketUrl, ticketNo, fmtTime, newTid, DEMO, fns} = TK;
+  const $ = id => document.getElementById(id);
+  const show = id => { ['vLoading','vEvent','vTicket','vClaim','vError'].forEach(v => $(v).classList.toggle('hidden', v!==id)); };
+  const MY_KEY = 'tk_my';
+  const myTickets = () => { try { return JSON.parse(localStorage.getItem(MY_KEY)||'[]'); } catch(_){ return []; } };
+  const saveMine = (eid, tid, label) => { const a = myTickets().filter(x => x.tid!==tid); a.unshift({eid, tid, label, at:Date.now()}); localStorage.setItem(MY_KEY, JSON.stringify(a.slice(0,20))); };
+  const fail = (m) => { $('errMsg').textContent = m; show('vError'); };
+  const goTicket = (eid, tid) => { location.href = `./?e=${encodeURIComponent(eid)}&t=${encodeURIComponent(tid)}${DEMO?'&demo=1':''}`; };
+  if (DEMO) document.querySelectorAll('a[href="./"]').forEach(a => a.href = './?demo=1');
+
+  let EID = null, PUB = null;
+
+  async function main(){
+    const sid = Q.get('session_id');
+    if (sid) return claim(sid);
+    EID = await TK.currentEventId();
+    if (!EID) return fail('現在、販売中の大会はありません。');
+    PUB = await TK.loadEventPub(EID);
+    if (!PUB) return fail('大会情報が見つかりません。');
+    if (Q.get('t')) return showTicket(EID, Q.get('t'));
+    renderEvent();
+  }
+
+  /* ---- 大会ページ ---- */
+  function renderEvent(){
+    document.title = `入場チケット ― ${PUB.name}`;
+    $('evName').textContent = PUB.name;
+    $('evMeta').textContent = [PUB.date, PUB.venue, PUB.open].filter(Boolean).join('　');
+    $('evPrice').innerHTML = `¥${Number(PUB.price||0).toLocaleString()}<small>税込</small>`;
+    $('evDoorPrice').textContent = `¥${Number(PUB.doorPrice||PUB.price||0).toLocaleString()}。`;
+    $('evDoorNote').textContent = PUB.doorNote || '';
+    const open = !!PUB.saleOpen && !!PUB.payLink;
+    $('buyWrap').classList.toggle('hidden', !open);
+    $('buyClosed').classList.toggle('hidden', open);
+    $('buyClosed').textContent = PUB.saleOpen ? '前売券のオンライン販売は準備中です。開始までしばらくお待ちください。' : '前売券の販売は終了しました。当日券を会場入口でお買い求めください。';
+    if (open) {
+      const u = new URL(PUB.payLink);
+      u.searchParams.set('client_reference_id', EID);
+      $('buyBtn').href = u.toString();
+    }
+    if (!PUB.saleOpen) { $('fBtn').disabled = true; $('fMsg').textContent = '無料チケットの発行は締め切りました。入口で所属をお伝えください。'; }
+    renderMine();
+    show('vEvent');
+  }
+  function renderMine(){
+    const list = myTickets().filter(x => x.eid === EID);
+    $('mineCard').classList.toggle('hidden', !list.length);
+    $('mineList').innerHTML = list.map(x => `<li data-t="${esc(x.tid)}"><span>${esc(x.label)}</span><span class="tag">${esc(ticketNo(x.kind||'', x.tid))}</span></li>`).join('');
+    $('mineList').querySelectorAll('li').forEach(li => li.onclick = () => { goTicket(EID, li.dataset.t); });
+  }
+
+  /* ---- 拳士の無料発行 ---- */
+  let univ = null, codeTimer = null;
+  $('fCode').addEventListener('input', () => {
+    const v = $('fCode').value.toUpperCase().replace(/[^A-Z0-9]/g,''); $('fCode').value = v; univ = null;
+    $('fUnivWrap').style.display='none'; $('fMsg').textContent='';
+    clearTimeout(codeTimer);
+    if (v.length >= 6) codeTimer = setTimeout(lookupCode, 250);
+  });
+  async function lookupCode(){
+    const code = $('fCode').value;
+    try {
+      const s = await db.ref(`tk/events/${EID}/codes/${code}`).once('value');
+      const uid = s.val();
+      if (!uid) { $('fMsg').textContent = 'このコードは登録されていません。大文字・数字をご確認ください。'; return; }
+      const us = await db.ref(`tk/events/${EID}/univs/${uid}/name`).once('value').catch(()=>null);
+      univ = { id: uid, name: (us && us.val()) || '' , code};
+      if (!univ.name) { // 大学名は管理者以外読めない設定でも動くように、コード側に名前があれば使う
+        const n = await db.ref(`tk/events/${EID}/codeNames/${code}`).once('value').catch(()=>null);
+        univ.name = (n && n.val()) || '登録済みの大学';
+      }
+      $('fUniv').textContent = univ.name; $('fUnivWrap').style.display='';
+      $('fName').focus();
+    } catch(e) { console.error(e); $('fMsg').textContent = 'コードを確認できませんでした。通信状況をご確認ください。'; }
+  }
+  $('freeForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const name = $('fName').value.trim().replace(/\s+/g,' ');
+    if (!univ) { $('fMsg').textContent = '大学コードを入力してください。'; return; }
+    if (name.length < 2) { $('fMsg').textContent = '氏名をフルネームで入力してください。'; return; }
+    // 同じ端末での重複発行を防ぐ
+    const dup = myTickets().find(x => x.eid===EID && x.kind==='free' && x.name===name);
+    if (dup) { goTicket(EID, dup.tid); return; }
+    $('fBtn').disabled = true; $('fMsg').textContent = '発行しています…'; $('fMsg').className='msg';
+    try {
+      const tid = await issueFree(univ, name);
+      saveMine(EID, tid, `${name}（${univ.name}）`); 
+      const a = myTickets(); a[0].kind='free'; a[0].name=name; localStorage.setItem(MY_KEY, JSON.stringify(a));
+      goTicket(EID, tid);
+    } catch(e) {
+      console.error(e);
+      const m = String(e && (e.code||e.message) || '');
+      $('fMsg').textContent = /PERMISSION|permission/.test(m) ? '発行できませんでした。大学の発行上限に達しているか、コードが無効になっています。所属大学の幹部にご確認ください。' : '発行できませんでした。通信状況をご確認のうえ、もう一度お試しください。';
+      $('fBtn').disabled = false;
+    }
+  });
+  async function issueFree(u, name){
+    // 大学ごとの発行数（counts）と チケットを同時に書く。counts は「+1 かつ上限以内」だけ許可されるルール
+    for (let i=0;i<4;i++){
+      const cs = await db.ref(`tk/counts/${EID}/${u.id}`).once('value');
+      const next = (cs.val()||0) + 1;
+      const tid = newTid();
+      const ticket = { kind:'free', qty:1, name, univ:u.id, univName:u.name, code:u.code, created:TS, used:0 };
+      try {
+        await db.ref().update({ [`tk/tickets/${EID}/${tid}`]: ticket, [`tk/counts/${EID}/${u.id}`]: next });
+        return tid;
+      } catch(e) { if (i===3 || !/PERMISSION|permission/.test(String(e.code||e.message))) throw e; await new Promise(r=>setTimeout(r, 200 + Math.random()*300)); }
+    }
+  }
+
+  /* ---- チケット表示 ---- */
+  let tRef = null;
+  async function showTicket(eid, tid){
+    if (!PUB) { PUB = await TK.loadEventPub(eid); if (!PUB) return fail('大会情報が見つかりません。'); }
+    tRef = db.ref(`tk/tickets/${eid}/${tid}`);
+    let first = true;
+    tRef.on('value', s => {
+      const t = s.val();
+      if (!t) { if (first) fail('このチケットは見つかりません。URL（QR）が正しいかご確認ください。'); return; }
+      first = false;
+      renderTicket(eid, tid, t);
+    }, err => { console.error(err); fail('チケットを読み込めませんでした。通信状況をご確認ください。'); });
+    $('tkSave').onclick = () => { const t = tRef._last; saveMine(eid, tid, whoLabel(t)); const a=myTickets(); a[0].kind=t.kind; a[0].name=t.name; localStorage.setItem(MY_KEY, JSON.stringify(a)); $('tkSave').textContent='保存しました'; };
+  }
+  function whoLabel(t){
+    if (t.kind==='free') return `${t.name}（${t.univName||''}）`;
+    if (t.kind==='pre') return `前売券 ${t.qty}名`;
+    if (t.kind==='comp') return `招待券 ${t.name||''} ${t.qty}名`;
+    return `当日券`;
+  }
+  function renderTicket(eid, tid, t){
+    tRef._last = t;
+    document.title = `${KIND[t.kind]?KIND[t.kind].label:'チケット'} ― ${PUB.name}`;
+    $('tkKind').textContent = (KIND[t.kind]||{}).label || 'チケット';
+    $('tkEv').textContent = PUB.name;
+    $('tkMeta').textContent = [PUB.date, PUB.venue].filter(Boolean).join('　');
+    const qty = Number(t.qty||1);
+    let who = '';
+    if (t.kind==='free') who = `${esc(t.name)}<small>${esc(t.univName||'')}</small>`;
+    else if (t.kind==='pre') who = `一般 ${qty}名様<small>${esc(t.name||'')}</small>`;
+    else if (t.kind==='comp') who = `${esc(t.name||'ご招待')}<small>${qty}名様${t.note?'　'+esc(t.note):''}</small>`;
+    else who = `当日券<small>${qty}名様</small>`;
+    $('tkWho').innerHTML = who;
+    if (!$('tkQr').dataset.done) { $('tkQr').innerHTML = qrSvg(ticketUrl(eid, tid), 4); $('tkQr').dataset.done='1'; }
+    $('tkNo').textContent = ticketNo(t.kind, tid);
+    const used = Number(t.used||0);
+    const allUsed = used >= qty;
+    $('tkCard').classList.toggle('used', allUsed || !!t.void);
+    $('tkStamp').classList.toggle('hidden', !(allUsed || t.void));
+    $('tkStamp').textContent = t.void ? '無効' : '入場済';
+    const st = $('tkState');
+    if (t.void) { st.textContent = 'このチケットは無効です'; st.className='state used'; }
+    else if (allUsed) { st.textContent = `入場済み ${fmtTime(t.usedAt)}`; st.className='state used'; }
+    else if (used>0) { st.textContent = `${used}名 入場済み／残り ${qty-used}名 有効`; st.className='state ok'; }
+    else { st.textContent = '有効（未使用）'; st.className='state ok'; }
+    const mine = myTickets().some(x => x.tid===tid);
+    $('tkSave').textContent = mine ? '保存済み' : 'この端末に保存する';
+    show('vTicket');
+  }
+
+  /* ---- 決済後（Stripe から戻ってきた） ---- */
+  async function claim(sid){
+    show('vClaim');
+    if (DEMO) { $('claimMsg').textContent='お試しモードでは決済は動きません。'; return; }
+    try {
+      if (!fns) throw new Error('functions unavailable');
+      const r = await fns.httpsCallable('claimSession')({ session_id: sid });
+      const d = r.data || {};
+      if (d.eid && d.tid) {
+        saveMine(d.eid, d.tid, `前売券 ${d.qty||1}名`); const a=myTickets(); a[0].kind='pre'; localStorage.setItem(MY_KEY, JSON.stringify(a));
+        goTicket(d.eid, d.tid);
+        return;
+      }
+      throw new Error(d.error || 'unknown');
+    } catch(e) {
+      console.error(e);
+      $('claimMsg').innerHTML = 'お支払いの確認に少し時間がかかっています。<br>数秒後に「もう一度確認する」を押してください。確認できない場合は、購入時のメールに届くチケットのリンクからご覧いただけます。';
+      $('claimRetry').classList.remove('hidden');
+    }
+  }
+
+  main().catch(e => { console.error(e); fail('読み込みに失敗しました。通信状況をご確認ください。'); });
+})();
+</script>
+</body>
+</html>
