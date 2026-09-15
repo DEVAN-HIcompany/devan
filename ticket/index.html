@@ -182,6 +182,7 @@
     <div id="claimRetry" class="hidden"><button class="btn ghost" onclick="location.reload()">もう一度確認する</button></div>
   </div>
 
+  <div id="vClosed" class="hidden"><div class="loader" style="min-height:40vh"><div class="ld-mark">DEVAN</div><div class="ld-rule" style="animation:none"></div><div class="ld-msg" style="letter-spacing:.1em;font-size:14px;color:var(--ink2)">現在、入場チケット・グッズの受付は行っていません</div><div class="muted" id="closedMsg" style="margin-top:10px;font-family:var(--sans);letter-spacing:0"></div><a class="btn ghost" href="../" style="margin-top:18px">DEVANへ戻る</a></div></div>
   <div id="vError" class="card hidden"><h2>表示できません</h2><p id="errMsg" class="lead"></p><a class="btn ghost" href="./">大会ページへ</a></div>
 
   <div class="foot"><a href="../">DEVAN ― 出番が、わかる。</a>　Produced by <a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">H.I. Company</a></div>
@@ -197,7 +198,7 @@
 (function(){
   const {db, TS, KIND, Q, esc, qrSvg, ticketUrl, ticketNo, fmtTime, newTid, DEMO, fns} = TK;
   const $ = id => document.getElementById(id);
-  const show = id => { ['vLoading','vEvent','vTicket','vClaim','vError','vThanks'].forEach(v => $(v).classList.toggle('hidden', v!==id)); };
+  const show = id => { ['vLoading','vEvent','vTicket','vClaim','vError','vThanks','vClosed'].forEach(v => $(v).classList.toggle('hidden', v!==id)); };
   const MY_KEY = 'tk_my';
   const myTickets = () => { try { return JSON.parse(localStorage.getItem(MY_KEY)||'[]'); } catch(_){ return []; } };
   const saveMine = (eid, tid, label) => { const a = myTickets().filter(x => x.tid!==tid); a.unshift({eid, tid, label, at:Date.now()}); localStorage.setItem(MY_KEY, JSON.stringify(a.slice(0,20))); };
@@ -210,6 +211,8 @@
   async function main(){
     const sid = Q.get('session_id');
     if (sid) return claim(sid);
+    const closed = (await db.ref('tk/config/closed').once('value').catch(()=>null)); const cv = closed && closed.val();
+    if (cv && cv.closed && !Q.get('t')) { $('closedMsg').textContent = cv.message||''; show('vClosed'); return; }
     EID = await TK.currentEventId();
     if (!EID) return fail('現在、販売中の大会はありません。');
     PUB = await TK.loadEventPub(EID);

@@ -70,6 +70,7 @@
   </div>
 
   <div id="vClaim" class="hidden"><div class="loader" style="min-height:30vh;padding-bottom:0"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">お支払いを確認しています</div></div><p class="muted" id="claimMsg" style="text-align:center">数秒お待ちください。</p><div id="claimRetry" class="hidden"><button class="btn ghost" onclick="location.reload()">もう一度確認する</button></div></div>
+  <div id="vClosed" class="hidden"><div class="loader" style="min-height:40vh"><div class="ld-mark">DEVAN</div><div class="ld-rule" style="animation:none"></div><div class="ld-msg" style="letter-spacing:.1em;font-size:14px;color:var(--ink2)">現在、入場チケット・グッズの受付は行っていません</div><div class="muted" id="closedMsg" style="margin-top:10px;font-family:var(--sans);letter-spacing:0"></div><a class="btn ghost" href="../" style="margin-top:18px">DEVANへ戻る</a></div></div>
   <div id="vError" class="card hidden"><h2>表示できません</h2><p id="errMsg" class="lead"></p><a class="btn ghost" href="goods.html">グッズ一覧へ</a></div>
 
   <div class="foot" id="legal"></div>
@@ -87,7 +88,7 @@
 (function(){
   const {db, Q, esc, yen, qrSvg, fmtTime, DEMO, fns, TS, newTid} = TK;
   const $ = id => document.getElementById(id);
-  const show = id => ['vLoading','vMain','vVoucher','vClaim','vError'].forEach(v => $(v).classList.toggle('hidden', v!==id));
+  const show = id => ['vLoading','vMain','vVoucher','vClaim','vError','vClosed'].forEach(v => $(v).classList.toggle('hidden', v!==id));
   const fail = m => { $('errMsg').textContent = m; show('vError'); };
   const MY='gd_my'; const myV = () => { try { return JSON.parse(localStorage.getItem(MY)||'[]'); } catch(_){ return []; } };
   const saveMine = (eid, vid, label) => { const a = myV().filter(x=>x.vid!==vid); a.unshift({eid, vid, label, at:Date.now()}); localStorage.setItem(MY, JSON.stringify(a.slice(0,20))); };
@@ -95,6 +96,8 @@
   let EID=null, PUB=null, GOODS={}, SOLD={}, cart={};
 
   async function main(){
+    const closed = (await db.ref('tk/config/closed').once('value').catch(()=>null)); const cv = closed && closed.val();
+    if (cv && cv.closed && !Q.get('v') && !Q.get('session_id')) { $('closedMsg').textContent = cv.message||''; show('vClosed'); return; }
     EID = await TK.currentEventId(); if (!EID) return fail('現在、販売中の大会はありません。');
     PUB = await TK.loadEventPub(EID); if (!PUB) return fail('大会情報が見つかりません。');
     if (Q.get('session_id')) return claim(Q.get('session_id'));

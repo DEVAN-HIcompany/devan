@@ -46,6 +46,14 @@
 
     <!-- 集計 -->
     <div id="tDash">
+      <div class="card" id="closeCard" style="border-color:var(--gold2)">
+        <div class="row between">
+          <div><h2 style="border:0;padding:0;margin:0 0 4px">チケット機能の公開</h2><p class="lead" style="margin:0">一時停止すると、DEVAN トップから「入場チケット」「大会グッズ」のボタンが消え、直接開いても「現在は受付していません」と表示されます（入場チケットを使わない大会のとき）。学連側の受付・管理画面はそのまま使えます。</p></div>
+          <label class="switch" style="white-space:nowrap"><input type="checkbox" id="tkClosed"> 一時停止する</label>
+        </div>
+        <div class="field" style="margin:10px 0 6px"><label>停止中に表示する文（任意）</label><input id="tkClosedMsg" placeholder="例: 入場チケットは第60回全日本学生大会から導入します。"></div>
+        <div class="row"><button class="btn sm" id="tkClosedSave">保存する</button><span class="msg" id="tkClosedMsgOut"></span></div>
+      </div>
       <div class="card">
         <h2>入場・発行の状況</h2>
         <div class="stats" id="stats"></div>
@@ -309,6 +317,10 @@
     try { await db.ref().update(upd); $('eMsg').className='msg ok'; $('eMsg').textContent='保存しました。'; await loadEvents(id); }
     catch(e){ console.error(e); $('eMsg').className='msg'; $('eMsg').textContent='保存できませんでした（権限またはルールを確認）。'; }
   };
+
+  /* ---- チケット機能の公開／一時停止（全大会共通） ---- */
+  db.ref('tk/config/closed').on('value', s => { const c = s.val()||{}; $('tkClosed').checked = !!c.closed; $('tkClosedMsg').value = c.message||''; $('closeCard').style.background = c.closed ? 'var(--warn-bg)' : ''; }, ()=>{});
+  $('tkClosedSave').onclick = async () => { try { await db.ref('tk/config/closed').set({ closed: $('tkClosed').checked, message: $('tkClosedMsg').value.trim(), at: TS }); $('tkClosedMsgOut').className='msg ok'; $('tkClosedMsgOut').textContent = $('tkClosed').checked ? '一時停止しました。' : '公開中にしました。'; } catch(e){ $('tkClosedMsgOut').className='msg'; $('tkClosedMsgOut').textContent='保存できませんでした。'; } };
 
   /* ---- Stripe 連携 ---- */
   db.ref('tk/config/stripeAccount').once('value').then(s => { $('cAcct').value = s.val()||''; }).catch(()=>{});
