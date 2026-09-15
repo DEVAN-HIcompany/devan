@@ -592,12 +592,12 @@ function renderFedHome(){
       <div class="hsub">大会進行の記録と、入場チケットの受付</div>
       <div class="hsec">大会の進行</div>
       <button class="hbtn primary" onclick="enterView()">
-        <div><div class="hbtn-l">閲覧用で開く</div><div class="hbtn-d">進行状況を見る。ログイン不要</div></div>
+        <div><div class="hbtn-l">大会リアルタイム進行管理閲覧</div><div class="hbtn-d">進行状況を見る。ログイン不要</div></div>
         <div class="hbtn-r">›</div>
       </button>
       <div class="hsmall">
         <button class="hbtn mini" onclick="enterOperator()">
-          <div><div class="hbtn-l">進行用</div><div class="hbtn-d">コートの進行係</div></div>
+          <div><div class="hbtn-l">進行セク用</div><div class="hbtn-d">コートの進行操作</div></div>
         </button>
         <button class="hbtn mini" onclick="enterAdmin()">
           <div><div class="hbtn-l">管理用</div><div class="hbtn-d">コート割・運営</div></div>
@@ -606,13 +606,13 @@ function renderFedHome(){
       <div class="hsec">入場チケット</div>
       <div class="hsmall">
         <button class="hbtn mini" onclick="location.href='./ticket/gate.html'">
-          <div><div class="hbtn-l">入口受付</div><div class="hbtn-d">QRの読み取り</div></div>
+          <div><div class="hbtn-l">受付セク用</div><div class="hbtn-d">入口でのQR読み取り</div></div>
         </button>
         <button class="hbtn mini" onclick="location.href='./ticket/admin.html'">
           <div><div class="hbtn-l">チケット管理</div><div class="hbtn-d">大会設定・集計</div></div>
         </button>
         <button class="hbtn mini" onclick="location.href='./ticket/redeem.html'">
-          <div><div class="hbtn-l">売店 引換受付</div><div class="hbtn-d">グッズ引換券のQR読み取り</div></div>
+          <div><div class="hbtn-l">パンフセク用</div><div class="hbtn-d">売店でのグッズ引換</div></div>
         </button>
       </div>
       <div class="hnote">閲覧用以外はログインが必要です</div>
@@ -647,7 +647,7 @@ function renderGateOnly(what){
       <div class="wordmark">DEVAN</div>
       <div class="hsub">このアカウント（${esc(u?u.email||'':'')}）は<br>${ROLE==='shop'?'売店（パンフレットセクション）専用':'入場チケットの受付専用'}です。${what}には入れません。</div>
       <button class="hbtn primary" onclick="location.href='${ROLE==='shop'?'./ticket/redeem.html':'./ticket/gate.html'}'">
-        <div><div class="hbtn-l">${ROLE==='shop'?'売店 引換受付を開く':'入口受付を開く'}</div><div class="hbtn-d">${ROLE==='shop'?'グッズ引換券のQR読み取り':'チケットのQR読み取り'}</div></div>
+        <div><div class="hbtn-l">${ROLE==='shop'?'パンフセク用を開く':'受付セク用を開く'}</div><div class="hbtn-d">${ROLE==='shop'?'グッズ引換券のQR読み取り':'チケットのQR読み取り'}</div></div>
         <div class="hbtn-r">›</div>
       </button>
       <div class="hwho">ログイン中: <b>${esc(u?u.email||'':'')}</b></div>
@@ -705,7 +705,7 @@ function renderLogin(msg){
           <button class="btn btnp" id="lbtn" onclick="doLogin()">ログイン</button>
         </div>
       </div>
-      <div class="hactions"><button class="hact quiet" onclick="enterView()">ログインせずに閲覧用で開く</button></div>
+      <div class="hactions"><button class="hact quiet" onclick="enterView()">ログインせずに閲覧する</button></div>
     </div></div>`);
   setTimeout(()=>$('lemail')?.focus(),50);
 }
@@ -805,7 +805,7 @@ function openTournament(id){
 }
 
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
-const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?'<span class="modetag">進行用</span>':MODE==='spectator'?'<span class="modetag">観客用</span>':'';
+const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?'<span class="modetag">進行セク用</span>':MODE==='spectator'?'<span class="modetag">観客用</span>':'';
 function deleteTournament(id){
   if(!isAdmin()) return;
   if(!confirm('この大会を削除しますか？')) return;

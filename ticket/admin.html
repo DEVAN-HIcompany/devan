@@ -158,7 +158,7 @@
     <div id="tGoods" class="hidden">
       <div class="card">
         <h2>グッズのオンライン販売</h2>
-        <p class="lead">観客・拳士が DEVAN で購入 → 引換券（QR）が表示される → 会場の売店で <a href="redeem.html">売店 引換受付</a>（パンフレットセクションのアカウントでログイン）が読み取って商品を渡します。売上は前売券と同じ Stripe に入金されます。</p>
+        <p class="lead">観客・拳士が DEVAN で購入 → 引換券（QR）が表示される → 会場の売店で <a href="redeem.html">パンフセク用</a>（パンフレットセクションのアカウントでログイン）が読み取って商品を渡します。売上は前売券と同じ Stripe に入金されます。</p>
         <div class="row" style="margin-bottom:10px">
           <label class="switch"><input type="checkbox" id="gOpen"> オンライン販売を受け付ける</label>
           <div class="field inline" style="margin:0;flex:1;min-width:220px"><label>引き換え場所（表示用）</label><input id="gNote" placeholder="例: 北口 売店（10:00〜16:00）"></div>
@@ -189,10 +189,10 @@
     <div id="tStaff" class="hidden">
       <div class="card">
         <h2>受付・パンフレットセクションのアカウント</h2>
-        <p class="lead">入口受付（gate.html）に入れるのは「受付」として許可したアカウント、売店の引換受付（redeem.html）に入れるのは「パンフレットセクション」として許可したアカウントだけです。進行用・管理用のアカウントではどちらにも入れません。</p>
+        <p class="lead">受付セク用（gate.html）に入れるのは「受付」として許可したアカウント、パンフセク用（redeem.html）に入れるのは「パンフレットセクション」として許可したアカウントだけです。進行用・管理用のアカウントではどちらにも入れません。</p>
         <ol style="margin:0 0 8px;padding-left:20px;font-size:14px;color:var(--ink2);line-height:1.8">
           <li>Firebase コンソール → Authentication → Users →「ユーザーを追加」で受付用のメールアドレスとパスワードを作る（例: uketsuke@kantogs.org。1つを受付スタッフ全員で共有して構いません）</li>
-          <li>そのアカウントで一度、入口受付（または売店 引換受付）にログインする → 下の「許可待ち」に表示される</li>
+          <li>そのアカウントで一度、受付セク用（またはパンフセク用）にログインする → 下の「許可待ち」に表示される</li>
           <li>「受付として許可」または「パンフレットセクションとして許可」を押す → 以後そのアカウントで使える</li>
         </ol>
         <h3>許可待ち</h3>
@@ -485,10 +485,10 @@
   }
   function renderStaff(){
     const pend = Object.entries(PENDING).filter(([uid]) => !(ROLES && (ROLES[uid]==='gate' || ROLES[uid]==='shop')));
-    $('pendTbl').innerHTML = '<tr><th>メールアドレス</th><th>ログイン日時</th><th>ログインした画面</th><th></th></tr>' + pend.sort((x,y)=>(y[1].at||0)-(x[1].at||0)).map(([uid,p]) => `<tr><td>${esc(p.email||uid)}</td><td>${fmtTime(p.at)}</td><td>${p.want==='shop'?'売店（パンフレット）':'入口受付'}</td><td class="row"><button class="btn xs ok" onclick="_s.allow('${uid}','gate')">受付として許可</button><button class="btn xs ok" onclick="_s.allow('${uid}','shop')">パンフレットセクションとして許可</button><button class="btn xs ghost" onclick="_s.dismiss('${uid}')">消す</button></td></tr>`).join('') || '<tr><td class="muted">ありません。該当のアカウントで入口受付または売店 引換受付に一度ログインすると、ここに出ます。</td></tr>';
+    $('pendTbl').innerHTML = '<tr><th>メールアドレス</th><th>ログイン日時</th><th>ログインした画面</th><th></th></tr>' + pend.sort((x,y)=>(y[1].at||0)-(x[1].at||0)).map(([uid,p]) => `<tr><td>${esc(p.email||uid)}</td><td>${fmtTime(p.at)}</td><td>${p.want==='shop'?'パンフセク用':'受付セク用'}</td><td class="row"><button class="btn xs ok" onclick="_s.allow('${uid}','gate')">受付として許可</button><button class="btn xs ok" onclick="_s.allow('${uid}','shop')">パンフレットセクションとして許可</button><button class="btn xs ghost" onclick="_s.dismiss('${uid}')">消す</button></td></tr>`).join('') || '<tr><td class="muted">ありません。該当のアカウントで入口受付または売店 引換受付に一度ログインすると、ここに出ます。</td></tr>';
     const gates = ROLES ? Object.entries(ROLES).filter(([,r])=>r==='gate'||r==='shop') : [];
     $('staffTbl').innerHTML = '<tr><th>メールアドレス</th><th>役割</th><th>許可日時</th><th></th></tr>' + gates.map(([uid,r]) => { const st = STAFF[uid]||{}; return `<tr><td>${esc(st.email||uid)}</td><td><span class="tag ${r==='shop'?'gold':'ok'}">${r==='shop'?'パンフレットセクション（売店）':'受付（入口）'}</span></td><td>${fmtTime(st.at)}</td><td><button class="btn xs ghost" onclick="_s.revoke('${uid}')">取り消す</button></td></tr>`; }).join('') || '<tr><td class="muted">まだありません</td></tr>';
-    $('rolesNote').textContent = ROLES === null ? '注意: 役割（sj/roles）が未設定のため、今はログインできる全員が入口受付と管理に入れます。管理用アカウントを先に管理者として登録してください（FIREBASE設定手順 手順4）。' : '';
+    $('rolesNote').textContent = ROLES === null ? '注意: 役割（sj/roles）が未設定のため、今はログインできる全員が受付セク用と管理に入れます。管理用アカウントを先に管理者として登録してください（FIREBASE設定手順 手順4）。' : '';
   }
   window._s = {
     allow: async (uid, role) => { const p = PENDING[uid]||{}; role = role||'gate'; if (ROLES && ROLES[uid]==='admin') { alert('管理者アカウントは受付・パンフレットセクションにできません。'); return; }
