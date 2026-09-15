@@ -150,3 +150,10 @@ table.tbl th{font-weight:600;color:var(--ink2);background:var(--bg2);font-size:1
 @keyframes ldSweep{0%{background-position:-60% 0}100%{background-position:160% 0}}
 @keyframes ldIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.loader .ld-rule::after{animation:none;background:var(--gold)}.loader{animation:none}}
+
+/* 見切れる文字は往復スクロール */
+.mqi{display:inline-block;white-space:nowrap;vertical-align:top}
+.mq-run{text-overflow:clip!important}
+.mq-run>.mqi{animation:mqPing var(--mqd,9s) ease-in-out infinite}
+@keyframes mqPing{0%,14%{transform:translateX(0)}46%,58%{transform:translateX(var(--mqx,0px))}90%,100%{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.mq-run>.mqi{animation:none}}

@@ -195,9 +195,14 @@
   // 試験運用中の表示（tk/config/beta）: 全チケット画面のヘッダー下に帯を出す
   document.addEventListener('DOMContentLoaded', ()=>{
     try { db.ref('tk/config/beta').on('value', s => { const v = s.val(); const on = !!(v && v.on); let bar = document.getElementById('betabar');
-      if (!bar) { bar = document.createElement('div'); bar.id='betabar'; bar.style.cssText='display:none;align-items:center;justify-content:center;gap:8px;margin:-6px 0 14px;padding:6px 10px;border:1px solid var(--line2);border-radius:999px;font-size:11.5px;color:var(--ink2);background:var(--card)'; bar.innerHTML='<span style="font-family:var(--mark);font-weight:600;font-size:11px;letter-spacing:.22em;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:1px 8px">BETA</span><span id="betamsg"></span>'; const top = document.querySelector('.top'); if (top && top.parentNode) top.parentNode.insertBefore(bar, top.nextSibling); }
+      if (!bar) { bar = document.createElement('div'); bar.id='betabar'; bar.style.cssText='display:none;align-items:center;justify-content:center;gap:8px;margin:-6px 0 14px;padding:6px 10px;border:1px solid var(--line2);border-radius:999px;font-size:11.5px;color:var(--ink2);background:var(--card)'; bar.innerHTML='<span style="font-family:var(--mark);font-weight:600;font-size:11px;letter-spacing:.22em;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:1px 8px">BETA</span><span id="betamsg" style="min-width:0;overflow:hidden;white-space:nowrap"></span>'; const top = document.querySelector('.top'); if (top && top.parentNode) top.parentNode.insertBefore(bar, top.nextSibling); }
       bar.style.display = on ? 'flex' : 'none'; bar.querySelector('#betamsg').textContent = (v && v.message) || '試験運用中です。表示が乱れることがあります。'; }, ()=>{}); } catch(_){}
   });
+
+  // 見切れ対策: 収まらない文字は往復スクロール
+  const MQ_SEL='#betamsg,#who,.top .role #who';
+  function applyMarquee(){ document.querySelectorAll(MQ_SEL).forEach(el=>{ let inner=el.querySelector(':scope>.mqi'); if(!inner){ if(!el.childNodes.length) return; inner=document.createElement('span'); inner.className='mqi'; while(el.firstChild) inner.appendChild(el.firstChild); el.appendChild(inner); } const over=inner.scrollWidth-el.clientWidth; if(over>4){ el.style.setProperty('--mqx',(-over-8)+'px'); el.style.setProperty('--mqd',Math.max(7,Math.round(over/18)+5)+'s'); el.classList.add('mq-run'); } else el.classList.remove('mq-run'); }); }
+  document.addEventListener('DOMContentLoaded', ()=>{ let t=null; const kick=()=>{ clearTimeout(t); t=setTimeout(applyMarquee,150); }; new MutationObserver(kick).observe(document.body,{childList:true,subtree:true,characterData:true}); window.addEventListener('resize',kick); kick(); });
 
   window.TK = { DEMO, Q, db, auth, fns, TS, yen, nameKey, KIND, kindLabel, countKey, newTid, newCode, ticketNo, fmtTime, esc, qrSvg, baseUrl, ticketUrl, parseTicketUrl, beep, download, csv, isAdmin, loadEventPub, currentEventId };
 })();

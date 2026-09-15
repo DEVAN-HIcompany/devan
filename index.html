@@ -78,6 +78,13 @@ body.beta .app{padding-top:32px}
 body.beta .dtop{top:32px}
 body.beta #splash{padding-top:32px}
 body.beta .overlay{top:32px}
+/* ── 見切れる文字は往復スクロールで全文を見せる ── */
+.mqi{display:inline-block;white-space:nowrap;vertical-align:top}
+.mq-run{text-overflow:clip!important}
+.mq-run>.mqi{animation:mqPing var(--mqd,9s) ease-in-out infinite}
+@keyframes mqPing{0%,14%{transform:translateX(0)}46%,58%{transform:translateX(var(--mqx,0px))}90%,100%{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.mq-run>.mqi{animation:none}.mq-run{text-overflow:ellipsis!important}}
+
 .hwho b{font-weight:500;color:var(--ink2)}
 .hactions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:8px}
 .hact{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line2);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:500;color:var(--ink2);cursor:pointer;letter-spacing:.04em;box-shadow:var(--sh);transition:border-color .15s,color .15s}
@@ -590,6 +597,23 @@ function renderHome(){
   if(sp){ const h=document.querySelector('#app .home'); if(h){ h.classList.add('enter'); if(sp.classList.contains('dock')){ requestAnimationFrame(()=>h.classList.add('go','landed')); } else { setTimeout(()=>{ h.classList.add('go','landed'); }, 3200); } } if(_splashResolve){ _splashResolve(); _splashResolve=null; } }
   applyTicketClosed();
 }
+
+// ── 見切れ対策: 収まらない文字は往復スクロール（対象セレクタは末尾）──
+const MQ_SEL='#betamsg,.dtitle,.tname,.ccat,.cnext,.suml,.ta,.pvteams,.hbtn.mini .hbtn-d,.ccc';
+function applyMarquee(){
+  document.querySelectorAll(MQ_SEL).forEach(el=>{
+    let inner=el.querySelector(':scope>.mqi');
+    if(!inner){ if(!el.childNodes.length) return; inner=document.createElement('span'); inner.className='mqi'; while(el.firstChild) inner.appendChild(el.firstChild); el.appendChild(inner); }
+    const over=inner.scrollWidth-el.clientWidth;
+    if(over>4){ el.style.setProperty('--mqx',(-over-8)+'px'); el.style.setProperty('--mqd',Math.max(7,Math.round(over/18)+5)+'s'); el.classList.add('mq-run'); }
+    else { el.classList.remove('mq-run'); }
+  });
+}
+(function(){
+  let t=null; const kick=()=>{ clearTimeout(t); t=setTimeout(applyMarquee,150); };
+  new MutationObserver(kick).observe(document.body,{childList:true,subtree:true,characterData:true});
+  window.addEventListener('resize',kick); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(kick); kick();
+})();
 // 試験運用中の表示（tk/config/beta）
 db.ref('tk/config/beta').on('value', s=>{ const v=s.val(); const on=!!(v&&v.on); const bar=document.getElementById('betabar'); if(!bar) return; bar.classList.toggle('on',on); document.body.classList.toggle('beta',on); if(v&&v.message) document.getElementById('betamsg').textContent=v.message; }, ()=>{});
 // チケット機能の一時停止（tk/config/closed）: 停止中はトップの「入場チケット」「大会グッズ」を出さない
