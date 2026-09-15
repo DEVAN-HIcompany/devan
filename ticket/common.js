@@ -30,6 +30,8 @@
   }
   function newTid(){ return rand(20); }
   function newCode(){ return rand(6); }
+  function kindLabel(t){ if (t && t.kind==='pre' && t.tier==='door') return '当日券（オンライン）'; return (KIND[t&&t.kind]||{}).label || 'チケット'; }
+  function countKey(t){ return (t.kind==='pre' && t.tier==='door') ? 'door' : t.kind; }
   function ticketNo(kind, tid){
     const p = {pre:'P',door:'D',free:'K',comp:'G'}[kind] || 'T';
     return p + '-' + tid.slice(-6);
@@ -88,13 +90,14 @@
         pending: { 'demo-gate-1': { email:'uketsuke@example.com', at: Date.now()-600000 } },
         config: { currentEvent: eid },
         events: { [eid]: {
-          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:1000, doorPrice:1000, payLink:'', saleOpen:true },
+          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:700, doorPrice:1000, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', saleOpen:true, doorOpen:true, feePercent:5 },
           univs: { u1:{name:'明治大学',code:'MEIJI1',cap:100}, u2:{name:'早稲田大学',code:'WASED2',cap:100}, u3:{name:'日本大学',code:'NIHON3',cap:100} },
           codes: { MEIJI1:'u1', WASED2:'u2', NIHON3:'u3' }
         }},
         counts: { [eid]: { u1:2 } },
         tickets: { [eid]: {
-          'DEMOPREAAAAAAAAAAAA1': { kind:'pre', qty:2, name:'山田 太郎', email:'demo@example.com', created:Date.now()-86400000, used:0 },
+          'DEMOPREAAAAAAAAAAAA6': { kind:'pre', tier:'door', qty:1, name:'高橋 次郎', email:'demo2@example.com', created:Date.now()-1800000, used:0 },
+          'DEMOPREAAAAAAAAAAAA1': { kind:'pre', tier:'adv', qty:2, name:'山田 太郎', email:'demo@example.com', created:Date.now()-86400000, used:0 },
           'DEMOFREEAAAAAAAAAAA2': { kind:'free', qty:1, name:'佐藤 花子', univ:'u1', univName:'明治大学', code:'MEIJI1', created:Date.now()-3600000, used:0 },
           'DEMOFREEAAAAAAAAAAA3': { kind:'free', qty:1, name:'鈴木 一郎', univ:'u1', univName:'明治大学', code:'MEIJI1', created:Date.now()-3000000, used:1, usedAt:Date.now()-600000 },
           'DEMODOORAAAAAAAAAAA4': { kind:'door', qty:1, batch:'B1', created:Date.now()-7200000, used:0 },
@@ -183,5 +186,5 @@
     const s = await db.ref('tk/config/currentEvent').once('value'); return s.val();
   }
 
-  window.TK = { DEMO, Q, db, auth, fns, TS, KIND, newTid, newCode, ticketNo, fmtTime, esc, qrSvg, baseUrl, ticketUrl, parseTicketUrl, beep, download, csv, isAdmin, loadEventPub, currentEventId };
+  window.TK = { DEMO, Q, db, auth, fns, TS, KIND, kindLabel, countKey, newTid, newCode, ticketNo, fmtTime, esc, qrSvg, baseUrl, ticketUrl, parseTicketUrl, beep, download, csv, isAdmin, loadEventPub, currentEventId };
 })();

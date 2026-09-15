@@ -168,10 +168,11 @@
   }
   function renderCounts(){
     const c = {all:0,pre:0,door:0,free:0,comp:0};
-    for (const k in TICKETS){ const t=TICKETS[k]; const u=Number(t.used||0); if (!u) continue; c.all+=u; c[t.kind]=(c[t.kind]||0)+u; }
+    for (const k in TICKETS){ const t=TICKETS[k]; const u=Number(t.used||0); if (!u) continue; c.all+=u; const kk=TK.countKey(t); c[kk]=(c[kk]||0)+u; }
     $('cAll').textContent=c.all; $('cPre').textContent=c.pre; $('cDoor').textContent=c.door; $('cFree').textContent=c.free; $('cComp').textContent=c.comp;
-    $('dUsed').innerHTML = c.door + '<small>枚</small>';
-    $('dCash').textContent = '¥' + (c.door * Number((PUB&&(PUB.doorPrice||PUB.price))||0)).toLocaleString();
+    let paper=0; for (const k in TICKETS){ const t=TICKETS[k]; if (t.kind==='door') paper += Number(t.used||0); }
+    $('dUsed').innerHTML = paper + '<small>枚</small>';
+    $('dCash').textContent = '¥' + (paper * Number((PUB&&(PUB.doorPrice||PUB.price))||0)).toLocaleString();
   }
 
   /* ---- タブ ---- */
@@ -284,7 +285,7 @@
   function whoText(t){
     const k = KIND[t.kind] ? KIND[t.kind].label : t.kind;
     if (t.kind==='free') return `<div class="who">${esc(t.name)}</div><div class="sub">${esc(t.univName||'')}　<span class="tag ok">${k}</span></div>`;
-    if (t.kind==='pre') return `<div class="who">一般 ${Number(t.qty||1)}名</div><div class="sub">${esc(t.name||'')}　<span class="tag info">${k}</span></div>`;
+    if (t.kind==='pre') return `<div class="who">一般 ${Number(t.qty||1)}名</div><div class="sub">${esc(t.name||'')}　<span class="tag ${t.tier==='door'?'warn':'info'}">${TK.kindLabel(t)}</span></div>`;
     if (t.kind==='comp') return `<div class="who">${esc(t.name||'ご招待')} ${Number(t.qty||1)}名</div><div class="sub">${esc(t.note||'')}　<span class="tag gold">${k}</span></div>`;
     return `<div class="who">当日券</div><div class="sub"><span class="tag warn">${k}</span></div>`;
   }

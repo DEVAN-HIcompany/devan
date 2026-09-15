@@ -66,7 +66,12 @@
         <div id="buyClosed" class="note hidden"></div>
         <hr class="sep">
         <h3>当日券</h3>
-        <p class="lead" style="margin:0"><span id="evDoorPrice"></span> 会場入口の受付でお買い求めください（現金）。<span id="evDoorNote"></span></p>
+        <div class="row between" style="margin:4px 0 10px"><div class="price" id="evDoorPrice"></div><div class="muted">1名につき</div></div>
+        <div id="doorWrap" class="hidden">
+          <a class="btn w" id="doorBtn" href="#">当日券をオンラインで購入する</a>
+          <p class="muted" style="margin:8px 0 0">スマホで購入すると、入口でQRを見せるだけで入場できます（列に並ばずに済みます）。</p>
+        </div>
+        <p class="lead" style="margin:8px 0 0" id="doorCash">会場入口の受付でも現金でお買い求めいただけます。<span id="evDoorNote"></span></p>
       </div>
 
       <div class="card">
@@ -164,12 +169,15 @@
     $('evName').textContent = PUB.name;
     $('evMeta').innerHTML = [PUB.date, PUB.venue, PUB.open].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
     $('evPrice').innerHTML = `¥${Number(PUB.price||0).toLocaleString()}<small>税込</small>`;
-    $('evDoorPrice').textContent = `¥${Number(PUB.doorPrice||PUB.price||0).toLocaleString()}。`;
+    $('evDoorPrice').innerHTML = `¥${Number(PUB.doorPrice||PUB.price||0).toLocaleString()}<small>税込</small>`;
+    const doorOpen = !!PUB.doorOpen && !!PUB.doorLink;
+    $('doorWrap').classList.toggle('hidden', !doorOpen);
+    if (doorOpen) { const du = new URL(PUB.doorLink); du.searchParams.set('client_reference_id', EID); $('doorBtn').href = du.toString(); }
     $('evDoorNote').textContent = PUB.doorNote || '';
     const open = !!PUB.saleOpen && !!PUB.payLink;
     $('buyWrap').classList.toggle('hidden', !open);
     $('buyClosed').classList.toggle('hidden', open);
-    $('buyClosed').textContent = PUB.saleOpen ? '前売券のオンライン販売は準備中です。開始までしばらくお待ちください。' : '前売券の販売は終了しました。当日券を会場入口でお買い求めください。';
+    $('buyClosed').textContent = PUB.saleOpen ? '前売券のオンライン販売は準備中です。開始までしばらくお待ちください。' : '前売券の販売は終了しました。当日券をご利用ください。';
     if (open) {
       const u = new URL(PUB.payLink);
       u.searchParams.set('client_reference_id', EID);
@@ -261,14 +269,14 @@
   }
   function whoLabel(t){
     if (t.kind==='free') return `${t.name}（${t.univName||''}）`;
-    if (t.kind==='pre') return `前売券 ${t.qty}名`;
+    if (t.kind==='pre') return `${TK.kindLabel(t)} ${t.qty}名`;
     if (t.kind==='comp') return `招待券 ${t.name||''} ${t.qty}名`;
     return `当日券`;
   }
   function renderTicket(eid, tid, t){
     tRef._last = t;
-    document.title = `${KIND[t.kind]?KIND[t.kind].label:'チケット'} ― ${PUB.name}`;
-    $('tkKind').textContent = (KIND[t.kind]||{}).label || 'チケット';
+    document.title = `${TK.kindLabel(t)} ― ${PUB.name}`;
+    $('tkKind').textContent = TK.kindLabel(t);
     $('tkEv').textContent = PUB.name;
     $('tkMeta').textContent = [PUB.date, PUB.venue].filter(Boolean).join('　');
     const qty = Number(t.qty||1);
@@ -304,7 +312,7 @@
       const r = await fns.httpsCallable('claimSession')({ session_id: sid });
       const d = r.data || {};
       if (d.eid && d.tid) {
-        saveMine(d.eid, d.tid, `前売券 ${d.qty||1}名`); const a=myTickets(); a[0].kind='pre'; localStorage.setItem(MY_KEY, JSON.stringify(a));
+        saveMine(d.eid, d.tid, `${d.tier==='door'?'当日券':'前売券'} ${d.qty||1}名`); const a=myTickets(); a[0].kind='pre'; localStorage.setItem(MY_KEY, JSON.stringify(a));
         goTicket(d.eid, d.tid);
         return;
       }
