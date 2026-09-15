@@ -30,7 +30,7 @@
   }
   function newTid(){ return rand(20); }
   function newCode(){ return rand(6); }
-  function kindLabel(t){ if (t && t.kind==='pre' && t.tier==='door') return '当日券（オンライン）'; return (KIND[t&&t.kind]||{}).label || 'チケット'; }
+  function kindLabel(t){ if (t && t.kind==='pre' && t.tier==='door') return '当日券（オンライン）'; if (t && t.kind==='pre' && t.tier==='advset') return '前売券（記念品付き）'; return (KIND[t&&t.kind]||{}).label || 'チケット'; }
   function countKey(t){ return (t.kind==='pre' && t.tier==='door') ? 'door' : t.kind; }
   function yen(n){ return '¥' + Number(n||0).toLocaleString(); }
   function ticketNo(kind, tid){
@@ -91,13 +91,14 @@
         pending: { 'demo-gate-1': { email:'uketsuke@example.com', at: Date.now()-600000 } },
         config: { currentEvent: eid },
         events: { [eid]: {
-          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:500, doorPrice:1000, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', saleOpen:true, doorOpen:true, feePercent:7, goodsOpen:true, goodsNote:'北口 売店（10:00〜16:00）' },
-          goods: { g1:{ name:'第60回少林寺拳法全日本学生大会 記念ステッカー', price:250, desc:'大会ロゴ入り。耐水加工。', stock:300, open:true, sort:1 } },
+          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:500, doorPrice:1000, setPrice:700, setGoods:'g1', setGoodsName:'第60回少林寺拳法全日本学生大会 記念ステッカー', setGoodsPrice:300, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', setLink:'https://buy.stripe.com/test_demo_set', saleOpen:true, doorOpen:true, feePercent:7, goodsOpen:true, goodsNote:'北口 売店（10:00〜16:00）' },
+          goods: { g1:{ name:'第60回少林寺拳法全日本学生大会 記念ステッカー', price:300, desc:'大会ロゴ入り。耐水加工。', stock:300, open:true, sort:1 } },
           univs: { u1:{name:'明治大学',code:'MEIJI1',cap:100}, u2:{name:'早稲田大学',code:'WASED2',cap:100}, u3:{name:'日本大学',code:'NIHON3',cap:100} },
           codes: { MEIJI1:'u1', WASED2:'u2', NIHON3:'u3' }
         }},
         counts: { [eid]: { u1:2 } },
         tickets: { [eid]: {
+          'DEMOPREAAAAAAAAAAAA7': { kind:'pre', tier:'advset', qty:2, name:'記念 花子', email:'demo3@example.com', goods:[{gid:'g1', name:'第60回少林寺拳法全日本学生大会 記念ステッカー', qty:2}], created:Date.now()-900000, used:0 },
           'DEMOPREAAAAAAAAAAAA6': { kind:'pre', tier:'door', qty:1, name:'高橋 次郎', email:'demo2@example.com', created:Date.now()-1800000, used:0 },
           'DEMOPREAAAAAAAAAAAA1': { kind:'pre', tier:'adv', qty:2, name:'山田 太郎', email:'demo@example.com', created:Date.now()-86400000, used:0 },
           'DEMOFREEAAAAAAAAAAA2': { kind:'free', qty:1, name:'佐藤 花子', univ:'u1', univName:'明治大学', code:'MEIJI1', created:Date.now()-3600000, used:0 },
@@ -131,6 +132,7 @@
       return {
         key: path.split('/').pop() || null, path,
         child: (k)=> ref(path + '/' + k),
+        orderByKey: ()=> ref(path), orderByChild: ()=> ref(path), limitToLast: ()=> ref(path),
         push: ()=> ref(path + '/' + ('-' + rand(18))),
         once: (ev)=> Promise.resolve(snap(path)),
         on: (ev, cb)=> { const l={path,cb}; listeners.push(l); setTimeout(()=>cb(snap(path)),0); return cb; },

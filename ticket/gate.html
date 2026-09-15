@@ -73,6 +73,7 @@
       <div class="opt">
         <label><input type="checkbox" id="optAuto" checked> 読み取ったら自動で入場にする</label>
         <label><input type="checkbox" id="optSound" checked> 音</label>
+        <label><input type="checkbox" id="optGoods" checked> 入場時に記念品を渡す</label>
         <button class="btn xs ghost" id="camRestart">カメラ再起動</button>
         <label class="btn xs ghost" style="cursor:pointer">画像から読む<input type="file" id="imgIn" accept="image/*" hidden></label>
       </div>
@@ -274,17 +275,21 @@
     const qty = Number(t.qty||1), used = Number(t.used||0);
     const next = Math.max(0, Math.min(qty, used + n));
     try {
-      await db.ref(`tk/tickets/${EID}/${tid}`).update({ used: next, usedAt: next>0 ? TS : null, usedBy: user ? (user.email||user.uid) : null });
-      TICKETS[tid] = Object.assign({}, t, { used: next, usedAt: Date.now() }); renderCounts();
+      const upd = { used: next, usedAt: next>0 ? TS : null, usedBy: user ? (user.email||user.uid) : null };
+      const goods = t.goods || []; const giveGoods = n > 0 && goods.length && !t.goodsRedeemed && $('optGoods').checked;
+      if (giveGoods) { upd.goodsRedeemed = true; upd.goodsRedeemedAt = TS; upd.goodsRedeemedBy = user ? (user.email||user.uid) : null; }
+      await db.ref(`tk/tickets/${EID}/${tid}`).update(upd);
+      TICKETS[tid] = Object.assign({}, t, { used: next, usedAt: Date.now() }, giveGoods ? { goodsRedeemed:true } : {}); renderCounts();
       const who = whoText(t), no = ticketNo(t.kind, tid);
-      if (n > 0) { setResult('ok', n===1 && qty===1 ? '入場OK' : `${n}名 入場OK`, `${who}<div class="sub">${no}${next<qty?`　残り ${qty-next}名`:''}</div>`, [{label:'取り消す', cls:'ghost xs', fn:()=>admit(tid, -n)}]); sound(true); addLog(`${no} ${who.replace(/<[^>]+>/g,' ')} ${n}名 入場`); }
+      const goodsHtml = goods.length ? `<div class="items" style="margin-top:8px;font-size:16px;font-weight:600;color:${giveGoods?'var(--ok)':(t.goodsRedeemed?'var(--muted)':'var(--warn)')}">${goods.map(g => `${esc(g.name)} × ${g.qty} ${giveGoods?'を渡してください':(t.goodsRedeemed?'（受取済み）':'（未受取・売店で引換）')}`).join('<br>')}</div>` : '';
+      if (n > 0) { setResult('ok', n===1 && qty===1 ? '入場OK' : `${n}名 入場OK`, `${who}<div class="sub">${no}${next<qty?`　残り ${qty-next}名`:''}</div>${goodsHtml}`, [{label:'取り消す', cls:'ghost xs', fn:()=>admit(tid, -n)}]); sound(true); addLog(`${no} ${who.replace(/<[^>]+>/g,' ')} ${n}名 入場${giveGoods?'・記念品渡し':''}`); }
       else { setResult('warn','取り消しました', `${who}<div class="sub">${no}</div>`); addLog(`${no} 取り消し`); }
     } catch(e) { console.error(e); setResult('ng','保存できません','通信状況をご確認ください。番号を控えて後で記録してください。'); sound(false); }
   }
   function whoText(t){
     const k = KIND[t.kind] ? KIND[t.kind].label : t.kind;
     if (t.kind==='free') return `<div class="who">${esc(t.name)}</div><div class="sub">${esc(t.univName||'')}　<span class="tag ok">${k}</span></div>`;
-    if (t.kind==='pre') return `<div class="who">一般 ${Number(t.qty||1)}名</div><div class="sub">${esc(t.name||'')}　<span class="tag ${t.tier==='door'?'warn':'info'}">${TK.kindLabel(t)}</span></div>`;
+    if (t.kind==='pre') return `<div class="who">一般 ${Number(t.qty||1)}名</div><div class="sub">${esc(t.name||'')}　<span class="tag ${t.tier==='door'?'warn':(t.tier==='advset'?'gold':'info')}">${TK.kindLabel(t)}</span>${(t.goods||[]).length?`　<span class="tag ${t.goodsRedeemed?'':'gold'}">${t.goodsRedeemed?'記念品 受取済':'記念品あり'}</span>`:''}</div>`;
     if (t.kind==='comp') return `<div class="who">${esc(t.name||'ご招待')} ${Number(t.qty||1)}名</div><div class="sub">${esc(t.note||'')}　<span class="tag gold">${k}</span></div>`;
     return `<div class="who">当日券</div><div class="sub"><span class="tag warn">${k}</span></div>`;
   }

@@ -124,14 +124,23 @@
   function onScan(text, force){
     const now=Date.now(); if (!force && text===lastCode && now-lastAt<4000) return; lastCode=text; lastAt=now;
     let vid=null, eid=null; try { const u=new URL(text); vid=u.searchParams.get('v'); eid=u.searchParams.get('e'); } catch(_){}
-    if (!vid) { const p = TK.parseTicketUrl(text); setResult('ng', p ? '入場チケットです' : 'このQRは違います', p ? 'これはグッズの引換券ではなく入場チケットです。入口受付で読んでください。' : 'グッズ引換券のQRコードではありません。'); sound(false); return; }
+    if (!vid) { const p = TK.parseTicketUrl(text); if (p && p.tid) { checkTicket(p.tid); return; } setResult('ng','このQRは違います','グッズ引換券のQRコードではありません。'); sound(false); return; }
     if (eid && eid!==EID) { setResult('ng','別の大会の引換券',`この引換券は別の大会（${esc(eid)}）のものです。`); sound(false); return; }
     check(vid);
   }
-  $('mBtn').onclick = () => { const v=$('mNo').value.trim().toUpperCase().replace(/^G-/,''); if (v.length<4) { setResult('warn','番号を入力','ハイフンの後ろの6文字を入力してください。'); return; } const hits=Object.keys(VOUCH).filter(k=>k.endsWith(v)); if (!hits.length) { setResult('ng','見つかりません',`番号「${esc(v)}」の引換券はありません。`); sound(false); return; } if (hits.length>1) { setResult('warn','複数あります','番号をもう少し長く入力してください。'); return; } $('mNo').value=''; check(hits[0]); };
+  $('mBtn').onclick = () => { const raw=$('mNo').value.trim().toUpperCase(); const v=raw.replace(/^[A-Z]-/,''); if (v.length<4) { setResult('warn','番号を入力','ハイフンの後ろの6文字を入力してください。'); return; } if (/^P-/.test(raw)) { db.ref(`tk/tickets/${EID}`).orderByKey().once('value').then(s=>{ const hits=[]; s.forEach(c=>{ if (c.key.endsWith(v)) hits.push(c.key); }); if (hits.length===1) checkTicket(hits[0]); else setResult('ng', hits.length?'複数あります':'見つかりません', hits.length?'番号をもう少し長く入力してください。':`番号「${esc(v)}」のチケットはありません。`); }).catch(()=>setResult('ng','検索できません','チケット一覧を読む権限がありません。QRを読んでください。')); return; } const hits=Object.keys(VOUCH).filter(k=>k.endsWith(v)); if (!hits.length) { setResult('ng','見つかりません',`番号「${esc(v)}」の引換券はありません。`); sound(false); return; } if (hits.length>1) { setResult('warn','複数あります','番号をもう少し長く入力してください。'); return; } $('mNo').value=''; check(hits[0]); };
   $('mNo').addEventListener('keydown', e => { if (e.key==='Enter') $('mBtn').click(); });
   function sound(ok){ if ($('optSound').checked) beep(ok); }
 
+  async function checkTicket(tid){
+    const s = await db.ref(`tk/tickets/${EID}/${tid}`).once('value').catch(()=>null); const t = s && s.val();
+    if (!t) { setResult('ng','無効なチケット','このチケットは登録されていません。'); sound(false); return; }
+    const goods = t.goods||[]; const no = (t.kind==='pre'?'P':'T')+'-'+tid.slice(-6);
+    if (!goods.length) { setResult('ng','記念品なしの入場チケット',`<div class="sub">${no}　入場チケットのみです。入口受付で読んでください。</div>`); sound(false); return; }
+    if (t.goodsRedeemed) { setResult('ng','受取済み',`<div class="sub">${no}　${esc(t.name||'')}　${fmtTime(t.goodsRedeemedAt)} に受取済み</div>`, [{label:'受け取りを取り消す', cls:'ghost', fn:async()=>{ await db.ref(`tk/tickets/${EID}/${tid}`).update({goodsRedeemed:null, goodsRedeemedAt:null}); setResult('warn','取り消しました',`<div class="sub">${no}</div>`); }}]); sound(false); return; }
+    setResult('ok','引換OK（記念品付きチケット）',`<div class="sub">${no}　${esc(t.name||'')}</div><div class="items">${goods.map(g=>`<div><span>${esc(g.name)}</span><span><b>${g.qty}</b> 個 渡す</span></div>`).join('')}</div>`, [{label:'渡した', cls:'ok', fn:async()=>{ try { await db.ref(`tk/tickets/${EID}/${tid}`).update({goodsRedeemed:true, goodsRedeemedAt:TS, goodsRedeemedBy:user?(user.email||user.uid):null}); setResult('ok','引き渡し完了',`<div class="sub">${no}</div>`); sound(true); } catch(e){ setResult('ng','保存できません','通信状況をご確認ください。'); } }}]);
+    sound(true);
+  }
   function check(vid){
     const v=VOUCH[vid];
     if (!v) { setResult('ng','無効な引換券','この引換券は登録されていません。'); sound(false); return; }

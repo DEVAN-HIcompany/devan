@@ -65,6 +65,10 @@
         </div>
         <div id="buyWrap">
           <a class="btn w gold" id="buyBtn" href="#">前売券を購入する</a>
+          <div id="setWrap" class="hidden" style="margin-top:10px">
+            <a class="btn w" id="setBtn" href="#">記念品付き前売券を購入する</a>
+            <p class="muted" style="margin:6px 0 0" id="setNote"></p>
+          </div>
           <p class="muted" style="margin:8px 0 0">クレジットカード等でお支払いいただけます（決済は Stripe の安全なページで行います）。購入後、この画面に戻るとチケットが表示されます。</p>
         </div>
         <div id="buyClosed" class="note hidden"></div>
@@ -186,6 +190,12 @@
       const u = new URL(PUB.payLink);
       u.searchParams.set('client_reference_id', EID);
       $('buyBtn').href = u.toString();
+      const setOpen = !!PUB.setLink && Number(PUB.setPrice||0) > 0;
+      $('setWrap').classList.toggle('hidden', !setOpen);
+      if (setOpen) { const su = new URL(PUB.setLink); su.searchParams.set('client_reference_id', EID); $('setBtn').href = su.toString();
+        const gname = PUB.setGoodsName || '記念品'; const save = Number(PUB.price||0) + Number(PUB.setGoodsPrice||0) - Number(PUB.setPrice||0);
+        $('setBtn').textContent = `${gname}付き前売券を購入する（¥${Number(PUB.setPrice).toLocaleString()}）`;
+        $('setNote').textContent = `前売券＋${gname}のセット。${save>0?`別々に買うより${save}円お得。`:''}記念品は入場時に入口でお渡しします。`; }
     }
     if (!PUB.saleOpen) { $('fBtn').disabled = true; $('fMsg').textContent = '無料チケットの発行は締め切りました。入口で所属をお伝えください。'; }
     renderMine();
@@ -286,7 +296,7 @@
     const qty = Number(t.qty||1);
     let who = '';
     if (t.kind==='free') who = `${esc(t.name)}<small>${esc(t.univName||'')}</small>`;
-    else if (t.kind==='pre') who = `一般 ${qty}名様<small>${esc(t.name||'')}</small>`;
+    else if (t.kind==='pre') who = `一般 ${qty}名様<small>${esc(t.name||'')}${(t.goods||[]).map(g => `<br>${esc(g.name)} × ${g.qty}${t.goodsRedeemed?'（受取済）':'（入口でお渡し）'}`).join('')}</small>`;
     else if (t.kind==='comp') who = `${esc(t.name||'ご招待')}<small>${qty}名様${t.note?'　'+esc(t.note):''}</small>`;
     else who = `当日券<small>${qty}名様</small>`;
     $('tkWho').innerHTML = who;

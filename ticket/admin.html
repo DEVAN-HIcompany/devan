@@ -79,10 +79,13 @@
           <div class="field"><label>開場・開会（表示用）</label><input id="eOpen" placeholder="例: 開場 9:00 ／ 開会式 10:00"></div>
           <div class="field"><label>前売券の価格（円）</label><input id="ePrice" type="number" inputmode="numeric" value="500"></div>
           <div class="field"><label>当日券の価格（円）</label><input id="eDoorPrice" type="number" inputmode="numeric" value="1000"></div>
+          <div class="field"><label>記念品付き前売券の価格（円・空欄なら販売しない）</label><input id="eSetPrice" type="number" inputmode="numeric" placeholder="例: 700"></div>
+          <div class="field"><label>付ける記念品（「グッズ」タブの商品から）</label><select id="eSetGoods"><option value="">（選ばない）</option></select><div class="hint">1枚につき1個。入場時に入口で渡す想定です（売店でも同じQRで引換可）。</div></div>
           <div class="field"><label>当日券の補足（任意）</label><input id="eDoorNote" placeholder="例: 北口の受付で販売します"></div>
           <div class="field"><label>前売券の決済リンク（Stripe）</label><input id="ePayLink" placeholder="https://buy.stripe.com/xxxxx"><div class="hint">空欄のあいだは「前売券を購入する」ボタンが出ません。</div></div>
           <div class="field"><label>当日券の決済リンク（Stripe）</label><input id="eDoorLink" placeholder="https://buy.stripe.com/xxxxx"><div class="hint">空欄のあいだは「当日券をオンラインで購入する」ボタンが出ません。</div></div>
-          <div class="field" style="grid-column:1/-1"><div class="row"><button class="btn sm ghost" id="eMakeLinks" type="button">決済リンクを自動作成する（前売・当日）</button><span class="muted" id="eFeeNote"></span></div><div class="hint">団体の Stripe に商品と支払いリンクを作り、上の2欄に自動で入ります。DEVAN 利用料（売上の7%）が決済ごとに自動で分配される設定になります。事前に「Stripe 連携」の設定が必要です。</div><div class="msg" id="eLinkMsg"></div></div>
+          <div class="field"><label>記念品付き前売券の決済リンク（Stripe）</label><input id="eSetLink" placeholder="https://buy.stripe.com/xxxxx"></div>
+          <div class="field" style="grid-column:1/-1"><div class="row"><button class="btn sm ghost" id="eMakeLinks" type="button">決済リンクを自動作成する（前売・記念品付き・当日）</button><span class="muted" id="eFeeNote"></span></div><div class="hint">団体の Stripe に商品と支払いリンクを作り、上の2欄に自動で入ります。DEVAN 利用料（売上の7%）が決済ごとに自動で分配される設定になります。事前に「Stripe 連携」の設定が必要です。</div><div class="msg" id="eLinkMsg"></div></div>
           <div class="field" style="grid-column:1/-1"><label>拳士の無料発行の上限（1大学あたりの既定値）</label><input id="eCap" type="number" value="120" style="max-width:160px"><div class="hint">大学コードを作るときの上限。大学ごとに後から変えられます。</div></div>
         </div>
         <div class="row" style="margin:6px 0 14px">
@@ -291,15 +294,15 @@
   }
   function fillEvForm(p){
     $('eId').value = EID || ''; $('eName').value = p.name||''; $('eDate').value = p.date||''; $('eVenue').value = p.venue||''; $('eOpen').value = p.open||'';
-    $('ePrice').value = p.price!=null?p.price:500; $('eDoorPrice').value = p.doorPrice!=null?p.doorPrice:1000; $('eDoorNote').value = p.doorNote||''; $('ePayLink').value = p.payLink||''; $('eDoorLink').value = p.doorLink||''; $('eDoorOpen').checked = !!p.doorOpen; $('eFeeNote').textContent = p.feePercent ? `利用料 ${p.feePercent}% 設定済み` : '';
+    $('ePrice').value = p.price!=null?p.price:500; $('eDoorPrice').value = p.doorPrice!=null?p.doorPrice:1000; $('eDoorNote').value = p.doorNote||''; $('ePayLink').value = p.payLink||''; $('eDoorLink').value = p.doorLink||''; $('eDoorOpen').checked = !!p.doorOpen; $('eSetPrice').value = p.setPrice!=null?p.setPrice:''; $('eSetLink').value = p.setLink||''; fillSetGoods(p.setGoods||''); $('eFeeNote').textContent = p.feePercent ? `利用料 ${p.feePercent}% 設定済み` : '';
     $('eCap').value = p.cap!=null?p.cap:120; $('eSaleOpen').checked = p.saleOpen!==false; $('eCurrent').checked = !!EID && CURRENT===EID;
   }
   $('eSave').onclick = async () => {
     const id = (EID || $('eId').value.trim()).replace(/[^A-Za-z0-9_-]/g,'');
     if (!id) { $('eMsg').textContent='大会IDを英数字で入力してください。'; return; }
     if (!$('eName').value.trim()) { $('eMsg').textContent='大会名を入力してください。'; return; }
-    const pub = { name:$('eName').value.trim(), date:$('eDate').value.trim(), venue:$('eVenue').value.trim(), open:$('eOpen').value.trim(), price:Number($('ePrice').value||0), doorPrice:Number($('eDoorPrice').value||0), doorNote:$('eDoorNote').value.trim(), payLink:$('ePayLink').value.trim(), doorLink:$('eDoorLink').value.trim(), doorOpen:$('eDoorOpen').checked, cap:Number($('eCap').value||120), saleOpen:$('eSaleOpen').checked, updated:TS };
-    ['advPriceId','doorPriceId','feePercent'].forEach(k => { if (PUB && PUB[k]!=null) pub[k] = PUB[k]; });
+    const pub = { name:$('eName').value.trim(), date:$('eDate').value.trim(), venue:$('eVenue').value.trim(), open:$('eOpen').value.trim(), price:Number($('ePrice').value||0), doorPrice:Number($('eDoorPrice').value||0), doorNote:$('eDoorNote').value.trim(), payLink:$('ePayLink').value.trim(), doorLink:$('eDoorLink').value.trim(), doorOpen:$('eDoorOpen').checked, setPrice:$('eSetPrice').value.trim()===''?null:Number($('eSetPrice').value), setLink:$('eSetLink').value.trim(), setGoods:$('eSetGoods').value||null, setGoodsName: ($('eSetGoods').value && GOODS[$('eSetGoods').value]) ? GOODS[$('eSetGoods').value].name : null, setGoodsPrice: ($('eSetGoods').value && GOODS[$('eSetGoods').value]) ? Number(GOODS[$('eSetGoods').value].price||0) : null, cap:Number($('eCap').value||120), saleOpen:$('eSaleOpen').checked, updated:TS };
+    ['advPriceId','doorPriceId','setPriceId','feePercent'].forEach(k => { if (PUB && PUB[k]!=null) pub[k] = PUB[k]; });
     const upd = { [`tk/events/${id}/pub`]: pub };
     if ($('eCurrent').checked) upd['tk/config/currentEvent'] = id; else if (CURRENT===id) upd['tk/config/currentEvent'] = null;
     try { await db.ref().update(upd); $('eMsg').className='msg ok'; $('eMsg').textContent='保存しました。'; await loadEvents(id); }
@@ -489,7 +492,8 @@
 
   /* ---- グッズ ---- */
   let GOODS={}, VOUCH={};
-  function watchGoods(eid){ const r1=db.ref(`tk/events/${eid}/goods`); r1.on('value', s=>{ GOODS=s.val()||{}; renderGoods(); }); refs.push(r1); const r2=db.ref(`tk/vouchers/${eid}`); r2.on('value', s=>{ VOUCH=s.val()||{}; renderGoods(); }, ()=>{}); refs.push(r2); }
+  function fillSetGoods(sel){ const cur = sel!==undefined ? sel : $('eSetGoods').value; $('eSetGoods').innerHTML = '<option value="">（選ばない）</option>' + Object.entries(GOODS).map(([gid,g]) => `<option value="${gid}"${gid===cur?' selected':''}>${esc(g.name)}（${yen(g.price)}）</option>`).join(''); }
+  function watchGoods(eid){ const r1=db.ref(`tk/events/${eid}/goods`); r1.on('value', s=>{ GOODS=s.val()||{}; renderGoods(); fillSetGoods((PUB&&PUB.setGoods)||undefined); }); refs.push(r1); const r2=db.ref(`tk/vouchers/${eid}`); r2.on('value', s=>{ VOUCH=s.val()||{}; renderGoods(); }, ()=>{}); refs.push(r2); }
   $('gSaveOpen').onclick = async () => { try { await db.ref().update({ [`tk/events/${EID}/pub/goodsOpen`]: $('gOpen').checked, [`tk/events/${EID}/pub/goodsNote`]: $('gNote').value.trim() }); $('gOpenMsg').className='msg ok'; $('gOpenMsg').textContent='保存しました。'; } catch(e){ $('gOpenMsg').className='msg'; $('gOpenMsg').textContent='保存できませんでした。'; } };
   $('gAdd').onclick = async () => {
     const name=$('gName').value.trim(), price=Number($('gPrice').value||0); if (!name||price<=0) { $('gMsg').className='msg'; $('gMsg').textContent='商品名と価格を入力してください。'; return; }
@@ -520,16 +524,16 @@
   /* ---- 集計・一覧 ---- */
   function render(){
     // 集計
-    const c = {}; ['pre','doorOnline','door','free','comp'].forEach(k => c[k]={issued:0,used:0});
+    const c = {}; ['pre','set','doorOnline','door','free','comp'].forEach(k => c[k]={issued:0,used:0});
     let voided = 0;
-    for (const tid in TICKETS){ const t=TICKETS[tid]; const k = (t.kind==='pre' && t.tier==='door') ? 'doorOnline' : t.kind; if (!c[k]) c[k]={issued:0,used:0}; if (t.void){voided++; continue;} const q=Number(t.qty||1); if (t.kind!=='door' || t.used || t.note) c[k].issued += q; c[k].used += Number(t.used||0); }
+    for (const tid in TICKETS){ const t=TICKETS[tid]; const k = (t.kind==='pre' && t.tier==='door') ? 'doorOnline' : ((t.kind==='pre' && t.tier==='advset') ? 'set' : t.kind); if (!c[k]) c[k]={issued:0,used:0}; if (t.void){voided++; continue;} const q=Number(t.qty||1); if (t.kind!=='door' || t.used || t.note) c[k].issued += q; c[k].used += Number(t.used||0); }
     const doorPrinted = Object.values(TICKETS).filter(t=>t.kind==='door').length;
     const totalUsed = Object.values(c).reduce((a,x)=>a+x.used,0);
     $('stats').innerHTML = `<div class="stat"><div class="k">入場合計</div><div class="v">${totalUsed}<small>名</small></div></div>` +
-      [['pre','前売券（購入/入場）'],['doorOnline','当日券オンライン（購入/入場）'],['free','拳士（発行/入場）'],['comp','招待（発行/入場）']].map(([k,l]) => `<div class="stat"><div class="k">${l}</div><div class="v">${c[k].issued}<small>/</small>${c[k].used}</div></div>`).join('') +
+      [['pre','前売券（購入/入場）'],['set','記念品付き前売（購入/入場）'],['doorOnline','当日券オンライン（購入/入場）'],['free','拳士（発行/入場）'],['comp','招待（発行/入場）']].map(([k,l]) => `<div class="stat"><div class="k">${l}</div><div class="v">${c[k].issued}<small>/</small>${c[k].used}</div></div>`).join('') +
       `<div class="stat"><div class="k">当日券 紙（印刷/入場）</div><div class="v">${doorPrinted}<small>/</small>${c.door.used}</div></div>` + (voided?`<div class="stat"><div class="k">無効</div><div class="v">${voided}</div></div>`:'');
     const price=Number(PUB.price||0), dprice=Number(PUB.doorPrice||PUB.price||0);
-    const pre = c.pre.issued*price, donl = c.doorOnline.issued*dprice, cash = c.door.used*dprice;
+    const pre = c.pre.issued*price + c.set.issued*Number(PUB.setPrice||0), donl = c.doorOnline.issued*dprice, cash = c.door.used*dprice;
     const online = pre + donl; const fee = Math.round(online*0.036) + Math.round(online*(Number(PUB.feePercent||0)/100));
     $('money').innerHTML = `<div class="stat"><div class="k">前売（オンライン）</div><div class="v">¥${pre.toLocaleString()}</div></div><div class="stat"><div class="k">当日券（オンライン）</div><div class="v">¥${donl.toLocaleString()}</div></div><div class="stat"><div class="k">当日券（入口・現金）</div><div class="v">¥${cash.toLocaleString()}</div></div><div class="stat"><div class="k">売上合計</div><div class="v">¥${(online+cash).toLocaleString()}</div></div><div class="stat"><div class="k">手数料の目安（決済3.6%＋DEVAN ${Number(PUB.feePercent||0)}%）</div><div class="v">−¥${fee.toLocaleString()}</div></div><div class="stat"><div class="k">団体の手取り目安</div><div class="v">¥${(online+cash-fee).toLocaleString()}</div></div>`;
     $('pubUrl').textContent = EID ? pubUrl() : '';
@@ -554,7 +558,7 @@
     if (q) rows = rows.filter(t => [t.name,t.univName,t.no,t.email,t.note].some(v => v && String(v).toLowerCase().includes(q)));
     rows.sort((a,b)=>(b.created||0)-(a.created||0));
     $('fCount').textContent = `${rows.length}件`;
-    $('fTbl').innerHTML = '<tr><th>番号</th><th>種別</th><th>氏名／宛名</th><th>所属</th><th>人数</th><th>入場</th><th>発行</th><th></th></tr>' + rows.slice(0,500).map(t => `<tr${t.void?' style="opacity:.5"':''}><td>${t.no}</td><td><span class="tag ${t.kind==='pre'&&t.tier==='door'?'warn':((KIND[t.kind]||{}).color||'')}">${t.kind==='pre'&&t.tier==='door'?'当日(On)':((KIND[t.kind]||{}).short||t.kind)}</span></td><td>${esc(t.name||'')}</td><td>${esc(t.univName||t.email||'')}</td><td>${t.qty||1}</td><td>${t.void?'無効':(t.used?`${t.used}名 ${fmtTime(t.usedAt)}`:'')}</td><td>${fmtTime(t.created)}</td><td class="row">${t.used?`<button class="btn xs ghost" onclick="_d.resetUsed('${t.tid}')">入場取消</button>`:''}<button class="btn xs ghost" onclick="_d.voidT('${t.tid}')">${t.void?'解除':'無効'}</button></td></tr>`).join('');
+    $('fTbl').innerHTML = '<tr><th>番号</th><th>種別</th><th>氏名／宛名</th><th>所属</th><th>人数</th><th>入場</th><th>発行</th><th></th></tr>' + rows.slice(0,500).map(t => `<tr${t.void?' style="opacity:.5"':''}><td>${t.no}</td><td><span class="tag ${t.kind==='pre'&&t.tier==='door'?'warn':((KIND[t.kind]||{}).color||'')}">${t.kind==='pre'&&t.tier==='door'?'当日(On)':(t.kind==='pre'&&t.tier==='advset'?'前売+品':((KIND[t.kind]||{}).short||t.kind))}</span></td><td>${esc(t.name||'')}</td><td>${esc(t.univName||t.email||'')}</td><td>${t.qty||1}</td><td>${t.void?'無効':(t.used?`${t.used}名 ${fmtTime(t.usedAt)}`:'')}</td><td>${fmtTime(t.created)}</td><td class="row">${t.used?`<button class="btn xs ghost" onclick="_d.resetUsed('${t.tid}')">入場取消</button>`:''}<button class="btn xs ghost" onclick="_d.voidT('${t.tid}')">${t.void?'解除':'無効'}</button></td></tr>`).join('');
     window._rows = rows;
   }
   ['fQ','fKind','fState'].forEach(id => $(id).addEventListener('input', renderList));
