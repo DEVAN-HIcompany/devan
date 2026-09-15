@@ -42,7 +42,13 @@
   .buy-card .bp{font-family:var(--serif);font-size:24px;white-space:nowrap}
   .buy-card .bp small{font-size:11px;color:var(--muted);display:block;text-align:right;letter-spacing:.04em}
   .center{text-align:center}
-  .center{text-align:center}
+  .hact-like{display:block;width:100%;background:var(--card);border:1px solid var(--line2);border-radius:999px;padding:11px 16px;font-size:13.5px;color:var(--ink2);cursor:pointer;text-align:center;letter-spacing:.03em}
+  .don-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .don{display:block;text-align:center;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:14px 6px}
+  .don .da{font-family:var(--serif);font-size:20px}
+  .don .dl{font-size:11px;color:var(--muted);margin-top:2px}
+  .don.rec{border-color:var(--gold);background:var(--gold-bg)}
+  .don.rec .dl{color:var(--gold);font-weight:600}
 </style>
 </head>
 <body>
@@ -80,6 +86,7 @@
         <div class="cr">›</div>
       </button>
       <p class="muted center" style="margin-top:14px">未就学児は無料です。</p>
+      <div id="donateChoose" class="hidden" style="margin-top:18px"><button class="hact-like" id="goDonate">参加費軽減基金に寄付する ›</button></div>
     </div>
 
     <!-- 2a) 観客 -->
@@ -96,6 +103,24 @@
       </div>
       <div class="buy-card plain"><div><div class="bl">当日券（会場入口・現金）</div><div class="bd" id="doorCash">当日、入口の受付でお買い求めください。</div></div><div class="bp" id="pDoor"></div></div>
       <p class="muted" style="margin-top:12px">購入後、この画面にQRチケットが表示されます（メールでも届きます）。チケットは入場時に1回だけ有効で、スクリーンショットでも入場できます。</p>
+      <div id="donateAud" class="hidden" style="margin-top:8px"><button class="hact-like" id="goDonate2">参加費軽減基金に寄付する ›</button></div>
+    </div>
+
+    <!-- 2c) 寄付 -->
+    <div id="pDon" class="hidden">
+      <button class="backlink" data-back>‹ 戻る</button>
+      <div class="card">
+        <h2>参加費軽減基金への寄付</h2>
+        <p class="lead">大会の費用は、これまで出場拳士の参加費でほぼすべてまかなわれてきました。いただいたご寄付は、出場する拳士の参加費の負担を減らすために使います。</p>
+        <div class="muted" id="donStat" style="margin-bottom:10px"></div>
+        <div class="don-grid">
+          <a class="don" id="don1000" href="#"><div class="da">¥1,000</div><div class="dl">応援</div></a>
+          <a class="don rec" id="don3000" href="#"><div class="da">¥3,000</div><div class="dl">おすすめ</div></a>
+          <a class="don" id="don10000" href="#"><div class="da">¥10,000</div><div class="dl">OBOG・法人</div></a>
+        </div>
+        <a class="btn ghost w" id="donCustom" href="#" style="margin-top:8px">金額を指定して寄付する（500円〜）</a>
+        <p class="muted" style="margin-top:10px">カード決済（Stripe）。領収書が必要な方は決済後のメールに返信してください。寄付は返金できません。</p>
+      </div>
     </div>
 
     <!-- 2b) 拳士 -->
@@ -141,6 +166,13 @@
   </div>
 
   <!-- 決済後 -->
+  <div id="vThanks" class="hidden">
+    <div class="card center"><div class="loader" style="min-height:0;padding:10px 0 0"><div class="ld-mark">DEVAN</div><div class="ld-rule" style="animation:none"></div></div>
+      <h2 style="border:0;margin-top:14px">ご寄付ありがとうございます</h2>
+      <p class="lead" id="thanksMsg"></p>
+      <p class="muted">いただいたご寄付は、出場する拳士の参加費の負担を減らすために使わせていただきます。</p>
+      <a class="btn ghost" href="./">大会ページへ戻る</a></div>
+  </div>
   <div id="vClaim" class="hidden"><div class="loader" style="min-height:30vh;padding-bottom:0"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">お支払いを確認しています</div></div>
     <p class="muted" id="claimMsg" style="text-align:center">数秒お待ちください。</p>
     <div id="claimRetry" class="hidden"><button class="btn ghost" onclick="location.reload()">もう一度確認する</button></div>
@@ -161,7 +193,7 @@
 (function(){
   const {db, TS, KIND, Q, esc, qrSvg, ticketUrl, ticketNo, fmtTime, newTid, DEMO, fns} = TK;
   const $ = id => document.getElementById(id);
-  const show = id => { ['vLoading','vEvent','vTicket','vClaim','vError'].forEach(v => $(v).classList.toggle('hidden', v!==id)); };
+  const show = id => { ['vLoading','vEvent','vTicket','vClaim','vError','vThanks'].forEach(v => $(v).classList.toggle('hidden', v!==id)); };
   const MY_KEY = 'tk_my';
   const myTickets = () => { try { return JSON.parse(localStorage.getItem(MY_KEY)||'[]'); } catch(_){ return []; } };
   const saveMine = (eid, tid, label) => { const a = myTickets().filter(x => x.tid!==tid); a.unshift({eid, tid, label, at:Date.now()}); localStorage.setItem(MY_KEY, JSON.stringify(a.slice(0,20))); };
@@ -211,12 +243,16 @@
     $('doorWrap').classList.toggle('hidden', !doorOpen);
     if (doorOpen) { const du = new URL(PUB.doorLink); du.searchParams.set('client_reference_id', EID); $('doorBtn').href = du.toString(); }
     if (!PUB.saleOpen) { $('fBtn').disabled = true; $('fMsg').textContent = '無料チケットの発行は締め切りました。入口で所属をお伝えください。'; }
+    const dl = (PUB.donate && PUB.donate.links) || {}; const donOpen = !!PUB.donateOpen && !!dl.custom;
+    $('donateChoose').classList.toggle('hidden', !donOpen); $('donateAud').classList.toggle('hidden', !donOpen);
+    if (donOpen) { const L = (k, id) => { const u = new URL(dl[k]); u.searchParams.set('client_reference_id', EID); $(id).href = u.toString(); }; L('1000','don1000'); L('3000','don3000'); L('10000','don10000'); L('custom','donCustom');
+      $('donStat').textContent = PUB.donateCount ? `これまでに ${PUB.donateCount}名から ¥${Number(PUB.donateTotal||0).toLocaleString()} のご寄付をいただいています。` : ''; }
     renderMine();
-    showPane(Q.get('p') === 'ken' ? 'pKen' : (Q.get('p') === 'aud' ? 'pAud' : 'pChoose'));
+    showPane(Q.get('p') === 'ken' ? 'pKen' : (Q.get('p') === 'aud' ? 'pAud' : (Q.get('p') === 'don' ? 'pDon' : 'pChoose')));
     show('vEvent');
   }
-  function showPane(id){ ['pChoose','pAud','pKen'].forEach(x => $(x).classList.toggle('hidden', x!==id)); if (id!=='pChoose') window.scrollTo({top:0}); if (id==='pKen') setTimeout(()=>$('fCode').focus(),100); }
-  $('goAud').onclick = () => showPane('pAud'); $('goKen').onclick = () => showPane('pKen');
+  function showPane(id){ ['pChoose','pAud','pKen','pDon'].forEach(x => $(x).classList.toggle('hidden', x!==id)); if (id!=='pChoose') window.scrollTo({top:0}); if (id==='pKen') setTimeout(()=>$('fCode').focus(),100); }
+  $('goAud').onclick = () => showPane('pAud'); $('goKen').onclick = () => showPane('pKen'); $('goDonate').onclick = () => showPane('pDon'); $('goDonate2').onclick = () => showPane('pDon');
   document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => showPane('pChoose'));
   function renderMine(){
     const list = myTickets().filter(x => x.eid === EID);
@@ -344,6 +380,7 @@
       if (!fns) throw new Error('functions unavailable');
       const r = await fns.httpsCallable('claimSession')({ session_id: sid });
       const d = r.data || {};
+      if (d.donation) { $('thanksMsg').textContent = `¥${Number(d.amount||0).toLocaleString()} のご寄付を受け付けました。`; show('vThanks'); return; }
       if (d.eid && d.tid) {
         saveMine(d.eid, d.tid, `${d.tier==='door'?'当日券':'前売券'} ${d.qty||1}名`); const a=myTickets(); a[0].kind='pre'; localStorage.setItem(MY_KEY, JSON.stringify(a));
         goTicket(d.eid, d.tid);

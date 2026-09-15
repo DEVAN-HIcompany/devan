@@ -92,8 +92,8 @@
         pending: { 'demo-gate-1': { email:'uketsuke@example.com', at: Date.now()-600000 } },
         config: { currentEvent: eid },
         events: { [eid]: {
-          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:500, doorPrice:1000, setPrice:700, setGoods:'g1', setGoodsName:'第60回少林寺拳法全日本学生大会 記念ステッカー', setGoodsPrice:300, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', setLink:'https://buy.stripe.com/test_demo_set', saleOpen:true, doorOpen:true, feePercent:7, goodsOpen:true, goodsNote:'北口 売店（10:00〜16:00）' },
-          goods: { g1:{ name:'第60回少林寺拳法全日本学生大会 記念ステッカー', price:300, desc:'大会ロゴ入り。耐水加工。', stock:300, open:true, sort:1 } },
+          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:500, doorPrice:1000, setPrice:700, setGoods:'g1', donateOpen:true, donate:{ links:{ '1000':'https://buy.stripe.com/test_d1', '3000':'https://buy.stripe.com/test_d3', '10000':'https://buy.stripe.com/test_d10', custom:'https://buy.stripe.com/test_dc' } }, donateTotal:42000, donateCount:11, setGoodsName:'第60回少林寺拳法全日本学生大会 記念ステッカー', setGoodsPrice:300, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', setLink:'https://buy.stripe.com/test_demo_set', saleOpen:true, doorOpen:true, feePercent:7, goodsOpen:true, goodsNote:'北口 売店（10:00〜16:00）' },
+          goods: { g1:{ name:'記念ステッカー（色①）', price:300, desc:'大会ロゴ入り。耐水加工。', stock:150, open:true, sort:1 }, g2:{ name:'記念ステッカー（色②）', price:300, desc:'大会ロゴ入り。耐水加工。', stock:150, open:true, sort:2 }, g3:{ name:'記念ステッカー 2色セット', price:500, desc:'色①＋色②。別々に買うより100円お得。', stock:100, open:true, sort:3 } },
           univs: { u1:{name:'明治大学',code:'MEIJI1',cap:100}, u2:{name:'早稲田大学',code:'WASED2',cap:100}, u3:{name:'日本大学',code:'NIHON3',cap:100} },
           codes: { MEIJI1:'u1', WASED2:'u2', NIHON3:'u3' }
         }},
