@@ -38,8 +38,8 @@
   </div>
 
   <div id="vLogin" class="card login hidden">
-    <h2>売店スタッフ ログイン</h2>
-    <p class="lead">受付用のアカウント（入口受付と同じ）でログインしてください。</p>
+    <h2>パンフレットセクション ログイン</h2>
+    <p class="lead">パンフレットセクション（売店担当）用のアカウントでログインしてください。受付用・進行用・管理用では入れません。</p>
     <div class="field"><label>メールアドレス</label><input id="lEmail" type="email" autocomplete="username"></div>
     <div class="field"><label>パスワード</label><input id="lPass" type="password" autocomplete="current-password"></div>
     <button class="btn w" id="lBtn">ログイン</button>
@@ -69,9 +69,9 @@
   const $ = id => document.getElementById(id);
   let EID=null, GOODS={}, VOUCH={}, user=null; const refs=[];
 
-  async function allowed(u){ if (DEMO) return true; const roles=(await db.ref('sj/roles').once('value')).val(); if (!roles) return true; const r=roles[u.uid]; return r==='gate'||r==='admin'; }
+  async function allowed(u){ if (DEMO) return true; const roles=(await db.ref('sj/roles').once('value')).val(); if (!roles) return true; const r=roles[u.uid]; return r==='shop'||r==='admin'; }
   auth.onAuthStateChanged(async u => {
-    if (u && !(await allowed(u))) { try { await db.ref('tk/pending/'+u.uid).set({ email:u.email||'', at:TS }); } catch(_){} await auth.signOut(); $('lMsg').innerHTML = `このアカウント（${esc(u.email||'')}）は受付として登録されていません。管理者に「チケット管理 → 受付・写真係」で許可してもらってください。`; return; }
+    if (u && !(await allowed(u))) { try { await db.ref('tk/pending/'+u.uid).set({ email:u.email||'', at:TS, want:'shop' }); } catch(_){} await auth.signOut(); $('lMsg').innerHTML = `このアカウント（${esc(u.email||'')}）はパンフレットセクションとして登録されていません。管理者に「チケット管理 → 受付アカウント」で「パンフレットセクションとして許可」してもらってください。`; return; }
     user=u; $('vLogin').classList.toggle('hidden', !!u); $('vMain').classList.toggle('hidden', !u); $('who').textContent = u ? (u.email||'') : '';
     if (u) loadEvents(); else stopCam();
   });

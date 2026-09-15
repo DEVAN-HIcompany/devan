@@ -406,7 +406,7 @@ async function loadRole(){
   const u=auth.currentUser; if(!u){ ROLE=null; return null; }
   try{
     const snap=await ROLES.once('value'); const roles=snap.val();
-    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : (roles[u.uid]==='gate' ? 'gate' : 'operator'));
+    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : ((roles[u.uid]==='gate'||roles[u.uid]==='shop') ? roles[u.uid] : 'operator'));
   }catch(e){ console.error('roles',e); ROLE='operator'; }
   return ROLE;
 }
@@ -576,7 +576,7 @@ async function enterAdmin(){
   if(!auth.currentUser){ pendingMode='admin'; renderLogin(); return; }
   show('<div class="loading">確認中...</div>');
   await loadRole();
-  if(ROLE==='gate'){ renderGateOnly('管理用'); return; }
+  if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('管理用'); return; }
   if(ROLE!=='admin'){ renderNoAdmin(); return; }
   MODE='admin'; renderAdminHome();
 }
@@ -584,7 +584,7 @@ async function enterOperator(){
   if(!auth.currentUser){ pendingMode='operator'; renderLogin(); return; }
   show('<div class="loading">確認中...</div>');
   await loadRole();
-  if(ROLE==='gate'){ renderGateOnly('進行用'); return; }
+  if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('進行用'); return; }
   MODE='operator'; viewRound=null; renderList();
 }
 function renderGateOnly(what){
@@ -594,9 +594,9 @@ function renderGateOnly(what){
       <div class="hero"></div>
       <div class="org">${what}</div>
       <div class="wordmark">DEVAN</div>
-      <div class="hsub">このアカウント（${esc(u?u.email||'':'')}）は<br>入場チケットの受付専用です。${what}には入れません。</div>
-      <button class="hbtn primary" onclick="location.href='./ticket/gate.html'">
-        <div><div class="hbtn-l">入口受付を開く</div><div class="hbtn-d">チケットのQR読み取り</div></div>
+      <div class="hsub">このアカウント（${esc(u?u.email||'':'')}）は<br>${ROLE==='shop'?'売店（パンフレットセクション）専用':'入場チケットの受付専用'}です。${what}には入れません。</div>
+      <button class="hbtn primary" onclick="location.href='${ROLE==='shop'?'./ticket/redeem.html':'./ticket/gate.html'}'">
+        <div><div class="hbtn-l">${ROLE==='shop'?'売店 引換受付を開く':'入口受付を開く'}</div><div class="hbtn-d">${ROLE==='shop'?'グッズ引換券のQR読み取り':'チケットのQR読み取り'}</div></div>
         <div class="hbtn-r">›</div>
       </button>
       <div class="hfoot"><button class="implink" onclick="doLogout()">ログアウトして別のアカウントで入る</button> ・ <button class="implink" onclick="renderHome()">最初の画面に戻る</button></div>
