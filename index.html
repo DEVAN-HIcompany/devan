@@ -580,7 +580,7 @@ function renderHome(){
         </button>
       </div>
       ${installHintHTML()}
-      <div class="credit"><a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">Produced by <b>H.I. Company</b></a><span>店舗・団体のAI業務自動化</span></div>
+      
     </div></div>`);
   if(document.getElementById('splash')){ const h=document.querySelector('#app .home'); if(h) h.classList.add('enter'); if(_splashResolve){ _splashResolve(); _splashResolve=null; } }
   applyTicketClosed();
@@ -634,7 +634,7 @@ function renderFedHome(){
       <div class="hnote">閲覧用以外はログインが必要です</div>
       ${u?`<div class="hwho">ログイン中: <b>${esc(u.email||'')}</b></div>`:''}
       <div class="hactions"><button class="hact" onclick="renderHome()">‹ 最初の画面に戻る</button>${u?`<button class="hact quiet" onclick="doLogout()">ログアウト</button>`:''}</div>
-      <div class="credit"><a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">Produced by <b>H.I. Company</b></a><span>店舗・団体のAI業務自動化</span></div>
+      
     </div></div>`);
 }
 function enterView(){ MODE='view'; viewRound=null; renderList(); }
@@ -1403,7 +1403,6 @@ function openSpecGuide(){
     ${specGuideHTML(false)}
     <div class="glegend"><span class="schip standby">待機中</span><span>コートがまだ始まっていない（1組目）</span><span class="schip now">演武中</span><span>いま演武している</span><span class="schip wait">あと3組</span><span>3組あとに出番</span><span class="schip done">終了</span><span>演武が終わった</span><span class="schip stopped">停止中</span><span>コートが一時中断</span></div>
     <div class="gnote">出番の行を押すと、そのコートの全出場組と進み具合が見られます。<br>お気に入りはこのスマホにだけ記憶されます。</div>
-    <div class="gnote" style="margin-top:.6rem;font-size:11px">このアプリ「DEVAN」は H.I. Company が開発・提供しています。大会運営でのご利用のご相談は <a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener" style="color:var(--gold)">hi-companyjapan.jp</a> まで。</div>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="mbtn p" onclick="closeModal()">わかりました</button></div>`;
   $('ov').classList.add('open');
 }
