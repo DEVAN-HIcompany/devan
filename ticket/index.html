@@ -36,7 +36,7 @@
   </div>
 
   <!-- 読み込み中 -->
-  <div id="vLoading" class="card center"><p class="muted" id="loadingMsg">読み込んでいます…</p></div>
+  <div id="vLoading" class="loader"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">読み込んでいます</div></div>
 
   <!-- 大会ページ -->
   <div id="vEvent" class="hidden">
@@ -126,9 +126,8 @@
   </div>
 
   <!-- 決済後 -->
-  <div id="vClaim" class="card center hidden">
-    <h2 style="border:0">お支払いを確認しています…</h2>
-    <p class="muted" id="claimMsg">数秒お待ちください。</p>
+  <div id="vClaim" class="hidden"><div class="loader" style="min-height:30vh;padding-bottom:0"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">お支払いを確認しています</div></div>
+    <p class="muted" id="claimMsg" style="text-align:center">数秒お待ちください。</p>
     <div id="claimRetry" class="hidden"><button class="btn ghost" onclick="location.reload()">もう一度確認する</button></div>
   </div>
 

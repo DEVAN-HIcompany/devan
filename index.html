@@ -91,6 +91,19 @@ button:active{transform:scale(.985)}
 .backbtn{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:500;color:var(--ink2);white-space:nowrap;letter-spacing:.04em}
 .backbtn:hover{border-color:var(--line2);background:#fff}
 .loading{text-align:center;padding:4rem;color:var(--muted);font-size:13px;letter-spacing:.06em}
+/* ── 読み込み表示（ロゴ＋金の細罫が流れる） ── */
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52vh;padding:3rem 1rem;text-align:center;animation:ldIn .5s ease .15s both}
+.loader .ld-mark{font-family:'Cormorant Garamond','Shippori Mincho',serif;font-size:26px;font-weight:600;letter-spacing:.34em;padding-left:.34em;color:#3D3A36;line-height:1;margin-bottom:14px}
+.loader .ld-rule{width:64px;height:1px;background:linear-gradient(90deg,rgba(168,137,79,0) 0%,rgba(168,137,79,0) 30%,#A8894F 50%,rgba(168,137,79,0) 70%,rgba(168,137,79,0) 100%);background-size:200% 100%;animation:ldSweep 1.6s ease-in-out infinite;position:relative}
+.loader .ld-rule::before{content:'';position:absolute;inset:0;background:#E7E2D9}
+.loader .ld-rule::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(168,137,79,0),#A8894F,rgba(168,137,79,0));background-size:60% 100%;background-repeat:no-repeat;animation:ldSweep 1.6s ease-in-out infinite}
+.loader .ld-msg{margin-top:14px;font-family:'Shippori Mincho','Hiragino Mincho ProN',serif;font-size:11.5px;letter-spacing:.24em;color:#8A857C}
+.loader.err .ld-msg{color:#9E3B3B;letter-spacing:.06em;font-family:inherit;font-size:13px}
+.loader.err .ld-rule::after{animation:none;opacity:0}
+@keyframes ldSweep{0%{background-position:-60% 0}100%{background-position:160% 0}}
+@keyframes ldIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.loader .ld-rule::after{animation:none;background:#A8894F}.loader{animation:none}}
+
 /* ── 起動アニメーション（ホームの見出しと同じ部品を使い、着地してそのままホームになる）── */
 #splash{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:2rem 1.25rem;transition:background-color .5s ease .25s}
 #splash.dock{background-color:rgba(246,244,239,0)}
@@ -612,7 +625,7 @@ function enterView(){ MODE='view'; viewRound=null; renderList(); }
 let pendingMode = null; // ログイン後に入るモード
 async function enterAdmin(){
   if(!auth.currentUser){ pendingMode='admin'; renderLogin(); return; }
-  show('<div class="loading">確認中...</div>');
+  show(loadingHTML('確認しています'));
   await loadRole();
   if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('管理用'); return; }
   if(ROLE!=='admin'){ renderNoAdmin(); return; }
@@ -620,7 +633,7 @@ async function enterAdmin(){
 }
 async function enterOperator(){
   if(!auth.currentUser){ pendingMode='operator'; renderLogin(); return; }
-  show('<div class="loading">確認中...</div>');
+  show(loadingHTML('確認しています'));
   await loadRole();
   if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('進行用'); return; }
   MODE='operator'; viewRound=null; renderList();
@@ -722,7 +735,7 @@ function doLogout(){ auth.signOut().finally(()=>renderHome()); }
 // ── 大会リスト ──
 // ─────────────────────────────────────────
 function renderList(){
-  show('<div class="loading">読み込み中...</div>');
+  show(loadingHTML());
   METAS.once('value').then(snap=>{
     const val = snap.val();
     const list = val ? Object.values(val) : [];
@@ -767,10 +780,10 @@ function renderList(){
 //  ③ 進行状態のリアルタイムリスナーを開始
 // ─────────────────────────────────────────
 function openTournament(id){
-  show('<div class="loading">読み込み中...</div>');
+  show(loadingHTML());
   META(id).once('value').then(snap=>{
     const td = snap.val();
-    if(!td){ show('<div class="loading">大会データが見つかりません。大会一覧に戻ります。</div>'); setTimeout(renderList,1500); return; }
+    if(!td){ show(loadingHTML('大会データが見つかりません。大会一覧に戻ります。',true)); setTimeout(renderList,1500); return; }
     CUR_ID = id;
     TD = clone(td);
     // Firebaseは空配列を保存しないので、teamsがない場合は空配列に補完
@@ -786,7 +799,7 @@ function openTournament(id){
     startProgListener(id);
   }).catch(e=>{
     console.error('openTournament error:', e);
-    show('<div class="loading">読み込みエラー。もう一度お試しください。</div>');
+    show(loadingHTML('読み込みエラー。もう一度お試しください。',true));
     setTimeout(renderList, 2000);
   });
 }
@@ -934,7 +947,7 @@ function saveDraftAndOpen(){
     (draftTD.courts[r]||[]).forEach(c=>{ c.teams=c.teams.filter(t=>t.a||t.n); });
   });
   // Firebaseに保存
-  show('<div class="loading">保存中...</div>');
+  show(loadingHTML('保存しています'));
   META(draftTD.id).set(draftTD).then(()=>{
     CUR_ID = draftTD.id;
     TD = clone(draftTD);
@@ -1826,8 +1839,9 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{ try{ r.update(); }catch(e){} }).catch(e=>console.warn('sw',e)); });
 }
 
+function loadingHTML(msg,err){ return `<div class="loader${err?' err':''}"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">${msg||'読み込んでいます'}</div></div>`; }
 let _booted=false;
-show('<div class="loading">読み込み中...</div>');
+show(loadingHTML());
 // ── 起動アニメーション（1セッションに1回。ロゴがホームの定位置へ着地してそのままホームになる）──
 let splashHomeReady=null, _splashResolve=null;
 (function(){

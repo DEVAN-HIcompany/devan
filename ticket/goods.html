@@ -39,7 +39,7 @@
     <div class="role"><a href="../">‹ DEVANへ戻る</a></div>
   </div>
 
-  <div id="vLoading" class="card center"><p class="muted">読み込んでいます…</p></div>
+  <div id="vLoading" class="loader"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">読み込んでいます</div></div>
 
   <div id="vMain" class="hidden">
     <div class="hero">
@@ -69,7 +69,7 @@
     <div class="row" style="margin-top:14px;display:grid;gap:8px"><button class="btn ghost" id="vSave">この端末に保存する</button><a class="btn ghost" id="vBack" href="goods.html">グッズ一覧へ戻る</a></div>
   </div>
 
-  <div id="vClaim" class="card center hidden"><h2 style="border:0">お支払いを確認しています…</h2><p class="muted" id="claimMsg">数秒お待ちください。</p><div id="claimRetry" class="hidden"><button class="btn ghost" onclick="location.reload()">もう一度確認する</button></div></div>
+  <div id="vClaim" class="hidden"><div class="loader" style="min-height:30vh;padding-bottom:0"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">お支払いを確認しています</div></div><p class="muted" id="claimMsg" style="text-align:center">数秒お待ちください。</p><div id="claimRetry" class="hidden"><button class="btn ghost" onclick="location.reload()">もう一度確認する</button></div></div>
   <div id="vError" class="card hidden"><h2>表示できません</h2><p id="errMsg" class="lead"></p><a class="btn ghost" href="goods.html">グッズ一覧へ</a></div>
 
   <div class="foot" id="legal"></div>
