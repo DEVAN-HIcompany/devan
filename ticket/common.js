@@ -192,5 +192,12 @@
     const s = await db.ref('tk/config/currentEvent').once('value'); return s.val();
   }
 
+  // 試験運用中の表示（tk/config/beta）: 全チケット画面のヘッダー下に帯を出す
+  document.addEventListener('DOMContentLoaded', ()=>{
+    try { db.ref('tk/config/beta').on('value', s => { const v = s.val(); const on = !!(v && v.on); let bar = document.getElementById('betabar');
+      if (!bar) { bar = document.createElement('div'); bar.id='betabar'; bar.style.cssText='display:none;align-items:center;justify-content:center;gap:8px;margin:-6px 0 14px;padding:6px 10px;border:1px solid var(--line2);border-radius:999px;font-size:11.5px;color:var(--ink2);background:var(--card)'; bar.innerHTML='<span style="font-family:var(--mark);font-weight:600;font-size:11px;letter-spacing:.22em;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:1px 8px">BETA</span><span id="betamsg"></span>'; const top = document.querySelector('.top'); if (top && top.parentNode) top.parentNode.insertBefore(bar, top.nextSibling); }
+      bar.style.display = on ? 'flex' : 'none'; bar.querySelector('#betamsg').textContent = (v && v.message) || '試験運用中です。表示が乱れることがあります。'; }, ()=>{}); } catch(_){}
+  });
+
   window.TK = { DEMO, Q, db, auth, fns, TS, yen, nameKey, KIND, kindLabel, countKey, newTid, newCode, ticketNo, fmtTime, esc, qrSvg, baseUrl, ticketUrl, parseTicketUrl, beep, download, csv, isAdmin, loadEventPub, currentEventId };
 })();

@@ -69,6 +69,11 @@ button:active{transform:scale(.985)}
 @media(max-width:480px){.hsub{font-size:13.5px;margin-bottom:1.8rem;letter-spacing:.04em}.wordmark{font-size:40px}.home{padding:1.5rem 1rem}}
 .hfoot{margin-top:1.25rem;font-size:12px;color:var(--muted);letter-spacing:.03em}
 .hwho{margin-top:1.2rem;font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+#betabar{position:fixed;left:0;right:0;top:0;z-index:900;display:none;justify-content:center;align-items:center;gap:8px;padding:6px 12px;background:rgba(246,244,239,.96);border-bottom:1px solid var(--line2);font-size:11.5px;color:var(--ink2);letter-spacing:.03em;backdrop-filter:saturate(1.2) blur(6px)}
+#betabar.on{display:flex}
+#betabar .bt{font-family:'Cormorant Garamond',var(--serif);font-weight:600;font-size:11px;letter-spacing:.22em;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:1px 8px}
+body.beta .app{padding-top:34px}
+body.beta #splash{padding-top:34px}
 .hwho b{font-weight:500;color:var(--ink2)}
 .hactions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:.6rem}
 .hact{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line2);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:500;color:var(--ink2);cursor:pointer;letter-spacing:.04em;box-shadow:var(--sh);transition:border-color .15s,color .15s}
@@ -389,6 +394,7 @@ button:active{transform:scale(.985)}
 </head>
 <body>
 <div id="splash" aria-hidden="true"><div class="home-box sp-in"><div class="sp-glow"></div><div class="hero"></div><div class="org">関東学生少林寺拳法連盟</div><div class="wordmark">DEVAN</div><div class="hsub">出番が、わかる。<br><span class="hsub2">大会の進行状況を、その場で・リアルタイムに</span></div></div></div>
+<div id="betabar" aria-live="polite"><span class="bt">BETA</span><span id="betamsg">試験運用中です。表示が乱れることがあります。</span></div>
 <div class="app" id="app"></div>
 <div class="overlay" id="ov"><div class="modal" id="mod"></div></div>
 
@@ -579,6 +585,8 @@ function renderHome(){
   if(document.getElementById('splash')){ const h=document.querySelector('#app .home'); if(h) h.classList.add('enter'); if(_splashResolve){ _splashResolve(); _splashResolve=null; } }
   applyTicketClosed();
 }
+// 試験運用中の表示（tk/config/beta）
+db.ref('tk/config/beta').on('value', s=>{ const v=s.val(); const on=!!(v&&v.on); const bar=document.getElementById('betabar'); if(!bar) return; bar.classList.toggle('on',on); document.body.classList.toggle('beta',on); if(v&&v.message) document.getElementById('betamsg').textContent=v.message; }, ()=>{});
 // チケット機能の一時停止（tk/config/closed）: 停止中はトップの「入場チケット」「大会グッズ」を出さない
 let _tkClosed=null;
 function applyTicketClosed(){

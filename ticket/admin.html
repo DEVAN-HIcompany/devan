@@ -53,6 +53,13 @@
         </div>
         <div class="field" style="margin:10px 0 6px"><label>停止中に表示する文（任意）</label><input id="tkClosedMsg" placeholder="例: 入場チケットは第60回全日本学生大会から導入します。"></div>
         <div class="row"><button class="btn sm" id="tkClosedSave">保存する</button><span class="msg" id="tkClosedMsgOut"></span></div>
+        <hr class="sep">
+        <div class="row between">
+          <div><h3 style="margin:0 0 4px">試験運用（BETA）の表示</h3><p class="lead" style="margin:0">オンにすると、DEVAN のすべての画面に「BETA 試験運用中」の帯が出ます。テストを兼ねる大会で、不具合が出ても信用を落とさないための表示です。</p></div>
+          <label class="switch" style="white-space:nowrap"><input type="checkbox" id="tkBeta"> BETA表示</label>
+        </div>
+        <div class="field" style="margin:10px 0 6px"><label>帯に出す文（任意）</label><input id="tkBetaMsg" placeholder="例: 試験運用中です。表示が乱れることがあります。お気づきの点は本部まで。"></div>
+        <div class="row"><button class="btn sm" id="tkBetaSave">保存する</button><span class="msg" id="tkBetaOut"></span></div>
       </div>
       <div class="card">
         <h2>入場・発行の状況</h2>
@@ -321,6 +328,9 @@
   /* ---- チケット機能の公開／一時停止（全大会共通） ---- */
   db.ref('tk/config/closed').on('value', s => { const c = s.val()||{}; $('tkClosed').checked = !!c.closed; $('tkClosedMsg').value = c.message||''; $('closeCard').style.background = c.closed ? 'var(--warn-bg)' : ''; }, ()=>{});
   $('tkClosedSave').onclick = async () => { try { await db.ref('tk/config/closed').set({ closed: $('tkClosed').checked, message: $('tkClosedMsg').value.trim(), at: TS }); $('tkClosedMsgOut').className='msg ok'; $('tkClosedMsgOut').textContent = $('tkClosed').checked ? '一時停止しました。' : '公開中にしました。'; } catch(e){ $('tkClosedMsgOut').className='msg'; $('tkClosedMsgOut').textContent='保存できませんでした。'; } };
+
+  db.ref('tk/config/beta').on('value', s => { const c = s.val()||{}; $('tkBeta').checked = !!c.on; $('tkBetaMsg').value = c.message||''; }, ()=>{});
+  $('tkBetaSave').onclick = async () => { try { await db.ref('tk/config/beta').set({ on: $('tkBeta').checked, message: $('tkBetaMsg').value.trim(), at: TS }); $('tkBetaOut').className='msg ok'; $('tkBetaOut').textContent = $('tkBeta').checked ? 'BETA表示をオンにしました。' : 'BETA表示をオフにしました。'; } catch(e){ $('tkBetaOut').className='msg'; $('tkBetaOut').textContent='保存できませんでした。'; } };
 
   /* ---- Stripe 連携 ---- */
   db.ref('tk/config/stripeAccount').once('value').then(s => { $('cAcct').value = s.val()||''; }).catch(()=>{});
