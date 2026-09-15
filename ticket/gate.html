@@ -80,7 +80,8 @@
         <button class="btn xs ghost" id="camRestart">カメラ再起動</button>
         <label class="btn xs ghost" style="cursor:pointer">画像から読む<input type="file" id="imgIn" accept="image/*" hidden></label>
       </div>
-      <div class="manual"><input id="mNo" placeholder="番号 例: K-3K7QP2" maxlength="10"><button class="btn" id="mBtn">検索</button></div>
+      <div class="manual"><input id="mNo" placeholder="番号（K-3K7QP2）または氏名・大学名" maxlength="40"><button class="btn" id="mBtn">検索</button></div>
+      <div id="mHits"></div>
       <div class="result" id="result"><div class="muted">QRコードを枠に入れてください。番号での検索もできます。</div></div>
     </div>
 
@@ -249,7 +250,17 @@
     check(p.tid);
   }
   $('mBtn').onclick = () => {
-    const v = $('mNo').value.trim().toUpperCase().replace(/^[A-Z]-/,'');
+    const raw = $('mNo').value.trim(); $('mHits').innerHTML='';
+    if (!/^[A-Za-z]?-?[A-Za-z0-9]{4,}$/.test(raw) || /[^\x00-\x7F]/.test(raw)) {
+      // 氏名・大学名で検索
+      const q = TK.nameKey(raw); if (q.length < 2) { setResult('warn','氏名を入力','氏名か大学名を2文字以上入力してください。'); return; }
+      const found = Object.entries(TICKETS).filter(([,t]) => TK.nameKey(t.name).includes(q) || TK.nameKey(t.univName).includes(q)).slice(0,8);
+      if (!found.length) { setResult('ng','見つかりません',`「${esc(raw)}」に該当するチケットはありません。`); sound(false); return; }
+      $('mHits').innerHTML = '<ul class="list">' + found.map(([tid,t]) => `<li><span>${esc(t.name||'')}<span class="muted">　${esc(t.univName||'')}　${ticketNo(t.kind,tid)}${t.used?'　入場済':''}</span></span><button class="btn xs" data-t="${tid}">開く</button></li>`).join('') + '</ul>';
+      $('mHits').querySelectorAll('button').forEach(b => b.onclick = () => { $('mHits').innerHTML=''; $('mNo').value=''; check(b.dataset.t); });
+      setResult('warn','候補があります','下の一覧から本人のチケットを選んでください。'); return;
+    }
+    const v = raw.toUpperCase().replace(/^[A-Z]-/,'');
     if (v.length < 4) { setResult('warn','番号を入力','ハイフンの後ろの6文字を入力してください。'); return; }
     const hits = Object.keys(TICKETS).filter(k => k.endsWith(v));
     if (!hits.length) { setResult('ng','見つかりません',`番号「${esc(v)}」のチケットはありません。`); sound(false); return; }

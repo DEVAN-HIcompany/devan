@@ -103,7 +103,8 @@
       <button class="backlink" data-back>‹ 戻る</button>
       <div class="card">
         <h2>無料チケットの発行</h2>
-        <p class="lead">主将・主務から連絡された「大学コード」と氏名を入れるだけです。お一人1枚。</p>
+        <p class="lead">主将・主務から連絡された「大学コード」と氏名を入れるだけです。</p>
+        <div class="note" style="margin-bottom:12px"><b>お一人様1枚まで。</b>大学ごとに発行できる枚数が決まっています。同じ氏名で2枚目は発行できません。</div>
         <form id="freeForm" autocomplete="off">
           <div class="field"><label>大学コード（6文字）</label><input id="fCode" placeholder="例: ABC234" maxlength="8" style="text-transform:uppercase;letter-spacing:.2em" inputmode="latin"></div>
           <div class="field" id="fUnivWrap" style="display:none"><label>所属</label><div id="fUniv" style="font-size:16px;font-weight:600;padding:4px 0"></div></div>
@@ -257,6 +258,8 @@
     const dup = myTickets().find(x => x.eid===EID && x.kind==='free' && x.name===name);
     if (dup) { goTicket(EID, dup.tid); return; }
     $('fBtn').disabled = true; $('fMsg').textContent = '発行しています…'; $('fMsg').className='msg';
+    // 同じ大学・同じ氏名の2枚目は発行しない（お一人様1枚）
+    try { const ex = await db.ref(`tk/names/${EID}/${univ.id}/${TK.nameKey(name)}`).once('value'); if (ex.val()) { $('fMsg').textContent = 'この氏名のチケットはすでに発行されています（お一人様1枚）。発行した端末の「お持ちのチケット」から表示するか、入口で氏名をお伝えください。'; $('fBtn').disabled = false; return; } } catch(_){}
     try {
       const tid = await issueFree(univ, name);
       saveMine(EID, tid, `${name}（${univ.name}）`); 
@@ -265,7 +268,7 @@
     } catch(e) {
       console.error(e);
       const m = String(e && (e.code||e.message) || '');
-      $('fMsg').textContent = /PERMISSION|permission/.test(m) ? '発行できませんでした。大学の発行上限に達しているか、コードが無効になっています。所属大学の幹部にご確認ください。' : '発行できませんでした。通信状況をご確認のうえ、もう一度お試しください。';
+      $('fMsg').textContent = /PERMISSION|permission/.test(m) ? '発行できませんでした。大学の発行上限に達しているか、この氏名ですでに発行済みか、コードが無効になっています。所属大学の幹部にご確認ください。' : '発行できませんでした。通信状況をご確認のうえ、もう一度お試しください。';
       $('fBtn').disabled = false;
     }
   });
@@ -277,7 +280,7 @@
       const tid = newTid();
       const ticket = { kind:'free', qty:1, name, univ:u.id, univName:u.name, code:u.code, created:TS, used:0 };
       try {
-        await db.ref().update({ [`tk/tickets/${EID}/${tid}`]: ticket, [`tk/counts/${EID}/${u.id}`]: next });
+        await db.ref().update({ [`tk/tickets/${EID}/${tid}`]: ticket, [`tk/counts/${EID}/${u.id}`]: next, [`tk/names/${EID}/${u.id}/${TK.nameKey(name)}`]: true });
         return tid;
       } catch(e) { if (i===3 || !/PERMISSION|permission/.test(String(e.code||e.message))) throw e; await new Promise(r=>setTimeout(r, 200 + Math.random()*300)); }
     }

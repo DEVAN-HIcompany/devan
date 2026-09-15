@@ -33,6 +33,7 @@
   function kindLabel(t){ if (t && t.kind==='pre' && t.tier==='door') return '当日券（オンライン）'; if (t && t.kind==='pre' && t.tier==='advset') return '前売券（記念品付き）'; return (KIND[t&&t.kind]||{}).label || 'チケット'; }
   function countKey(t){ return (t.kind==='pre' && t.tier==='door') ? 'door' : t.kind; }
   function yen(n){ return '¥' + Number(n||0).toLocaleString(); }
+  function nameKey(s){ return String(s||'').normalize('NFKC').replace(/[\s\u3000・･,.、。]/g,'').toLowerCase().replace(/[.#$\/\[\]]/g,'_'); }
   function ticketNo(kind, tid){
     const p = {pre:'P',door:'D',free:'K',comp:'G'}[kind] || 'T';
     return p + '-' + tid.slice(-6);
@@ -97,6 +98,7 @@
           codes: { MEIJI1:'u1', WASED2:'u2', NIHON3:'u3' }
         }},
         counts: { [eid]: { u1:2 } },
+        names: { [eid]: { u1: { '佐藤花子':true, '鈴木一郎':true } } },
         tickets: { [eid]: {
           'DEMOPREAAAAAAAAAAAA7': { kind:'pre', tier:'advset', qty:2, name:'記念 花子', email:'demo3@example.com', goods:[{gid:'g1', name:'第60回少林寺拳法全日本学生大会 記念ステッカー', qty:2}], created:Date.now()-900000, used:0 },
           'DEMOPREAAAAAAAAAAAA6': { kind:'pre', tier:'door', qty:1, name:'高橋 次郎', email:'demo2@example.com', created:Date.now()-1800000, used:0 },
@@ -190,5 +192,5 @@
     const s = await db.ref('tk/config/currentEvent').once('value'); return s.val();
   }
 
-  window.TK = { DEMO, Q, db, auth, fns, TS, yen, KIND, kindLabel, countKey, newTid, newCode, ticketNo, fmtTime, esc, qrSvg, baseUrl, ticketUrl, parseTicketUrl, beep, download, csv, isAdmin, loadEventPub, currentEventId };
+  window.TK = { DEMO, Q, db, auth, fns, TS, yen, nameKey, KIND, kindLabel, countKey, newTid, newCode, ticketNo, fmtTime, esc, qrSvg, baseUrl, ticketUrl, parseTicketUrl, beep, download, csv, isAdmin, loadEventPub, currentEventId };
 })();

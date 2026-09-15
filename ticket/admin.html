@@ -288,7 +288,7 @@
     const sub = (path, fn) => { const r = db.ref(path); r.on('value', s => { fn(s.val()||{}); render(); }); refs.push(r); };
     sub(`tk/events/${eid}/pub`, v => { PUB = v; fillEvForm(v); });
     sub(`tk/events/${eid}/univs`, v => UNIVS = v);
-    sub(`tk/tickets/${eid}`, v => TICKETS = v);
+    sub(`tk/tickets/${eid}`, v => { TICKETS = v; backfillNames(eid); });
     sub(`tk/counts/${eid}`, v => COUNTS = v);
     watchGoods(eid);
   }
@@ -326,6 +326,14 @@
       $('eLinkMsg').className='msg ok'; $('eLinkMsg').textContent = d.connected ? `作成しました（利用料 ${d.feePercent}% を自動分配）。` : '作成しました。※団体の Stripe アカウント ID が未設定のため、H.I. Company の口座に入金される設定です。'; }
     catch(e){ console.error(e); $('eLinkMsg').className='msg'; $('eLinkMsg').textContent='作成できませんでした: ' + (e.message||''); }
   };
+
+  let _namesDone = {};
+  async function backfillNames(eid){ // 以前に発行された無料チケットにも「お一人様1枚」の索引を付ける（1回だけ）
+    if (_namesDone[eid]) return; _namesDone[eid] = true;
+    try { const ex = (await db.ref(`tk/names/${eid}`).once('value')).val() || {}; const upd = {};
+      Object.values(TICKETS).forEach(t => { if (t.kind==='free' && t.univ && t.name && !t.void) { const k = TK.nameKey(t.name); if (!(ex[t.univ] && ex[t.univ][k])) upd[`tk/names/${eid}/${t.univ}/${k}`] = true; } });
+      if (Object.keys(upd).length) await db.ref().update(upd); } catch(e){ console.warn('names backfill', e); }
+  }
 
   /* ---- 大学コード ---- */
   $('uAdd').onclick = async () => {
@@ -465,7 +473,7 @@
                 delBatch: async b => { const ks = Object.entries(TICKETS).filter(([,t])=>t.kind==='door'&&t.batch===b); const used = ks.filter(([,t])=>t.used).length; if (!confirm(`束 ${b}（${ks.length}枚、うち入場済み${used}）を削除しますか？`)) return; const upd={}; ks.forEach(([tid])=>upd[`tk/tickets/${EID}/${tid}`]=null); await db.ref().update(upd); },
                 printComp: tid => printTickets([{tid, kind:'comp'}]),
                 copyLink: tid => navigator.clipboard.writeText(ticketUrl(EID, tid)).then(()=>alert('リンクをコピーしました。')),
-                voidT: async tid => { const t=TICKETS[tid]; const v = t.void ? null : (prompt('無効にする理由（任意）','')||'無効'); if (t.void && !confirm('無効を解除しますか？')) return; await db.ref(`tk/tickets/${EID}/${tid}`).update({ void: v?true:null, voidNote: v||null }); },
+                voidT: async tid => { const t=TICKETS[tid]; const v = t.void ? null : (prompt('無効にする理由（任意）','')||'無効'); if (t.void && !confirm('無効を解除しますか？')) return; const upd = { [`tk/tickets/${EID}/${tid}/void`]: v?true:null, [`tk/tickets/${EID}/${tid}/voidNote`]: v||null }; if (t.kind==='free' && t.univ && t.name) upd[`tk/names/${EID}/${t.univ}/${TK.nameKey(t.name)}`] = v ? null : true; await db.ref().update(upd); },
                 resetUsed: async tid => { if (!confirm('入場記録を取り消しますか？')) return; await db.ref(`tk/tickets/${EID}/${tid}`).update({ used:0, usedAt:null }); } };
 
   /* ---- 受付アカウント（sj/roles = 'gate'） ---- */
