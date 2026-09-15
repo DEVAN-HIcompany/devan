@@ -150,7 +150,7 @@
   /* ---- 大会選択 ---- */
   async function loadEvents(){
     const [evs, cur] = await Promise.all([db.ref('tk/events').once('value'), db.ref('tk/config/currentEvent').once('value')]);
-    const list = []; evs.forEach(s => list.push({ id:s.key, pub: s.child('pub').val()||{} }));
+    const list = []; evs.forEach(s => { list.push({ id:s.key, pub:s.child('pub').val()||{} }); });
     $('evSel').innerHTML = list.map(e => `<option value="${esc(e.id)}">${esc(e.pub.name||e.id)}</option>`).join('') || '<option value="">大会がありません</option>';
     const want = TK.Q.get('e') || localStorage.getItem('tk_gate_e') || cur.val() || (list[0]&&list[0].id);
     if (want && list.some(e=>e.id===want)) $('evSel').value = want;

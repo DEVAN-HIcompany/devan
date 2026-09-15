@@ -212,7 +212,7 @@
   async function loadEvents(keep){
     const [evs, cur] = await Promise.all([db.ref('tk/events').once('value'), db.ref('tk/config/currentEvent').once('value')]);
     CURRENT = cur.val();
-    const list = []; evs.forEach(s => list.push({ id:s.key, pub:s.child('pub').val()||{} }));
+    const list = []; evs.forEach(s => { list.push({ id:s.key, pub:s.child('pub').val()||{} }); });
     EVENTS = list; renderEvTable();
     $('evSel').innerHTML = list.map(e => `<option value="${esc(e.id)}">${esc(e.pub.name||e.id)}${e.id===CURRENT?'（現在の大会）':''}</option>`).join('') || '<option value="">大会がありません（「新しい大会を作る」）</option>';
     const want = keep || EID || CURRENT || (list[0]&&list[0].id);
