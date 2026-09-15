@@ -113,6 +113,7 @@
         <h2>参加費軽減基金への寄付</h2>
         <p class="lead">大会の費用は、これまで出場拳士の参加費でほぼすべてまかなわれてきました。いただいたご寄付は、出場する拳士の参加費の負担を減らすために使います。</p>
         <div class="muted" id="donStat" style="margin-bottom:10px"></div>
+        <div class="note hidden" id="donPrep" style="margin-bottom:10px">オンラインでの受付は準備中です。開始までしばらくお待ちください。</div>
         <div class="don-grid">
           <a class="don" id="don1000" href="#"><div class="da">¥1,000</div><div class="dl">応援</div></a>
           <a class="don rec" id="don3000" href="#"><div class="da">¥3,000</div><div class="dl">おすすめ</div></a>
@@ -243,10 +244,13 @@
     $('doorWrap').classList.toggle('hidden', !doorOpen);
     if (doorOpen) { const du = new URL(PUB.doorLink); du.searchParams.set('client_reference_id', EID); $('doorBtn').href = du.toString(); }
     if (!PUB.saleOpen) { $('fBtn').disabled = true; $('fMsg').textContent = '無料チケットの発行は締め切りました。入口で所属をお伝えください。'; }
-    const dl = (PUB.donate && PUB.donate.links) || {}; const donOpen = !!PUB.donateOpen && !!dl.custom;
+    const dl = (PUB.donate && PUB.donate.links) || {}; const donOpen = !!PUB.donateOpen; const donReady = donOpen && !!dl.custom;
     $('donateChoose').classList.toggle('hidden', !donOpen); $('donateAud').classList.toggle('hidden', !donOpen);
-    if (donOpen) { const L = (k, id) => { const u = new URL(dl[k]); u.searchParams.set('client_reference_id', EID); $(id).href = u.toString(); }; L('1000','don1000'); L('3000','don3000'); L('10000','don10000'); L('custom','donCustom');
-      $('donStat').textContent = PUB.donateCount ? `これまでに ${PUB.donateCount}名から ¥${Number(PUB.donateTotal||0).toLocaleString()} のご寄付をいただいています。` : ''; }
+    if (donOpen) {
+      $('donStat').textContent = PUB.donateCount ? `これまでに ${PUB.donateCount}名から ¥${Number(PUB.donateTotal||0).toLocaleString()} のご寄付をいただいています。` : '';
+      if (donReady) { const L = (k, id) => { const u = new URL(dl[k]); u.searchParams.set('client_reference_id', EID); $(id).href = u.toString(); }; L('1000','don1000'); L('3000','don3000'); L('10000','don10000'); L('custom','donCustom'); $('donPrep').classList.add('hidden'); }
+      else { ['don1000','don3000','don10000','donCustom'].forEach(id => { $(id).removeAttribute('href'); $(id).style.opacity='.5'; $(id).style.pointerEvents='none'; }); $('donPrep').classList.remove('hidden'); }
+    }
     renderMine();
     showPane(Q.get('p') === 'ken' ? 'pKen' : (Q.get('p') === 'aud' ? 'pAud' : (Q.get('p') === 'don' ? 'pDon' : 'pChoose')));
     show('vEvent');
