@@ -91,7 +91,7 @@
         <div class="row" style="margin:6px 0 14px">
           <label class="switch"><input type="checkbox" id="eSaleOpen" checked> 前売券の販売と無料発行を受け付ける</label>
           <label class="switch"><input type="checkbox" id="eDoorOpen"> 当日券のオンライン販売を受け付ける（大会当日にオンにする）</label>
-          <label class="switch"><input type="checkbox" id="eDonateOpen"> 参加費軽減基金への寄付を受け付ける（1,000／3,000／10,000円＋自由金額。「決済リンクを自動作成」で寄付用リンクも作られます）</label>
+          <label class="switch"><input type="checkbox" id="eDonateOpen"> 出場選手への応援金（寄付）を受け付ける（1,000／3,000／10,000円＋自由金額。「決済リンクを自動作成」で応援金用リンクも作られます）</label>
           <label class="switch"><input type="checkbox" id="eCurrent"> この大会を「現在の大会」にする（URLに大会IDが無いときに表示される）</label>
         </div>
         <div class="row"><button class="btn" id="eSave">保存する</button><button class="btn ghost" id="eDelete">この大会を削除</button><span class="msg" id="eMsg"></span></div>
@@ -545,7 +545,7 @@
     const pre = c.pre.issued*price + c.set.issued*Number(PUB.setPrice||0), donl = c.doorOnline.issued*dprice, cash = c.door.used*dprice;
     const online = pre + donl; const fee = Math.round(online*0.036) + Math.round(online*(Number(PUB.feePercent||0)/100));
     const don = Number(PUB.donateTotal||0);
-    $('money').innerHTML = (don?`<div class="stat"><div class="k">寄付（${PUB.donateCount||0}件）</div><div class="v">¥${don.toLocaleString()}</div></div>`:'') + `<div class="stat"><div class="k">前売（オンライン）</div><div class="v">¥${pre.toLocaleString()}</div></div><div class="stat"><div class="k">当日券（オンライン）</div><div class="v">¥${donl.toLocaleString()}</div></div><div class="stat"><div class="k">当日券（入口・現金）</div><div class="v">¥${cash.toLocaleString()}</div></div><div class="stat"><div class="k">売上合計</div><div class="v">¥${(online+cash).toLocaleString()}</div></div><div class="stat"><div class="k">手数料の目安（決済3.6%＋DEVAN ${Number(PUB.feePercent||0)}%）</div><div class="v">−¥${fee.toLocaleString()}</div></div><div class="stat"><div class="k">団体の手取り目安</div><div class="v">¥${(online+cash-fee).toLocaleString()}</div></div>`;
+    $('money').innerHTML = (don?`<div class="stat"><div class="k">応援金（${PUB.donateCount||0}件）</div><div class="v">¥${don.toLocaleString()}</div></div>`:'') + `<div class="stat"><div class="k">前売（オンライン）</div><div class="v">¥${pre.toLocaleString()}</div></div><div class="stat"><div class="k">当日券（オンライン）</div><div class="v">¥${donl.toLocaleString()}</div></div><div class="stat"><div class="k">当日券（入口・現金）</div><div class="v">¥${cash.toLocaleString()}</div></div><div class="stat"><div class="k">売上合計</div><div class="v">¥${(online+cash).toLocaleString()}</div></div><div class="stat"><div class="k">手数料の目安（決済3.6%＋DEVAN ${Number(PUB.feePercent||0)}%）</div><div class="v">−¥${fee.toLocaleString()}</div></div><div class="stat"><div class="k">団体の手取り目安</div><div class="v">¥${(online+cash-fee).toLocaleString()}</div></div>`;
     $('pubUrl').textContent = EID ? pubUrl() : '';
     // 大学別
     const us = Object.entries(UNIVS).sort((a,b)=>a[1].name.localeCompare(b[1].name,'ja'));
