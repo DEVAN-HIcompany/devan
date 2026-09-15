@@ -69,11 +69,14 @@ button:active{transform:scale(.985)}
 @media(max-width:480px){.hsub{font-size:13.5px;margin-bottom:1.8rem;letter-spacing:.04em}.wordmark{font-size:40px}.home{padding:1.5rem 1rem}}
 .hfoot{margin-top:1.25rem;font-size:12px;color:var(--muted);letter-spacing:.03em}
 .hwho{margin-top:1.2rem;font-size:11.5px;color:var(--muted);letter-spacing:.04em}
-#betabar{position:fixed;left:0;right:0;top:0;z-index:900;display:none;justify-content:center;align-items:center;gap:8px;padding:6px 12px;background:rgba(246,244,239,.96);border-bottom:1px solid var(--line2);font-size:11.5px;color:var(--ink2);letter-spacing:.03em;backdrop-filter:saturate(1.2) blur(6px)}
+#betabar{position:fixed;left:0;right:0;top:0;height:32px;z-index:900;display:none;justify-content:center;align-items:center;gap:8px;padding:0 12px;background:rgba(246,244,239,.97);border-bottom:1px solid var(--line2);font-size:11.5px;color:var(--ink2);letter-spacing:.02em;backdrop-filter:saturate(1.2) blur(6px);box-sizing:border-box}
 #betabar.on{display:flex}
-#betabar .bt{font-family:'Cormorant Garamond',var(--serif);font-weight:600;font-size:11px;letter-spacing:.22em;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:1px 8px}
-body.beta .app{padding-top:34px}
-body.beta #splash{padding-top:34px}
+#betabar .bt{flex:none;font-family:'Cormorant Garamond',var(--serif);font-weight:600;font-size:11px;letter-spacing:.22em;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:1px 8px;line-height:1.4}
+#betabar #betamsg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+body.beta .app{padding-top:32px}
+body.beta .dtop{top:32px}
+body.beta #splash{padding-top:32px}
+body.beta .overlay{top:32px}
 .hwho b{font-weight:500;color:var(--ink2)}
 .hactions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:.6rem}
 .hact{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line2);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:500;color:var(--ink2);cursor:pointer;letter-spacing:.04em;box-shadow:var(--sh);transition:border-color .15s,color .15s}
