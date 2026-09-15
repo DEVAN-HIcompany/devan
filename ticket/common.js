@@ -32,6 +32,9 @@
   function newCode(){ return rand(6); }
   function kindLabel(t){ if (t && t.kind==='pre' && t.tier==='door') return '当日券（オンライン）'; return (KIND[t&&t.kind]||{}).label || 'チケット'; }
   function countKey(t){ return (t.kind==='pre' && t.tier==='door') ? 'door' : t.kind; }
+  function photoPrices(pub){ const p=(pub&&pub.photo)||{}; return { price:Number(p.price||500), pack5:Number(p.pack5||2000), set:Number(p.set||3000) }; }
+  function photoAmount(nSingles, nSets, pr){ return nSets*pr.set + Math.floor(nSingles/5)*pr.pack5 + (nSingles%5)*pr.price; }
+  function yen(n){ return '¥' + Number(n||0).toLocaleString(); }
   function ticketNo(kind, tid){
     const p = {pre:'P',door:'D',free:'K',comp:'G'}[kind] || 'T';
     return p + '-' + tid.slice(-6);
@@ -85,12 +88,18 @@
     try { root = JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch(_){}
     if (!root.tk) {
       const eid = 'demo2026';
-      root.sj = { roles: { 'demo-admin':'admin' } };
+      const svg = (t,c)=> 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="${c}"/><text x="300" y="190" font-size="34" text-anchor="middle" fill="#fff" font-family="sans-serif">${t}</text><text x="300" y="250" font-size="22" text-anchor="middle" fill="#fff" opacity=".7" font-family="sans-serif">SAMPLE</text></svg>`);
+      const cols=['#6b7a8f','#8f6b6b','#6b8f7a','#8f866b','#7a6b8f','#5f7f8f','#8f7f5f','#6f6f6f'];
+      const teams=[['明治大学','山田・佐藤'],['早稲田大学','鈴木・高橋'],['日本大学','田中'],['青山学院大学','伊藤・渡辺']];
+      const photos={}; let k=0;
+      teams.forEach((t,ti)=>{ const n = ti===0?8:3; for(let i=0;i<n;i++){ photos['p'+(k++)]={ round:'本選 Aラウンド', court:1+ti, no:5+ti, cat:'組演武', univ:t[0], names:t[1], prev:svg(`${t[0]} ${i+1}`, cols[k%cols.length]), orig:'ph/demo2026/orig/p'+k+'.jpg', created:Date.now()-3600000+i*1000, by:'ob@example.com' }; } });
+      root.ph = { events: { demo2026: { photos } } };
+      root.sj = { roles: { 'demo-admin':'admin' }, meta: { 'demo-td': { id:'demo-td', name:'第60回少林寺拳法全日本学生大会', rounds:['本選 Aラウンド'], courts:{ '本選 Aラウンド':[ {cat:'組演武',id:1,teams:[{a:'東京大学',n:'一・二'},{a:'京都大学',n:'三'},{a:'東北大学',n:'四'},{a:'北海道大学',n:'五'},{a:'明治大学',n:'山田・佐藤'}]}, {cat:'組演武',id:2,teams:[{a:'東京大学',n:'一・二'},{a:'京都大学',n:'三'},{a:'東北大学',n:'四'},{a:'北海道大学',n:'五'},{a:'大阪大学',n:'六'},{a:'早稲田大学',n:'鈴木・高橋'}]} ] } } } };
       root.tk = {
         pending: { 'demo-gate-1': { email:'uketsuke@example.com', at: Date.now()-600000 } },
         config: { currentEvent: eid },
         events: { [eid]: {
-          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:500, doorPrice:1000, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', saleOpen:true, doorOpen:true, feePercent:7 },
+          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:500, doorPrice:1000, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', saleOpen:true, doorOpen:true, feePercent:7, devanId:'demo-td', photo:{ price:500, pack5:2000, set:3000, open:true, credit:'撮影: 関東学生OB会連合会・広報セクション' } },
           univs: { u1:{name:'明治大学',code:'MEIJI1',cap:100}, u2:{name:'早稲田大学',code:'WASED2',cap:100}, u3:{name:'日本大学',code:'NIHON3',cap:100} },
           codes: { MEIJI1:'u1', WASED2:'u2', NIHON3:'u3' }
         }},
@@ -154,9 +163,9 @@
   }
 
   /* ---------- 初期化 ---------- */
-  let db, auth, fns;
+  let db, auth, fns, storage;
   if (DEMO) {
-    db = makeFakeDb(); auth = makeFakeAuth(); fns = null;
+    db = makeFakeDb(); auth = makeFakeAuth(); fns = null; storage = null;
     document.addEventListener('DOMContentLoaded', ()=>{
       const b = document.createElement('div');
       b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99;background:#9A7A2E;color:#fff;font-size:12px;text-align:center;padding:5px;letter-spacing:.08em';
@@ -168,6 +177,7 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     db = firebase.database(); auth = firebase.auth();
     fns = (firebase.functions ? firebase.app().functions(FUNCTIONS_REGION) : null);
+    storage = (firebase.storage ? firebase.storage() : null);
   }
   const TS = DEMO ? {'.sv':'timestamp'} : firebase.database.ServerValue.TIMESTAMP;
 
@@ -186,5 +196,5 @@
     const s = await db.ref('tk/config/currentEvent').once('value'); return s.val();
   }
 
-  window.TK = { DEMO, Q, db, auth, fns, TS, KIND, kindLabel, countKey, newTid, newCode, ticketNo, fmtTime, esc, qrSvg, baseUrl, ticketUrl, parseTicketUrl, beep, download, csv, isAdmin, loadEventPub, currentEventId };
+  window.TK = { DEMO, Q, db, auth, fns, TS, get storage(){ return storage; }, photoPrices, photoAmount, yen, KIND, kindLabel, countKey, newTid, newCode, ticketNo, fmtTime, esc, qrSvg, baseUrl, ticketUrl, parseTicketUrl, beep, download, csv, isAdmin, loadEventPub, currentEventId };
 })();
