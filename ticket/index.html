@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="common.css">
 <style>
   .hero{padding:6px 0 4px}
+  .ev .meta span{display:inline-block;margin-right:12px}
+  @media(max-width:640px){.ev .name{font-size:19px}.hero .sub{font-size:12px}}
   .hero .sub{font-family:var(--serif);font-size:13px;color:var(--gold);letter-spacing:.24em;margin-bottom:6px}
   .choice{display:grid;gap:12px}
   .choice .card{margin:0}
@@ -30,7 +32,7 @@
 <div class="wrap">
   <div class="top">
     <div><span class="mark">DEVAN<small>入場チケット</small></span></div>
-    <div class="role"><a href="../" style="color:var(--muted);text-decoration:none">‹ DEVANへ戻る</a></div>
+    <div class="role"><a href="../">‹ DEVANへ戻る</a></div>
   </div>
 
   <!-- 読み込み中 -->
@@ -160,7 +162,7 @@
   function renderEvent(){
     document.title = `入場チケット ― ${PUB.name}`;
     $('evName').textContent = PUB.name;
-    $('evMeta').textContent = [PUB.date, PUB.venue, PUB.open].filter(Boolean).join('　');
+    $('evMeta').innerHTML = [PUB.date, PUB.venue, PUB.open].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
     $('evPrice').innerHTML = `¥${Number(PUB.price||0).toLocaleString()}<small>税込</small>`;
     $('evDoorPrice').textContent = `¥${Number(PUB.doorPrice||PUB.price||0).toLocaleString()}。`;
     $('evDoorNote').textContent = PUB.doorNote || '';

@@ -11,7 +11,7 @@
 <style>
   .wrap{padding-bottom:24px}
   .bar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px}
-  .bar div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 4px;text-align:center}
+  .bar div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 2px;text-align:center;min-width:0}
   .bar .k{font-size:10px;color:var(--muted);letter-spacing:.06em}
   .bar .v{font-family:var(--serif);font-size:18px;line-height:1.2}
   .scan{position:relative;background:#111;border-radius:14px;overflow:hidden;aspect-ratio:1/1;max-height:52vh}
@@ -40,7 +40,7 @@
 <div class="wrap">
   <div class="top">
     <div><span class="mark">DEVAN<small>入口受付</small></span></div>
-    <div class="role"><a href="../" style="color:var(--muted);text-decoration:none">‹ DEVANへ戻る</a><span id="who" style="margin-left:10px"></span></div>
+    <div class="role"><a href="../">‹ DEVANへ戻る</a><span id="who"></span></div>
   </div>
 
   <div id="vLogin" class="card login hidden">
@@ -68,7 +68,7 @@
       <div class="scan">
         <video id="video" playsinline muted></video>
         <div class="frame"></div>
-        <div class="off" id="camOff">カメラを起動します…<br><span class="muted">許可を求められたら「許可」を押してください</span></div>
+        <div class="off" id="camOff"><div>カメラを起動します…<br><span class="muted">許可を求められたら「許可」を押してください</span></div></div>
       </div>
       <div class="opt">
         <label><input type="checkbox" id="optAuto" checked> 読み取ったら自動で入場にする</label>
@@ -195,7 +195,7 @@
       loop();
     } catch(e) {
       console.error(e);
-      $('camOff').innerHTML = 'カメラを使えません。<br><span class="muted">ブラウザの設定でカメラを許可するか、「画像から読む」または番号検索をお使いください。</span>';
+      $('camOff').innerHTML = '<div>カメラを使えません。<br><span class="muted">ブラウザの設定でカメラを許可するか、「画像から読む」または番号検索をお使いください。</span></div>';
     }
   }
   function stopCam(){ if (raf) cancelAnimationFrame(raf); raf=null; if (stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }

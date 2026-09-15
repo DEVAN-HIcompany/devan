@@ -17,9 +17,12 @@ h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:.04em;margin:0}
 .wrap{max-width:640px;margin:0 auto;padding:16px 16px 48px}
 .wrap.wide{max-width:1080px}
 .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:14px 0 12px;border-bottom:1px solid var(--line2);margin-bottom:18px}
+.top .role{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right;line-height:1.5;min-width:0}
+.top .role a{color:var(--muted);text-decoration:none;white-space:nowrap}
+.top .role #who{font-size:11px;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mark{font-family:var(--mark);font-weight:600;font-size:22px;letter-spacing:.32em;color:var(--ink);line-height:1;padding-top:8px;border-top:1px solid var(--gold);display:inline-block}
 .mark small{display:block;font-family:var(--serif);font-size:11px;letter-spacing:.2em;color:var(--muted);margin-top:6px}
-.top .role{font-family:var(--serif);font-size:13px;color:var(--muted);letter-spacing:.1em}
+.top .role{font-family:var(--serif);font-size:13px;color:var(--muted);letter-spacing:.08em}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px;margin-bottom:14px}
 .card h2{font-size:17px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
 .card h3{font-size:15px;margin:14px 0 6px}
@@ -117,3 +120,18 @@ table.tbl th{font-weight:600;color:var(--ink2);background:var(--bg2);font-size:1
 .ptk .t .m{font-size:7.5pt;color:#444;line-height:1.5}
 .ptk .t .n{font-family:var(--mark);font-size:12pt;letter-spacing:.16em;margin-top:1.5mm}
 .ptk .t .p{font-family:var(--serif);font-size:12pt;margin-top:1mm}
+
+/* スマホ調整 */
+@media(max-width:640px){
+  .wrap{padding:12px 14px 40px}
+  .top{padding:10px 0 10px;margin-bottom:14px}
+  .mark{font-size:20px}
+  .tabs button{font-size:13px;padding:9px 9px}
+  .stats{grid-template-columns:1fr 1fr}
+  .stats .stat:first-child{grid-column:1/-1}
+  .stat .v{font-size:22px}
+  .card{padding:16px 14px}
+  .card h2{font-size:16px}
+  .btn{padding:11px 14px;font-size:14px}
+  .row > .btn.sm{flex:1 1 auto;justify-content:center}
+}
