@@ -84,6 +84,25 @@ button:active{transform:scale(.985)}
 .backbtn{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:500;color:var(--ink2);white-space:nowrap;letter-spacing:.04em}
 .backbtn:hover{border-color:var(--line2);background:#fff}
 .loading{text-align:center;padding:4rem;color:var(--muted);font-size:13px;letter-spacing:.06em}
+/* ── 起動アニメーション ── */
+#splash{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity .6s ease}
+#splash.out{opacity:0;pointer-events:none}
+#splash .sp-in{text-align:center;position:relative;padding:0 1rem}
+#splash .sp-glow{position:absolute;left:50%;top:50%;width:420px;height:220px;transform:translate(-50%,-50%);background:radial-gradient(ellipse at center,rgba(168,137,79,.16),rgba(168,137,79,0) 65%);opacity:0;filter:blur(2px)}
+#splash .sp-rule{width:56px;height:1px;background:var(--gold);margin:0 auto 1.4rem;transform:scaleX(0);transform-origin:center}
+#splash .sp-mark{font-family:'Cormorant Garamond',var(--serif);font-size:54px;font-weight:600;letter-spacing:.7em;padding-left:.34em;color:var(--ink);line-height:1.1;opacity:0;transform:translateY(22px);filter:blur(8px)}
+#splash .sp-tag{font-family:var(--serif);font-size:15px;color:var(--ink2);letter-spacing:.24em;margin-top:.9rem;opacity:0;transform:translateY(10px)}
+#splash.go .sp-rule{animation:spRule .7s cubic-bezier(.2,.7,.2,1) forwards}
+#splash.go .sp-mark{animation:spMark 1.1s cubic-bezier(.2,.7,.2,1) .25s forwards}
+#splash.go .sp-tag{animation:spTag .7s ease-out 1s forwards}
+#splash.go .sp-glow{animation:spGlow 1.4s ease-out .4s forwards}
+@keyframes spRule{to{transform:scaleX(1)}}
+@keyframes spMark{to{opacity:1;transform:translateY(0);filter:blur(0);letter-spacing:.34em}}
+@keyframes spTag{to{opacity:1;transform:translateY(0)}}
+@keyframes spGlow{to{opacity:1}}
+@media(max-width:480px){#splash .sp-mark{font-size:44px}#splash .sp-tag{font-size:13.5px}}
+@media(prefers-reduced-motion:reduce){#splash{display:none}}
+
 .empty{text-align:center;padding:3rem;color:var(--muted);font-size:13px}
 
 /* ── 大会リスト ── */
@@ -340,6 +359,7 @@ button:active{transform:scale(.985)}
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="sp-in"><div class="sp-glow"></div><div class="sp-rule"></div><div class="sp-mark">DEVAN</div><div class="sp-tag">出番が、わかる。</div></div></div>
 <div class="app" id="app"></div>
 <div class="overlay" id="ov"><div class="modal" id="mod"></div></div>
 
@@ -1788,6 +1808,17 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
 
 let _booted=false;
 show('<div class="loading">読み込み中...</div>');
+// ── 起動アニメーション（1セッションに1回。フォント読み込みを待ってから開始）──
+(function(){
+  const sp=document.getElementById('splash'); if(!sp) return;
+  let shown=false; try{ shown=sessionStorage.getItem('sj_splash')==='1'; }catch(e){}
+  if(shown || (window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){ sp.remove(); return; }
+  try{ sessionStorage.setItem('sj_splash','1'); }catch(e){}
+  const start=()=>{ sp.classList.add('go'); setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(),650); }, 1900); };
+  const t=setTimeout(start,700);
+  if(document.fonts&&document.fonts.load){ document.fonts.load('600 54px "Cormorant Garamond"').then(()=>{ clearTimeout(t); start(); }).catch(()=>{}); }
+})();
+
 auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; renderHome(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
 </script>
 </body>
