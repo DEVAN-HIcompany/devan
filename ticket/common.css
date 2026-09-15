@@ -20,6 +20,8 @@ h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:.04em;margin:0}
 .top .role{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right;line-height:1.5;min-width:0}
 .top .role a{color:var(--muted);text-decoration:none;white-space:nowrap}
 .top .role #who{font-size:11px;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top .role .pill{display:inline-flex;align-items:center;background:var(--card);border:1px solid var(--line2);border-radius:999px;padding:5px 12px;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;letter-spacing:.03em;margin-top:2px}
+.top .role .pill:hover{border-color:var(--gold2);color:var(--ink)}
 .mark{font-family:var(--mark);font-weight:600;font-size:22px;letter-spacing:.32em;color:var(--ink);line-height:1;padding-top:8px;border-top:1px solid var(--gold);display:inline-block}
 .mark small{display:block;font-family:var(--serif);font-size:11px;letter-spacing:.2em;color:var(--muted);margin-top:6px}
 .top .role{font-family:var(--serif);font-size:13px;color:var(--muted);letter-spacing:.08em}

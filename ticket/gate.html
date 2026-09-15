@@ -40,7 +40,7 @@
 <div class="wrap">
   <div class="top">
     <div><span class="mark">DEVAN<small>入口受付</small></span></div>
-    <div class="role"><a href="../">‹ DEVANへ戻る</a><span id="who"></span></div>
+    <div class="role"><a href="../">‹ DEVANへ戻る</a><span id="who"></span><button class="pill hidden" id="logout">ログアウト</button></div>
   </div>
 
   <div id="vLogin" class="card login hidden">
@@ -98,7 +98,6 @@
         <h2>この端末の記録（新しい順）</h2>
         <ul class="list log" id="logList"><li class="muted">まだありません</li></ul>
       </div>
-      <button class="btn ghost w" id="logout">ログアウト</button>
     </div>
   </div>
 
@@ -136,7 +135,7 @@
     }
     user = u;
     $('vLogin').classList.toggle('hidden', !!u); $('vMain').classList.toggle('hidden', !u);
-    $('who').textContent = u ? (u.email||'') : '';
+    $('who').textContent = u ? (u.email||'') : ''; $('logout').classList.toggle('hidden', !u);
     if (u) { await loadEvents(); } else { stopCam(); }
   });
   $('lBtn').onclick = async () => {

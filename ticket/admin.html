@@ -25,7 +25,7 @@
 <div class="wrap wide">
   <div class="top">
     <div><span class="mark">DEVAN<small>チケット管理</small></span></div>
-    <div class="role"><a href="../">‹ DEVANへ戻る</a><span id="who"></span></div>
+    <div class="role"><a href="../">‹ DEVANへ戻る</a><span id="who"></span><button class="pill hidden" id="logout">ログアウト</button></div>
   </div>
 
   <div id="vLogin" class="card login hidden">
@@ -40,7 +40,7 @@
   <div id="vMain" class="hidden">
     <div class="row between" style="margin-bottom:10px">
       <div class="field" style="margin:0;min-width:260px"><select id="evSel"></select></div>
-      <div class="row"><button class="btn sm ghost" id="newEv">＋ 大会を追加</button><button class="btn sm ghost" id="logout">ログアウト</button></div>
+      <div class="row"><button class="btn sm ghost" id="newEv">＋ 大会を追加</button></div>
     </div>
     <div class="tabs"><button class="on" data-tab="dash">集計</button><button data-tab="ev">大会設定</button><button data-tab="univ">大学コード</button><button data-tab="door">当日券・招待券</button><button data-tab="list">チケット一覧</button><button data-tab="goods">グッズ</button><button data-tab="staff">受付アカウント</button></div>
 
@@ -236,7 +236,7 @@
     user = u;
     if (u && !(await TK.isAdmin(u))) { $('lMsg').textContent = 'このアカウントは管理者ではありません。'; await auth.signOut(); return; }
     $('vLogin').classList.toggle('hidden', !!u); $('vMain').classList.toggle('hidden', !u);
-    $('who').textContent = u ? (u.email||'') : '';
+    $('who').textContent = u ? (u.email||'') : ''; $('logout').classList.toggle('hidden', !u);
     if (u) { loadEvents(); watchStaff(); }
   });
   $('lBtn').onclick = async () => { $('lMsg').textContent=''; try { await auth.signInWithEmailAndPassword($('lEmail').value.trim(), $('lPass').value); } catch(e){ $('lMsg').textContent='ログインできませんでした。'; } };

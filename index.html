@@ -68,6 +68,13 @@ button:active{transform:scale(.985)}
 .hnote{font-size:11px;color:var(--muted);text-align:left;margin:-.2rem 0 .6rem;letter-spacing:.02em}
 @media(max-width:480px){.hsub{font-size:13.5px;margin-bottom:1.8rem;letter-spacing:.04em}.wordmark{font-size:40px}.home{padding:1.5rem 1rem}}
 .hfoot{margin-top:1.25rem;font-size:12px;color:var(--muted);letter-spacing:.03em}
+.hwho{margin-top:1.2rem;font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+.hwho b{font-weight:500;color:var(--ink2)}
+.hactions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:.6rem}
+.hact{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line2);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:500;color:var(--ink2);cursor:pointer;letter-spacing:.04em;box-shadow:var(--sh);transition:border-color .15s,color .15s}
+.hact:hover{border-color:var(--gold2);color:var(--ink)}
+.hact.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+.hact.quiet{background:transparent;box-shadow:none}
 .credit{margin-top:2.2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:11px;color:var(--muted);letter-spacing:.06em;display:flex;flex-direction:column;gap:2px;align-items:center}
 .credit a{color:var(--muted);text-decoration:none}
 .credit a:hover{color:var(--ink)}
@@ -108,8 +115,8 @@ button:active{transform:scale(.985)}
 /* ホーム側: 見出しは着地の瞬間まで隠し（二重表示を防ぐ）、ボタン類は着地中に順に浮かぶ */
 .home.enter .hero,.home.enter .org,.home.enter .wordmark,.home.enter .hsub{opacity:0}
 .home.enter.landed .hero,.home.enter.landed .org,.home.enter.landed .wordmark,.home.enter.landed .hsub{opacity:1}
-.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .credit,.home.enter .installbar{opacity:0;transform:translateY(14px)}
-.home.enter.go .hbtn,.home.enter.go .hsmall,.home.enter.go .hsec,.home.enter.go .hnote,.home.enter.go .credit,.home.enter.go .installbar{opacity:1;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .hwho,.home.enter .hactions,.home.enter .credit,.home.enter .installbar{opacity:0;transform:translateY(14px)}
+.home.enter.go .hbtn,.home.enter.go .hsmall,.home.enter.go .hsec,.home.enter.go .hnote,.home.enter.go .hwho,.home.enter.go .hactions,.home.enter.go .credit,.home.enter.go .installbar{opacity:1;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
 @media(prefers-reduced-motion:reduce){#splash{display:none}.home.enter .hero,.home.enter .org,.home.enter .wordmark,.home.enter .hsub{opacity:1}.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .credit,.home.enter .installbar{opacity:1;transform:none}}
 
 .empty{text-align:center;padding:3rem;color:var(--muted);font-size:13px}
@@ -595,8 +602,9 @@ function renderFedHome(){
           <div><div class="hbtn-l">売店 引換受付</div><div class="hbtn-d">グッズ引換券のQR読み取り</div></div>
         </button>
       </div>
-      <div class="hnote">閲覧用以外はログインが必要です${u?'（ログイン済み）':''}</div>
-      <div class="hfoot"><button class="implink" onclick="renderHome()">最初の画面に戻る</button>${u?` ・ ${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button>`:''}</div>
+      <div class="hnote">閲覧用以外はログインが必要です</div>
+      ${u?`<div class="hwho">ログイン中: <b>${esc(u.email||'')}</b></div>`:''}
+      <div class="hactions"><button class="hact" onclick="renderHome()">‹ 最初の画面に戻る</button>${u?`<button class="hact quiet" onclick="doLogout()">ログアウト</button>`:''}</div>
       <div class="credit"><a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">Produced by <b>H.I. Company</b></a><span>店舗・団体のAI業務自動化</span></div>
     </div></div>`);
 }
@@ -629,7 +637,8 @@ function renderGateOnly(what){
         <div><div class="hbtn-l">${ROLE==='shop'?'売店 引換受付を開く':'入口受付を開く'}</div><div class="hbtn-d">${ROLE==='shop'?'グッズ引換券のQR読み取り':'チケットのQR読み取り'}</div></div>
         <div class="hbtn-r">›</div>
       </button>
-      <div class="hfoot"><button class="implink" onclick="doLogout()">ログアウトして別のアカウントで入る</button> ・ <button class="implink" onclick="renderHome()">最初の画面に戻る</button></div>
+      <div class="hwho">ログイン中: <b>${esc(u?u.email||'':'')}</b></div>
+      <div class="hactions"><button class="hact" onclick="renderHome()">‹ 最初の画面に戻る</button><button class="hact quiet" onclick="doLogout()">ログアウトして別のアカウントで入る</button></div>
     </div></div>`);
 }
 function renderNoAdmin(){
@@ -640,7 +649,7 @@ function renderNoAdmin(){
       <div class="htitle">権限がありません</div>
       <div class="hsub">${esc(auth.currentUser?.email||'')} は進行用のアカウントです。<br>管理用の操作には管理者アカウントでログインしてください。</div>
       <button class="hbtn" onclick="enterOperator()"><div class="hicon">02</div><div><div class="hbtn-l">進行用で開く</div><div class="hbtn-d">このままの権限で進行の操作をする</div></div><div class="hbtn-r">›</div></button>
-      <div class="hfoot"><button class="implink" onclick="renderFedHome()">モード選択に戻る</button> ・ <button class="implink" onclick="doLogout()">別のアカウントでログイン</button></div>
+      <div class="hactions"><button class="hact" onclick="renderFedHome()">‹ 学生連盟の画面に戻る</button><button class="hact quiet" onclick="doLogout()">別のアカウントでログイン</button></div>
     </div></div>`);
 }
 function renderAdminHome(){
@@ -661,7 +670,8 @@ function renderAdminHome(){
         <div><div class="hbtn-l">大会を開く</div><div class="hbtn-d">保存済みの大会を選んで進行を記録する</div></div>
         <div class="hbtn-r">›</div>
       </button>
-      <div class="hfoot"><button class="implink" onclick="renderFedHome()">モード選択に戻る</button> ・ <button class="implink" onclick="doLogout()">ログアウト</button></div>
+      <div class="hwho">ログイン中: <b>${esc(auth.currentUser?.email||'')}</b></div>
+      <div class="hactions"><button class="hact" onclick="renderFedHome()">‹ 学生連盟の画面に戻る</button><button class="hact quiet" onclick="doLogout()">ログアウト</button></div>
     </div></div>`);
 }
 function renderLogin(msg){
@@ -682,7 +692,7 @@ function renderLogin(msg){
           <button class="btn btnp" id="lbtn" onclick="doLogin()">ログイン</button>
         </div>
       </div>
-      <div class="hfoot">閲覧だけなら <button class="implink" onclick="enterView()">閲覧用で開く</button></div>
+      <div class="hactions"><button class="hact quiet" onclick="enterView()">ログインせずに閲覧用で開く</button></div>
     </div></div>`);
   setTimeout(()=>$('lemail')?.focus(),50);
 }
@@ -1831,7 +1841,7 @@ let splashHomeReady=null, _splashResolve=null;
     if(to){ const a=from.getBoundingClientRect(), b=to.getBoundingClientRect(); const dx=(b.left+b.width/2)-(a.left+a.width/2), dy=b.top-a.top;
       inner.style.transition='transform .8s cubic-bezier(.2,.7,.2,1)'; inner.style.transform=`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px)`; }
     sp.classList.add('dock');
-    const home=document.querySelector('#app .home'); if(home){ home.classList.add('enter'); const els=home.querySelectorAll('.hbtn,.hsmall,.hsec,.hnote,.credit,.installbar'); els.forEach((el,i)=>{ el.style.transitionDelay=(0.35+i*0.07)+'s'; }); requestAnimationFrame(()=>requestAnimationFrame(()=>home.classList.add('go'))); }
+    const home=document.querySelector('#app .home'); if(home){ home.classList.add('enter'); const els=home.querySelectorAll('.hbtn,.hsmall,.hsec,.hnote,.hwho,.hactions,.credit,.installbar'); els.forEach((el,i)=>{ el.style.transitionDelay=(0.35+i*0.07)+'s'; }); requestAnimationFrame(()=>requestAnimationFrame(()=>home.classList.add('go'))); }
     setTimeout(()=>{ const h=document.querySelector('#app .home'); if(h) h.classList.add('landed'); sp.remove(); }, 830);
   };
   const start=()=>{ sp.classList.add('go'); setTimeout(()=>{ Promise.race([splashHomeReady, new Promise(r=>setTimeout(r,2500))]).then(()=>setTimeout(dock,50)); }, 1650); };

@@ -34,7 +34,7 @@
 <div class="wrap">
   <div class="top">
     <div><span class="mark">DEVAN<small>売店 引換受付</small></span></div>
-    <div class="role"><a href="../">‹ DEVANへ戻る</a><span id="who"></span></div>
+    <div class="role"><a href="../">‹ DEVANへ戻る</a><span id="who"></span><button class="pill hidden" id="logout">ログアウト</button></div>
   </div>
 
   <div id="vLogin" class="card login hidden">
@@ -51,7 +51,7 @@
     <div class="bar"><div><div class="k">引換券（支払済）</div><div class="v" id="cPaid">0</div></div><div><div class="k">引換済み</div><div class="v" id="cDone">0</div></div><div><div class="k">未引換</div><div class="v" id="cLeft">0</div></div></div>
     <div id="stock" class="muted" style="margin-bottom:10px"></div>
     <div class="scan"><video id="video" playsinline muted></video><div class="frame"></div><div class="off" id="camOff"><div>カメラを起動します…<br><span class="muted">許可を求められたら「許可」を押してください</span></div></div></div>
-    <div class="opt"><label><input type="checkbox" id="optSound" checked> 音</label><button class="btn xs ghost" id="camRestart">カメラ再起動</button><label class="btn xs ghost" style="cursor:pointer">画像から読む<input type="file" id="imgIn" accept="image/*" hidden></label><button class="btn xs ghost" id="logout">ログアウト</button></div>
+    <div class="opt"><label><input type="checkbox" id="optSound" checked> 音</label><button class="btn xs ghost" id="camRestart">カメラ再起動</button><label class="btn xs ghost" style="cursor:pointer">画像から読む<input type="file" id="imgIn" accept="image/*" hidden></label></div>
     <div class="manual"><input id="mNo" placeholder="番号 例: G-3K7QP2" maxlength="10"><button class="btn" id="mBtn">検索</button></div>
     <div class="result" id="result"><div class="muted">引換券のQRコードを枠に入れてください。番号での検索もできます。</div></div>
   </div>
@@ -72,7 +72,7 @@
   async function allowed(u){ if (DEMO) return true; const roles=(await db.ref('sj/roles').once('value')).val(); if (!roles) return true; const r=roles[u.uid]; return r==='shop'||r==='admin'; }
   auth.onAuthStateChanged(async u => {
     if (u && !(await allowed(u))) { try { await db.ref('tk/pending/'+u.uid).set({ email:u.email||'', at:TS, want:'shop' }); } catch(_){} await auth.signOut(); $('lMsg').innerHTML = `このアカウント（${esc(u.email||'')}）はパンフレットセクションとして登録されていません。管理者に「チケット管理 → 受付アカウント」で「パンフレットセクションとして許可」してもらってください。`; return; }
-    user=u; $('vLogin').classList.toggle('hidden', !!u); $('vMain').classList.toggle('hidden', !u); $('who').textContent = u ? (u.email||'') : '';
+    user=u; $('vLogin').classList.toggle('hidden', !!u); $('vMain').classList.toggle('hidden', !u); $('who').textContent = u ? (u.email||'') : ''; $('logout').classList.toggle('hidden', !u);
     if (u) loadEvents(); else stopCam();
   });
   $('lBtn').onclick = async () => { $('lMsg').textContent=''; try { await auth.signInWithEmailAndPassword($('lEmail').value.trim(), $('lPass').value); } catch(e){ $('lMsg').textContent='ログインできませんでした。'; } };
