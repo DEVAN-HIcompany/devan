@@ -56,10 +56,14 @@ button:active{transform:scale(.985)}
 .hbtn.primary .hbtn-d{color:rgba(255,255,255,.7)}
 .hbtn.primary .hbtn-r{color:rgba(255,255,255,.5)}
 .hbtn.primary:hover{background:#000;border-color:#000}
-.hsmall{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.hbtn.mini{padding:.85rem 1rem;margin:0;gap:0}
+.hsmall{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem}
+.hbtn.mini{padding:.85rem .9rem;margin:0;gap:0;min-width:0;align-items:flex-start}
+.hbtn.mini>div{min-width:0}
 .hbtn.mini .hbtn-l{font-size:14px}
 .hbtn.mini .hbtn-d{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hsec{font-size:11px;letter-spacing:.24em;color:var(--gold);margin:.4rem 0 .55rem;text-align:left;font-weight:500}
+.hnote{font-size:11px;color:var(--muted);text-align:left;margin:-.2rem 0 .6rem;letter-spacing:.02em}
+@media(max-width:480px){.hsub{font-size:13.5px;margin-bottom:1.8rem;letter-spacing:.04em}.wordmark{font-size:40px}.home{padding:1.5rem 1rem}}
 .hfoot{margin-top:1.25rem;font-size:12px;color:var(--muted);letter-spacing:.03em}
 .credit{margin-top:2.2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:11px;color:var(--muted);letter-spacing:.06em;display:flex;flex-direction:column;gap:2px;align-items:center}
 .credit a{color:var(--muted);text-decoration:none}
@@ -528,25 +532,30 @@ function renderFedHome(){
       <div class="hero"></div>
       <div class="org">学生連盟の方</div>
       <div class="wordmark">DEVAN</div>
-      <div class="hsub">コート割の作成と、試合進行の記録・共有</div>
+      <div class="hsub">大会進行の記録と、入場チケットの受付</div>
+      <div class="hsec">大会の進行</div>
       <button class="hbtn primary" onclick="enterView()">
         <div><div class="hbtn-l">閲覧用で開く</div><div class="hbtn-d">進行状況を見る。ログイン不要</div></div>
         <div class="hbtn-r">›</div>
       </button>
       <div class="hsmall">
         <button class="hbtn mini" onclick="enterOperator()">
-          <div><div class="hbtn-l">進行用</div><div class="hbtn-d">進行係${lg}</div></div>
+          <div><div class="hbtn-l">進行用</div><div class="hbtn-d">コートの進行係</div></div>
         </button>
         <button class="hbtn mini" onclick="enterAdmin()">
-          <div><div class="hbtn-l">管理用</div><div class="hbtn-d">運営${lg}</div></div>
-        </button>
-        <button class="hbtn mini" onclick="location.href='./ticket/gate.html'">
-          <div><div class="hbtn-l">入口受付</div><div class="hbtn-d">チケットのQR読み取り${lg}</div></div>
-        </button>
-        <button class="hbtn mini" onclick="location.href='./ticket/admin.html'">
-          <div><div class="hbtn-l">チケット管理</div><div class="hbtn-d">大会設定・集計${lg}</div></div>
+          <div><div class="hbtn-l">管理用</div><div class="hbtn-d">コート割・運営</div></div>
         </button>
       </div>
+      <div class="hsec">入場チケット</div>
+      <div class="hsmall">
+        <button class="hbtn mini" onclick="location.href='./ticket/gate.html'">
+          <div><div class="hbtn-l">入口受付</div><div class="hbtn-d">QRの読み取り</div></div>
+        </button>
+        <button class="hbtn mini" onclick="location.href='./ticket/admin.html'">
+          <div><div class="hbtn-l">チケット管理</div><div class="hbtn-d">大会設定・集計</div></div>
+        </button>
+      </div>
+      <div class="hnote">閲覧用以外はログインが必要です${u?'（ログイン済み）':''}</div>
       <div class="hfoot"><button class="implink" onclick="renderHome()">最初の画面に戻る</button>${u?` ・ ${esc(u.email||'')} としてログイン中 ・ <button class="implink" onclick="doLogout()">ログアウト</button>`:''}</div>
       <div class="credit"><a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">Produced by <b>H.I. Company</b></a><span>店舗・団体のAI業務自動化</span></div>
     </div></div>`);
