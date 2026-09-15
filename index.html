@@ -54,9 +54,15 @@ button:active{transform:scale(.985)}
 .hbtn-r{font-size:18px;color:var(--line2);margin-left:auto;flex-shrink:0}
 .hbtn.primary{background:var(--ink);border-color:var(--ink);padding:21px 21px;margin-bottom:13px;min-height:89px}
 .hbtn.primary .hbtn-l{color:#fff;font-size:18px;letter-spacing:.06em}
+.hbtn>div{min-width:0}
+.hbtn-l .nb{display:inline-block;white-space:nowrap}
+.hbtn.primary .hbtn-l.long{font-size:17px;letter-spacing:.02em;line-height:1.3}
 .hbtn.primary .hbtn-d{color:rgba(255,255,255,.7)}
 .hbtn.primary .hbtn-r{color:rgba(255,255,255,.5)}
 .hbtn.primary:hover{background:#000;border-color:#000}
+.tk-only{display:none}
+body.tk-open .tk-only{display:flex}
+body.tk-open .hsmall .tk-only{display:flex}
 .hbtn.primary.gold{background:var(--gold);border-color:var(--gold)}
 .hbtn.primary.gold:hover{background:#8f7440;border-color:#8f7440}
 .hbtn.primary.gold .hbtn-d{color:rgba(255,255,255,.85)}
@@ -618,10 +624,11 @@ function applyMarquee(){
 db.ref('tk/config/beta').on('value', s=>{ const v=s.val(); const on=!!(v&&v.on); const bar=document.getElementById('betabar'); if(!bar) return; bar.classList.toggle('on',on); document.body.classList.toggle('beta',on); if(v&&v.message) document.getElementById('betamsg').textContent=v.message; }, ()=>{});
 // チケット機能の一時停止（tk/config/closed）: 停止中はトップの「入場チケット」「大会グッズ」を出さない
 let _tkClosed=null;
+try{ const c=localStorage.getItem('sj_tk_closed'); if(c==='0') document.body.classList.add('tk-open'); }catch(e){}
 function applyTicketClosed(){
-  const apply=()=>{ document.querySelectorAll('.tk-only').forEach(el=>{ el.style.display = _tkClosed ? 'none' : ''; }); const sm=document.querySelector('#app .home .hsmall'); if(sm){ sm.style.gridTemplateColumns = _tkClosed ? '1fr' : ''; } };
+  const apply=()=>{ document.body.classList.toggle('tk-open', _tkClosed===false); try{ localStorage.setItem('sj_tk_closed', _tkClosed?'1':'0'); }catch(e){} };
   if(_tkClosed!==null){ apply(); return; }
-  db.ref('tk/config/closed').once('value').then(s=>{ const v=s.val(); _tkClosed=!!(v&&v.closed); apply(); }).catch(()=>{ _tkClosed=false; });
+  db.ref('tk/config/closed').on('value', s=>{ const v=s.val(); _tkClosed=!!(v&&v.closed); apply(); }, ()=>{ _tkClosed=false; apply(); });
 }
 function enterSpectator(){ MODE='spectator'; viewRound=null; specQ=''; specUniv=''; specTab='search'; renderList(); }
 function renderFedHome(){
@@ -637,7 +644,7 @@ function renderFedHome(){
       <div class="hsub">大会進行の記録と、入場チケットの受付</div>
       <div class="hsec">大会の進行</div>
       <button class="hbtn primary" onclick="enterView()">
-        <div><div class="hbtn-l">大会リアルタイム進行管理閲覧</div><div class="hbtn-d">進行状況を見る。ログイン不要</div></div>
+        <div><div class="hbtn-l long"><span class="nb">大会リアルタイム</span><span class="nb">進行管理閲覧</span></div><div class="hbtn-d">進行状況を見る。ログイン不要</div></div>
         <div class="hbtn-r">›</div>
       </button>
       <div class="hsmall">
