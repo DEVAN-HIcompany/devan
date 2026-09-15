@@ -185,7 +185,12 @@
     const open = !!PUB.saleOpen && !!PUB.payLink;
     $('buyWrap').classList.toggle('hidden', !open);
     $('buyClosed').classList.toggle('hidden', open);
-    $('buyClosed').textContent = PUB.saleOpen ? '前売券のオンライン販売は準備中です。開始までしばらくお待ちください。' : '前売券の販売は終了しました。当日券をご利用ください。';
+    if (PUB.saleOpen) {
+      const rows = [`前売券 ¥${Number(PUB.price||0).toLocaleString()}`];
+      if (Number(PUB.setPrice||0) > 0) rows.push(`${PUB.setGoodsName||'記念品'}付き前売券 ¥${Number(PUB.setPrice).toLocaleString()}（別々に買うより${Math.max(0, Number(PUB.price||0)+Number(PUB.setGoodsPrice||0)-Number(PUB.setPrice))}円お得）`);
+      rows.push(`当日券 ¥${Number(PUB.doorPrice||PUB.price||0).toLocaleString()}`);
+      $('buyClosed').innerHTML = `<b>前売券のオンライン販売は準備中です。</b>開始までしばらくお待ちください。<br><span class="muted">販売予定: ${rows.map(esc).join('　／　')}</span>`;
+    } else $('buyClosed').textContent = '前売券の販売は終了しました。当日券をご利用ください。';
     if (open) {
       const u = new URL(PUB.payLink);
       u.searchParams.set('client_reference_id', EID);
