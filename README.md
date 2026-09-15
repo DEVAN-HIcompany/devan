@@ -1,1 +1,0 @@
-# shorinjikempo-kanto-gakuseirenmei-progress-test

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>大会グッズ ― DEVAN</title>
+<meta name="description" content="少林寺拳法 学生大会の記念グッズ。オンラインで購入し、会場の売店で引換券（QR）と交換。">
+<link rel="icon" href="../devan-192.png">
+<link rel="apple-touch-icon" href="../devan-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Cormorant+Garamond:wght@600&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{padding-bottom:110px}
+  .hero .sub{font-family:var(--serif);font-size:13px;color:var(--gold);letter-spacing:.24em;margin-bottom:6px}
+  .item{display:flex;gap:14px;align-items:flex-start}
+  .item .img{width:96px;height:96px;flex:none;border-radius:10px;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--serif);color:var(--gold);font-size:12px;letter-spacing:.1em;text-align:center;padding:6px}
+  .item .img img{width:100%;height:100%;object-fit:cover}
+  .item .body{flex:1;min-width:0}
+  .item .name{font-size:16px;font-weight:600}
+  .item .desc{font-size:13px;color:var(--ink2);margin:2px 0 8px}
+  .qty{display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+  .qty button{width:40px;height:38px;border:0;background:#fff;font-size:20px;cursor:pointer;color:var(--ink)}
+  .qty span{min-width:36px;text-align:center;font-weight:600}
+  .soldout{color:var(--ng);font-size:13px;font-weight:600}
+  .cartbar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line2);box-shadow:0 -6px 20px rgba(28,27,26,.08);padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:20}
+  .cartbar .in{max-width:640px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .cartbar .sum{font-size:13px;color:var(--ink2);white-space:nowrap}
+  .cartbar .sum b{font-family:var(--serif);font-size:20px;color:var(--ink);margin-left:6px}
+  .vitems{text-align:left;margin:8px auto 0;max-width:300px;font-size:14px}
+  .vitems div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)}
+  .vitems .done{color:var(--muted);text-decoration:line-through}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><span class="mark">DEVAN<small>大会グッズ</small></span></div>
+    <div class="role"><a href="../">‹ DEVANへ戻る</a></div>
+  </div>
+
+  <div id="vLoading" class="card center"><p class="muted">読み込んでいます…</p></div>
+
+  <div id="vMain" class="hidden">
+    <div class="hero">
+      <div class="sub">GOODS</div>
+      <div class="ev"><h1 class="name" id="evName" style="font-size:20px"></h1><div class="meta" id="evMeta"></div></div>
+    </div>
+    <div class="note" style="margin:0 0 12px;border-left:3px solid var(--gold);background:var(--gold-bg);color:var(--ink)"><b>グッズの売上は、出場する拳士の参加費を減らすために使います。</b><br>オンラインで購入すると引換券（QR）が表示されます。大会当日、会場の売店でお見せください。<span id="goodsNote"></span></div>
+    <div id="myCard" class="card hidden"><h2>お持ちの引換券</h2><ul class="list" id="myList"></ul></div>
+    <div id="closed" class="note hidden">グッズの販売は現在行っていません。</div>
+    <div id="items"></div>
+    <p class="muted" style="margin-top:10px">お支払いはクレジットカード等（Stripe）。引換券は1回限り有効で、当日会場でのお渡しです（発送はしません）。売店でも現金で購入できます。</p>
+  </div>
+
+  <div id="vVoucher" class="hidden">
+    <div class="ticket" id="vCard">
+      <div class="stamp hidden" id="vStamp">引換済</div>
+      <div class="head"><div class="kind">グッズ引換券</div><div class="ev" id="vEv"></div><div class="meta" id="vMeta"></div></div>
+      <div class="body">
+        <div class="who" id="vWho"></div>
+        <div class="qr" id="vQr"></div>
+        <div class="no" id="vNo"></div>
+        <div class="state" id="vState"></div>
+        <div class="vitems" id="vItems"></div>
+      </div>
+      <div class="foot">会場の売店でこの画面をお見せください。スクリーンショットでも引き換えできます。</div>
+    </div>
+    <div class="row" style="margin-top:14px;display:grid;gap:8px"><button class="btn ghost" id="vSave">この端末に保存する</button><a class="btn ghost" id="vBack" href="goods.html">グッズ一覧へ戻る</a></div>
+  </div>
+
+  <div id="vClaim" class="card center hidden"><h2 style="border:0">お支払いを確認しています…</h2><p class="muted" id="claimMsg">数秒お待ちください。</p><div id="claimRetry" class="hidden"><button class="btn ghost" onclick="location.reload()">もう一度確認する</button></div></div>
+  <div id="vError" class="card hidden"><h2>表示できません</h2><p id="errMsg" class="lead"></p><a class="btn ghost" href="goods.html">グッズ一覧へ</a></div>
+
+  <div class="foot" id="legal"></div>
+  <div class="foot"><a href="../">DEVAN ― 出番が、わかる。</a>　Produced by <a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">H.I. Company</a></div>
+</div>
+<div class="cartbar hidden" id="cartbar"><div class="in"><div class="sum" id="cartSum"></div><div class="row"><button class="btn ghost sm" id="cartClear">選び直す</button><button class="btn gold" id="cartBuy">購入する</button></div></div></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="common.js"></script>
+<script>
+(function(){
+  const {db, Q, esc, yen, qrSvg, fmtTime, DEMO, fns, TS, newTid} = TK;
+  const $ = id => document.getElementById(id);
+  const show = id => ['vLoading','vMain','vVoucher','vClaim','vError'].forEach(v => $(v).classList.toggle('hidden', v!==id));
+  const fail = m => { $('errMsg').textContent = m; show('vError'); };
+  const MY='gd_my'; const myV = () => { try { return JSON.parse(localStorage.getItem(MY)||'[]'); } catch(_){ return []; } };
+  const saveMine = (eid, vid, label) => { const a = myV().filter(x=>x.vid!==vid); a.unshift({eid, vid, label, at:Date.now()}); localStorage.setItem(MY, JSON.stringify(a.slice(0,20))); };
+  const vurl = (eid, vid) => `goods.html?e=${encodeURIComponent(eid)}&v=${encodeURIComponent(vid)}${DEMO?'&demo=1':''}`;
+  let EID=null, PUB=null, GOODS={}, SOLD={}, cart={};
+
+  async function main(){
+    EID = await TK.currentEventId(); if (!EID) return fail('現在、販売中の大会はありません。');
+    PUB = await TK.loadEventPub(EID); if (!PUB) return fail('大会情報が見つかりません。');
+    if (Q.get('session_id')) return claim(Q.get('session_id'));
+    if (Q.get('v')) return showVoucher(Q.get('v'));
+    document.title = `大会グッズ ― ${PUB.name}`;
+    $('evName').textContent = PUB.name; $('evMeta').textContent = [PUB.date, PUB.venue].filter(Boolean).join('　');
+    $('goodsNote').textContent = PUB.goodsNote ? '　引き換え場所: ' + PUB.goodsNote : '';
+    $('closed').classList.toggle('hidden', PUB.goodsOpen !== false);
+    db.ref('tk/config/legal').once('value').then(s => { const l=s.val(); if (l && l.name) $('legal').innerHTML = `販売主体: ${esc(l.name)}${l.address?'　'+esc(l.address):''}${l.contact?'　連絡先: '+esc(l.contact):''}`; }).catch(()=>{});
+    const mine = myV().filter(x=>x.eid===EID);
+    $('myCard').classList.toggle('hidden', !mine.length);
+    $('myList').innerHTML = mine.map(x => `<li><span>${esc(x.label)}</span><a class="btn xs ghost" href="${vurl(x.eid,x.vid)}">表示</a></li>`).join('');
+    db.ref(`tk/events/${EID}/goods`).on('value', s => { GOODS = s.val()||{}; render(); show('vMain'); }, e => { console.error(e); fail('商品を読み込めませんでした。'); });
+  }
+  function render(){
+    const list = Object.entries(GOODS).filter(([,g]) => g.open !== false).sort((a,b) => (a[1].sort||0)-(b[1].sort||0));
+    $('items').innerHTML = list.map(([gid,g]) => {
+      const left = g.stock != null ? Math.max(0, Number(g.stock) - Number(g.sold||0)) : null;
+      const out = left !== null && left <= 0;
+      return `<div class="card"><div class="item"><div class="img">${g.image ? `<img src="${esc(g.image)}" alt="">` : esc(g.name)}</div><div class="body"><div class="name">${esc(g.name)}</div><div class="desc">${esc(g.desc||'')}</div><div class="row between"><div class="price">${yen(g.price)}</div>${out ? '<span class="soldout">完売</span>' : `<div class="qty"><button data-g="${gid}" data-d="-1">−</button><span id="q_${gid}">${cart[gid]||0}</span><button data-g="${gid}" data-d="1">＋</button></div>`}</div>${left!==null && !out && left<=20 ? `<div class="muted" style="margin-top:4px">残り ${left} 個</div>`:''}</div></div></div>`;
+    }).join('') || '<div class="card"><p class="muted">商品はまだありません。</p></div>';
+    $('items').querySelectorAll('.qty button').forEach(b => b.onclick = () => { const gid=b.dataset.g; const g=GOODS[gid]; const left = g.stock!=null ? Math.max(0, Number(g.stock)-Number(g.sold||0)) : 20; cart[gid] = Math.max(0, Math.min(Math.min(20,left), (cart[gid]||0) + Number(b.dataset.d))); if (!cart[gid]) delete cart[gid]; render(); });
+    renderCart();
+  }
+  function renderCart(){
+    const n = Object.values(cart).reduce((a,b)=>a+b,0);
+    $('cartbar').classList.toggle('hidden', !n);
+    if (!n) return;
+    const total = Object.entries(cart).reduce((a,[gid,q]) => a + Number(GOODS[gid]?.price||0)*q, 0);
+    $('cartSum').innerHTML = `${n}点<b>${yen(total)}</b>`;
+  }
+  $('cartClear').onclick = () => { cart={}; render(); };
+  $('cartBuy').onclick = async () => {
+    if (PUB.goodsOpen === false) { alert('グッズの販売は現在行っていません。'); return; }
+    const items = Object.entries(cart).map(([gid,qty]) => ({gid, qty}));
+    if (!items.length) return;
+    $('cartBuy').disabled = true; $('cartBuy').textContent = '決済ページへ移動中…';
+    try {
+      if (DEMO) {
+        const vid = newTid(); const its = items.map(it => ({gid:it.gid, name:GOODS[it.gid].name, price:Number(GOODS[it.gid].price), qty:it.qty}));
+        await db.ref(`tk/vouchers/${EID}/${vid}`).set({ status:'paid', items:its, amount: its.reduce((a,i)=>a+i.price*i.qty,0), created:TS, paidAt:TS, name:'お試し 太郎', email:'demo@example.com' });
+        saveMine(EID, vid, its.map(i=>`${i.name}×${i.qty}`).join('、')); location.href = vurl(EID, vid); return;
+      }
+      if (!fns) throw new Error('functions');
+      const r = await fns.httpsCallable('createGoodsCheckout')({ eid: EID, items }); const d = r.data||{};
+      if (!d.url) throw new Error('no url');
+      sessionStorage.setItem('gd_pending', JSON.stringify({eid:EID, vid:d.vid, label: items.map(it => `${GOODS[it.gid].name}×${it.qty}`).join('、')}));
+      location.href = d.url;
+    } catch(e) { console.error(e); alert('決済ページを開けませんでした。' + (e.message && !/functions|url/.test(e.message) ? '\n' + e.message : '')); $('cartBuy').disabled=false; $('cartBuy').textContent='購入する'; }
+  };
+
+  async function claim(sid){
+    show('vClaim');
+    try {
+      if (!fns) throw new Error('functions unavailable');
+      const r = await fns.httpsCallable('claimGoodsSession')({ session_id: sid }); const d = r.data||{};
+      if (!d.vid) throw new Error('no voucher');
+      const pend = JSON.parse(sessionStorage.getItem('gd_pending')||'{}');
+      saveMine(d.eid, d.vid, pend.label || 'グッズ引換券');
+      location.replace(vurl(d.eid, d.vid));
+    } catch(e) { console.error(e); $('claimMsg').innerHTML = 'お支払いの確認に少し時間がかかっています。数秒後に「もう一度確認する」を押してください。<br>確認できない場合は、購入時のメールに届く引換券のリンクからご覧いただけます。'; $('claimRetry').classList.remove('hidden'); }
+  }
+  let vref=null;
+  function showVoucher(vid){
+    vref = db.ref(`tk/vouchers/${EID}/${vid}`); let first=true;
+    vref.on('value', s => { const v=s.val(); if (!v) { if (first) fail('この引換券は見つかりません。'); return; } first=false; renderVoucher(vid, v); }, e => { console.error(e); fail('引換券を読み込めませんでした。'); });
+  }
+  function renderVoucher(vid, v){
+    document.title = `グッズ引換券 ― ${PUB.name}`;
+    $('vEv').textContent = PUB.name; $('vMeta').textContent = [PUB.date, PUB.venue].filter(Boolean).join('　');
+    const items = v.items||[]; const red = v.redeemed||{};
+    const total = items.reduce((a,i)=>a+Number(i.qty||0),0), done = items.reduce((a,i)=>a+Math.min(Number(i.qty||0), Number(red[i.gid]||0)),0);
+    $('vWho').innerHTML = `${esc(v.name||'')}<small>${total}点　${yen(v.amountPaid||v.amount)}</small>`;
+    if (!$('vQr').dataset.done) { $('vQr').innerHTML = qrSvg(location.origin + location.pathname.replace(/[^/]*$/,'') + `goods.html?e=${encodeURIComponent(EID)}&v=${encodeURIComponent(vid)}`, 4); $('vQr').dataset.done='1'; }
+    $('vNo').textContent = 'G-' + vid.slice(-6);
+    $('vItems').innerHTML = items.map(i => { const r = Number(red[i.gid]||0); return `<div class="${r>=i.qty?'done':''}"><span>${esc(i.name)}</span><span>× ${i.qty}${r?`（引換 ${r}）`:''}</span></div>`; }).join('');
+    const pending = v.status !== 'paid';
+    const all = !pending && done >= total;
+    $('vCard').classList.toggle('used', all); $('vStamp').classList.toggle('hidden', !all);
+    const st = $('vState');
+    if (pending) { st.textContent='お支払いが確認できていません'; st.className='state used'; }
+    else if (all) { st.textContent=`引換済み ${fmtTime(v.redeemedAt)}`; st.className='state used'; }
+    else if (done>0) { st.textContent=`${done}点 引換済み／残り ${total-done}点`; st.className='state ok'; }
+    else { st.textContent='有効（未引換）'; st.className='state ok'; }
+    $('vSave').onclick = () => { saveMine(EID, vid, items.map(i=>`${i.name}×${i.qty}`).join('、')); $('vSave').textContent='保存しました'; };
+    if (myV().some(x=>x.vid===vid)) $('vSave').textContent='保存済み';
+    if (DEMO) $('vBack').href='goods.html?demo=1';
+    show('vVoucher');
+  }
+  main().catch(e => { console.error(e); fail('読み込みに失敗しました。'); });
+})();
+</script>
+</body>
+</html>

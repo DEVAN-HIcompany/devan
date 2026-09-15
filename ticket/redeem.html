@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>売店 引換受付 ― DEVAN</title>
+<link rel="icon" href="../devan-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Cormorant+Garamond:wght@600&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .scan{position:relative;background:#111;border-radius:14px;overflow:hidden;aspect-ratio:1/1;max-height:46vh}
+  .scan video{width:100%;height:100%;object-fit:cover;display:block}
+  .scan .frame{position:absolute;inset:14%;border:2px solid rgba(255,255,255,.7);border-radius:12px;pointer-events:none}
+  .scan .off{position:absolute;inset:0;display:grid;place-items:center;color:#ccc;font-size:14px;text-align:center;padding:20px;background:#222;line-height:1.7}
+  .result{border-radius:14px;padding:16px;margin-top:12px;min-height:120px;border:1px solid var(--line);background:var(--card)}
+  .result.ok{background:var(--ok-bg);border-color:var(--ok)} .result.ng{background:var(--ng-bg);border-color:var(--ng)} .result.warn{background:var(--warn-bg);border-color:var(--warn)}
+  .result .big{font-family:var(--serif);font-size:28px;line-height:1.2;letter-spacing:.06em}
+  .result.ok .big{color:var(--ok)} .result.ng .big{color:var(--ng)} .result.warn .big{color:var(--warn)}
+  .result .sub{font-size:13px;color:var(--ink2);margin-top:2px}
+  .items{margin:10px 0 4px;font-size:15px}
+  .items div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line2)}
+  .items .done{color:var(--muted)}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .manual{display:flex;gap:8px;margin-top:12px}
+  .manual input{flex:1;border:1px solid var(--line2);border-radius:9px;padding:10px 12px;font-size:18px;letter-spacing:.14em;text-transform:uppercase}
+  .opt{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin-top:10px;align-items:center}
+  .bar{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+  .bar div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 4px;text-align:center}
+  .bar .k{font-size:10px;color:var(--muted);letter-spacing:.06em} .bar .v{font-family:var(--serif);font-size:18px;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><span class="mark">DEVAN<small>売店 引換受付</small></span></div>
+    <div class="role"><a href="../">‹ DEVANへ戻る</a><span id="who"></span></div>
+  </div>
+
+  <div id="vLogin" class="card login hidden">
+    <h2>売店スタッフ ログイン</h2>
+    <p class="lead">受付用のアカウント（入口受付と同じ）でログインしてください。</p>
+    <div class="field"><label>メールアドレス</label><input id="lEmail" type="email" autocomplete="username"></div>
+    <div class="field"><label>パスワード</label><input id="lPass" type="password" autocomplete="current-password"></div>
+    <button class="btn w" id="lBtn">ログイン</button>
+    <div class="msg" id="lMsg"></div>
+  </div>
+
+  <div id="vMain" class="hidden">
+    <div class="field" style="margin-bottom:10px"><select id="evSel"></select></div>
+    <div class="bar"><div><div class="k">引換券（支払済）</div><div class="v" id="cPaid">0</div></div><div><div class="k">引換済み</div><div class="v" id="cDone">0</div></div><div><div class="k">未引換</div><div class="v" id="cLeft">0</div></div></div>
+    <div id="stock" class="muted" style="margin-bottom:10px"></div>
+    <div class="scan"><video id="video" playsinline muted></video><div class="frame"></div><div class="off" id="camOff"><div>カメラを起動します…<br><span class="muted">許可を求められたら「許可」を押してください</span></div></div></div>
+    <div class="opt"><label><input type="checkbox" id="optSound" checked> 音</label><button class="btn xs ghost" id="camRestart">カメラ再起動</button><label class="btn xs ghost" style="cursor:pointer">画像から読む<input type="file" id="imgIn" accept="image/*" hidden></label><button class="btn xs ghost" id="logout">ログアウト</button></div>
+    <div class="manual"><input id="mNo" placeholder="番号 例: G-3K7QP2" maxlength="10"><button class="btn" id="mBtn">検索</button></div>
+    <div class="result" id="result"><div class="muted">引換券のQRコードを枠に入れてください。番号での検索もできます。</div></div>
+  </div>
+  <div class="foot">DEVAN ― Produced by H.I. Company</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="common.js"></script>
+<script>
+(function(){
+  const {db, auth, TS, esc, yen, fmtTime, beep, DEMO} = TK;
+  const $ = id => document.getElementById(id);
+  let EID=null, GOODS={}, VOUCH={}, user=null; const refs=[];
+
+  async function allowed(u){ if (DEMO) return true; const roles=(await db.ref('sj/roles').once('value')).val(); if (!roles) return true; const r=roles[u.uid]; return r==='gate'||r==='admin'; }
+  auth.onAuthStateChanged(async u => {
+    if (u && !(await allowed(u))) { try { await db.ref('tk/pending/'+u.uid).set({ email:u.email||'', at:TS }); } catch(_){} await auth.signOut(); $('lMsg').innerHTML = `このアカウント（${esc(u.email||'')}）は受付として登録されていません。管理者に「チケット管理 → 受付・写真係」で許可してもらってください。`; return; }
+    user=u; $('vLogin').classList.toggle('hidden', !!u); $('vMain').classList.toggle('hidden', !u); $('who').textContent = u ? (u.email||'') : '';
+    if (u) loadEvents(); else stopCam();
+  });
+  $('lBtn').onclick = async () => { $('lMsg').textContent=''; try { await auth.signInWithEmailAndPassword($('lEmail').value.trim(), $('lPass').value); } catch(e){ $('lMsg').textContent='ログインできませんでした。'; } };
+  $('lPass').addEventListener('keydown', e => { if (e.key==='Enter') $('lBtn').click(); });
+  $('logout').onclick = () => auth.signOut();
+
+  async function loadEvents(){
+    const [evs, cur] = await Promise.all([db.ref('tk/events').once('value'), db.ref('tk/config/currentEvent').once('value')]);
+    const list=[]; evs.forEach(s => { list.push({id:s.key, pub:s.child('pub').val()||{}}); });
+    $('evSel').innerHTML = list.map(e => `<option value="${esc(e.id)}">${esc(e.pub.name||e.id)}</option>`).join('') || '<option value="">大会がありません</option>';
+    const want = TK.Q.get('e') || localStorage.getItem('tk_gate_e') || cur.val() || (list[0]&&list[0].id); if (want && list.some(e=>e.id===want)) $('evSel').value=want;
+    selectEvent($('evSel').value);
+  }
+  $('evSel').onchange = () => selectEvent($('evSel').value);
+  function selectEvent(eid){
+    refs.forEach(r=>r.off()); refs.length=0; EID=eid; if (!eid) return;
+    const sub=(p,fn)=>{ const r=db.ref(p); r.on('value', s=>{ fn(s.val()||{}); renderCounts(); }, e=>{ console.error(e); setResult('ng','読み込みエラー','引換券を読み込めません。ログイン権限をご確認ください。'); }); refs.push(r); };
+    sub(`tk/events/${eid}/goods`, v => GOODS=v); sub(`tk/vouchers/${eid}`, v => VOUCH=v);
+    startCam();
+  }
+  function renderCounts(){
+    let paid=0, done=0, left=0; const soldBy={}, redBy={};
+    for (const k in VOUCH){ const v=VOUCH[k]; if (v.status!=='paid') continue; paid++; const red=v.redeemed||{}; (v.items||[]).forEach(i => { const q=Number(i.qty||0), r=Math.min(q, Number(red[i.gid]||0)); done+=r; left+=q-r; soldBy[i.gid]=(soldBy[i.gid]||0)+q; redBy[i.gid]=(redBy[i.gid]||0)+r; }); }
+    $('cPaid').textContent=paid; $('cDone').textContent=done; $('cLeft').textContent=left;
+    $('stock').innerHTML = Object.entries(GOODS).map(([gid,g]) => `${esc(g.name)}: 未引換 <b>${(soldBy[gid]||0)-(redBy[gid]||0)}</b>${g.stock!=null?`（在庫 ${g.stock}・販売 ${soldBy[gid]||0}）`:''}`).join('　');
+  }
+
+  /* ---- カメラ ---- */
+  let stream=null, raf=null, lastCode='', lastAt=0, detector=null;
+  const video=$('video'), canvas=document.createElement('canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
+  async function startCam(){
+    if (stream) return; $('camOff').style.display='';
+    try { stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:1280} }, audio:false }); video.srcObject=stream; await video.play(); $('camOff').style.display='none'; if ('BarcodeDetector' in window) { try { detector = new BarcodeDetector({formats:['qr_code']}); } catch(_){ detector=null; } } loop(); }
+    catch(e){ console.error(e); $('camOff').innerHTML='<div>カメラを使えません。<br><span class="muted">ブラウザの設定でカメラを許可するか、「画像から読む」または番号検索をお使いください。</span></div>'; }
+  }
+  function stopCam(){ if (raf) cancelAnimationFrame(raf); raf=null; if (stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
+  $('camRestart').onclick = () => { stopCam(); startCam(); };
+  async function loop(){
+    if (!stream) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      let text=null;
+      if (detector) { try { const codes = await detector.detect(video); if (codes.length) text = codes[0].rawValue; } catch(_){ detector=null; } }
+      if (!detector) { const w=video.videoWidth, h=video.videoHeight, s=Math.min(w,h), side=Math.min(s,720); canvas.width=side; canvas.height=side; ctx.drawImage(video,(w-s)/2,(h-s)/2,s,s,0,0,side,side); const img=ctx.getImageData(0,0,side,side); const r=jsQR(img.data,side,side,{inversionAttempts:'dontInvert'}); if (r&&r.data) text=r.data; }
+      if (text) onScan(text);
+    }
+    raf = requestAnimationFrame(loop);
+  }
+  $('imgIn').onchange = () => { const f=$('imgIn').files[0]; if (!f) return; const im=new Image(); im.onload=()=>{ const sc=Math.min(1,900/Math.max(im.width,im.height)); canvas.width=Math.round(im.width*sc); canvas.height=Math.round(im.height*sc); ctx.drawImage(im,0,0,canvas.width,canvas.height); const img=ctx.getImageData(0,0,canvas.width,canvas.height); const r=jsQR(img.data,canvas.width,canvas.height); if (r&&r.data) onScan(r.data,true); else setResult('ng','読めません','画像にQRコードが見つかりません。'); $('imgIn').value=''; }; im.src=URL.createObjectURL(f); };
+  function onScan(text, force){
+    const now=Date.now(); if (!force && text===lastCode && now-lastAt<4000) return; lastCode=text; lastAt=now;
+    let vid=null, eid=null; try { const u=new URL(text); vid=u.searchParams.get('v'); eid=u.searchParams.get('e'); } catch(_){}
+    if (!vid) { const p = TK.parseTicketUrl(text); setResult('ng', p ? '入場チケットです' : 'このQRは違います', p ? 'これはグッズの引換券ではなく入場チケットです。入口受付で読んでください。' : 'グッズ引換券のQRコードではありません。'); sound(false); return; }
+    if (eid && eid!==EID) { setResult('ng','別の大会の引換券',`この引換券は別の大会（${esc(eid)}）のものです。`); sound(false); return; }
+    check(vid);
+  }
+  $('mBtn').onclick = () => { const v=$('mNo').value.trim().toUpperCase().replace(/^G-/,''); if (v.length<4) { setResult('warn','番号を入力','ハイフンの後ろの6文字を入力してください。'); return; } const hits=Object.keys(VOUCH).filter(k=>k.endsWith(v)); if (!hits.length) { setResult('ng','見つかりません',`番号「${esc(v)}」の引換券はありません。`); sound(false); return; } if (hits.length>1) { setResult('warn','複数あります','番号をもう少し長く入力してください。'); return; } $('mNo').value=''; check(hits[0]); };
+  $('mNo').addEventListener('keydown', e => { if (e.key==='Enter') $('mBtn').click(); });
+  function sound(ok){ if ($('optSound').checked) beep(ok); }
+
+  function check(vid){
+    const v=VOUCH[vid];
+    if (!v) { setResult('ng','無効な引換券','この引換券は登録されていません。'); sound(false); return; }
+    if (v.status!=='paid') { setResult('ng','未決済','お支払いが確認できていない引換券です。'); sound(false); return; }
+    const red=v.redeemed||{}; const items=v.items||[];
+    const left = items.map(i => ({...i, left: Number(i.qty||0) - Number(red[i.gid]||0)}));
+    const remain = left.reduce((a,i)=>a+Math.max(0,i.left),0);
+    const no='G-'+vid.slice(-6);
+    const itemsHtml = `<div class="items">${left.map(i => `<div class="${i.left<=0?'done':''}"><span>${esc(i.name)}</span><span>${i.left>0?`<b>${i.left}</b> 個 渡す`:'引換済み'}</span></div>`).join('')}</div>`;
+    if (remain<=0) { setResult('ng','引換済み',`<div class="sub">${no}　${esc(v.name||'')}　${fmtTime(v.redeemedAt)} に引換済み</div>${itemsHtml}`, [{label:'引き換えを取り消す', cls:'ghost', fn:()=>redeem(vid, {}, true)}]); sound(false); return; }
+    const all={}; left.forEach(i => { if (i.left>0) all[i.gid]=Number(i.qty||0); });
+    setResult('ok','引換OK',`<div class="sub">${no}　${esc(v.name||'')}　${yen(v.amountPaid||v.amount)}</div>${itemsHtml}`, [{label:`すべて渡した（${remain}点）`, cls:'ok', fn:()=>redeem(vid, all)}]);
+    sound(true);
+  }
+  async function redeem(vid, redeemed, undo){
+    try {
+      await db.ref(`tk/vouchers/${EID}/${vid}`).update({ redeemed: undo ? null : redeemed, redeemedAt: undo ? null : TS, redeemedBy: user?(user.email||user.uid):null });
+      setResult(undo?'warn':'ok', undo?'取り消しました':'引き渡し完了', `<div class="sub">G-${vid.slice(-6)}</div>`); sound(!undo);
+    } catch(e){ console.error(e); setResult('ng','保存できません','通信状況をご確認ください。'); sound(false); }
+  }
+  function setResult(cls, big, html, acts){ const r=$('result'); r.className='result '+cls; r.innerHTML=`<div class="big">${big}</div>${html||''}<div class="acts"></div>`; (acts||[]).forEach(a=>{ const b=document.createElement('button'); b.className='btn '+(a.cls||''); b.textContent=a.label; b.onclick=a.fn; r.querySelector('.acts').appendChild(b); }); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopCam(); else if (user) startCam(); });
+})();
+</script>
+</body>
+</html>

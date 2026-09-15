@@ -40,9 +40,9 @@
   <div id="vMain" class="hidden">
     <div class="row between" style="margin-bottom:10px">
       <div class="field" style="margin:0;min-width:260px"><select id="evSel"></select></div>
-      <div class="row"><a class="btn sm ghost" href="photos-admin.html">写真の登録・販売</a><button class="btn sm ghost" id="newEv">＋ 大会を追加</button><button class="btn sm ghost" id="logout">ログアウト</button></div>
+      <div class="row"><button class="btn sm ghost" id="newEv">＋ 大会を追加</button><button class="btn sm ghost" id="logout">ログアウト</button></div>
     </div>
-    <div class="tabs"><button class="on" data-tab="dash">集計</button><button data-tab="ev">大会設定</button><button data-tab="univ">大学コード</button><button data-tab="door">当日券・招待券</button><button data-tab="list">チケット一覧</button><button data-tab="staff">受付・写真係</button></div>
+    <div class="tabs"><button class="on" data-tab="dash">集計</button><button data-tab="ev">大会設定</button><button data-tab="univ">大学コード</button><button data-tab="door">当日券・招待券</button><button data-tab="list">チケット一覧</button><button data-tab="goods">グッズ</button><button data-tab="staff">受付アカウント</button></div>
 
     <!-- 集計 -->
     <div id="tDash">
@@ -151,19 +151,50 @@
       </div>
     </div>
 
+    <!-- グッズ -->
+    <div id="tGoods" class="hidden">
+      <div class="card">
+        <h2>グッズのオンライン販売</h2>
+        <p class="lead">観客・拳士が DEVAN で購入 → 引換券（QR）が表示される → 会場の売店で <a href="redeem.html">売店 引換受付</a>（受付アカウントでログイン）が読み取って商品を渡します。売上は前売券と同じ Stripe に入金されます。</p>
+        <div class="row" style="margin-bottom:10px">
+          <label class="switch"><input type="checkbox" id="gOpen"> オンライン販売を受け付ける</label>
+          <div class="field inline" style="margin:0;flex:1;min-width:220px"><label>引き換え場所（表示用）</label><input id="gNote" placeholder="例: 北口 売店（10:00〜16:00）"></div>
+          <button class="btn sm" id="gSaveOpen">保存</button><span class="msg" id="gOpenMsg"></span>
+        </div>
+        <hr class="sep">
+        <h3>商品を追加</h3>
+        <div class="grid2">
+          <div class="field"><label>商品名</label><input id="gName" placeholder="例: 第60回少林寺拳法全日本学生大会 記念ステッカー"></div>
+          <div class="field"><label>価格（円）</label><input id="gPrice" type="number" value="250"></div>
+          <div class="field"><label>説明（任意）</label><input id="gDesc" placeholder="例: 大会ロゴ入り。耐水加工。"></div>
+          <div class="field"><label>在庫数（任意。空欄なら無制限）</label><input id="gStock" type="number" placeholder="例: 300"></div>
+          <div class="field" style="grid-column:1/-1"><label>画像URL（任意）</label><input id="gImage" placeholder="https://…（正方形の画像がきれいに出ます）"></div>
+        </div>
+        <div class="row"><button class="btn" id="gAdd">追加する</button><span class="msg" id="gMsg"></span></div>
+        <h3>商品一覧</h3>
+        <div class="tblwrap"><table class="tbl" id="gTbl"></table></div>
+      </div>
+      <div class="card">
+        <h2>売上・引換状況</h2>
+        <div class="stats" id="gStats"></div>
+        <div class="row" style="margin-top:10px"><button class="btn sm ghost" id="gCsv">引換券一覧をCSVで保存</button></div>
+        <div class="tblwrap" style="margin-top:8px"><table class="tbl" id="vTbl"></table></div>
+      </div>
+    </div>
+
     <!-- 受付アカウント -->
     <div id="tStaff" class="hidden">
       <div class="card">
-        <h2>受付・写真係アカウントの登録</h2>
-        <p class="lead">入口受付（gate.html）に入れるのは「受付」として許可したアカウント、写真の登録（photos-admin.html）に入れるのは「写真係」として許可したアカウント（と管理者）だけです。進行用・管理用のアカウントでは入口受付に入れません。</p>
+        <h2>受付アカウントの登録</h2>
+        <p class="lead">入口受付（gate.html）と売店の引換受付（redeem.html）に入れるのは、ここで「受付」として許可したアカウントだけです。進行用・管理用のアカウントでは入れません。</p>
         <ol style="margin:0 0 8px;padding-left:20px;font-size:14px;color:var(--ink2);line-height:1.8">
           <li>Firebase コンソール → Authentication → Users →「ユーザーを追加」で受付用のメールアドレスとパスワードを作る（例: uketsuke@kantogs.org。1つを受付スタッフ全員で共有して構いません）</li>
-          <li>そのアカウントで一度 入口受付（または写真の登録）にログインする → 下の「許可待ち」に表示される</li>
-          <li>「受付」または「写真係」として許可する → 以後そのアカウントで使える</li>
+          <li>そのアカウントで一度 入口受付にログインする → 下の「許可待ち」に表示される</li>
+          <li>「受付として許可」を押す → 以後そのアカウントで入口受付・売店受付が使える</li>
         </ol>
         <h3>許可待ち</h3>
         <div class="tblwrap"><table class="tbl" id="pendTbl"></table></div>
-        <h3>許可済み（受付・写真係）</h3>
+        <h3>受付として許可済み</h3>
         <div class="tblwrap"><table class="tbl" id="staffTbl"></table></div>
         <div class="msg" id="sMsg"></div>
         <p class="muted" id="rolesNote" style="margin-top:8px"></p>
@@ -196,7 +227,7 @@
 <script src="common.js"></script>
 <script>
 (function(){
-  const {db, auth, TS, KIND, esc, qrSvg, ticketUrl, ticketNo, fmtTime, newTid, newCode, download, csv, baseUrl} = TK;
+  const {db, auth, TS, KIND, esc, qrSvg, ticketUrl, ticketNo, fmtTime, newTid, newCode, download, csv, baseUrl, yen} = TK;
   const $ = id => document.getElementById(id);
   let EID = null, PUB = {}, UNIVS = {}, TICKETS = {}, COUNTS = {}, CURRENT = null, user = null, EVENTS = [];
   const refs = [];
@@ -214,7 +245,7 @@
 
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x===b));
-    ['dash','ev','univ','door','list','staff'].forEach(t => $('t'+t[0].toUpperCase()+t.slice(1)).classList.toggle('hidden', t!==b.dataset.tab));
+    ['dash','ev','univ','door','list','goods','staff'].forEach(t => $('t'+t[0].toUpperCase()+t.slice(1)).classList.toggle('hidden', t!==b.dataset.tab));
   });
 
   /* ---- 大会 ---- */
@@ -256,6 +287,7 @@
     sub(`tk/events/${eid}/univs`, v => UNIVS = v);
     sub(`tk/tickets/${eid}`, v => TICKETS = v);
     sub(`tk/counts/${eid}`, v => COUNTS = v);
+    watchGoods(eid);
   }
   function fillEvForm(p){
     $('eId').value = EID || ''; $('eName').value = p.name||''; $('eDate').value = p.date||''; $('eVenue').value = p.venue||''; $('eOpen').value = p.open||'';
@@ -442,7 +474,7 @@
   }
   function renderStaff(){
     const pend = Object.entries(PENDING).filter(([uid]) => !(ROLES && (ROLES[uid]==='gate' || ROLES[uid]==='photo')));
-    $('pendTbl').innerHTML = '<tr><th>メールアドレス</th><th>ログイン日時</th><th>希望</th><th></th></tr>' + pend.sort((x,y)=>(y[1].at||0)-(x[1].at||0)).map(([uid,p]) => `<tr><td>${esc(p.email||uid)}</td><td>${fmtTime(p.at)}</td><td>${p.want==='photo'?'写真係':'受付'}</td><td class="row"><button class="btn xs ok" onclick="_s.allow('${uid}','gate')">受付として許可</button><button class="btn xs ok" onclick="_s.allow('${uid}','photo')">写真係として許可</button><button class="btn xs ghost" onclick="_s.dismiss('${uid}')">消す</button></td></tr>`).join('') || '<tr><td class="muted">ありません。受付用・写真係用のアカウントで一度ログインすると、ここに出ます。</td></tr>';
+    $('pendTbl').innerHTML = '<tr><th>メールアドレス</th><th>ログイン日時</th><th>役割</th><th></th></tr>' + pend.sort((x,y)=>(y[1].at||0)-(x[1].at||0)).map(([uid,p]) => `<tr><td>${esc(p.email||uid)}</td><td>${fmtTime(p.at)}</td><td>受付</td><td class="row"><button class="btn xs ok" onclick="_s.allow('${uid}','gate')">受付として許可</button><button class="btn xs ghost" onclick="_s.dismiss('${uid}')">消す</button></td></tr>`).join('') || '<tr><td class="muted">ありません。受付用アカウントで入口受付に一度ログインすると、ここに出ます。</td></tr>';
     const gates = ROLES ? Object.entries(ROLES).filter(([,r])=>r==='gate'||r==='photo') : [];
     $('staffTbl').innerHTML = '<tr><th>メールアドレス</th><th>役割</th><th>許可日時</th><th></th></tr>' + gates.map(([uid,r]) => { const st = STAFF[uid]||{}; return `<tr><td>${esc(st.email||uid)}</td><td><span class="tag ${r==='photo'?'gold':'ok'}">${r==='photo'?'写真係':'受付'}</span></td><td>${fmtTime(st.at)}</td><td><button class="btn xs ghost" onclick="_s.revoke('${uid}')">取り消す</button></td></tr>`; }).join('') || '<tr><td class="muted">まだありません</td></tr>';
     $('rolesNote').textContent = ROLES === null ? '注意: 役割（sj/roles）が未設定のため、今はログインできる全員が入口受付と管理に入れます。管理用アカウントを先に管理者として登録してください（FIREBASE設定手順 手順4）。' : '';
@@ -454,6 +486,36 @@
     dismiss: async uid => { await db.ref(`tk/pending/${uid}`).remove(); },
     revoke: async uid => { const st = STAFF[uid]||{}; if (!confirm(`${st.email||uid} の権限を取り消しますか？`)) return; await db.ref().update({ [`sj/roles/${uid}`]: null, [`tk/staff/${uid}`]: null }); }
   };
+
+  /* ---- グッズ ---- */
+  let GOODS={}, VOUCH={};
+  function watchGoods(eid){ const r1=db.ref(`tk/events/${eid}/goods`); r1.on('value', s=>{ GOODS=s.val()||{}; renderGoods(); }); refs.push(r1); const r2=db.ref(`tk/vouchers/${eid}`); r2.on('value', s=>{ VOUCH=s.val()||{}; renderGoods(); }, ()=>{}); refs.push(r2); }
+  $('gSaveOpen').onclick = async () => { try { await db.ref().update({ [`tk/events/${EID}/pub/goodsOpen`]: $('gOpen').checked, [`tk/events/${EID}/pub/goodsNote`]: $('gNote').value.trim() }); $('gOpenMsg').className='msg ok'; $('gOpenMsg').textContent='保存しました。'; } catch(e){ $('gOpenMsg').className='msg'; $('gOpenMsg').textContent='保存できませんでした。'; } };
+  $('gAdd').onclick = async () => {
+    const name=$('gName').value.trim(), price=Number($('gPrice').value||0); if (!name||price<=0) { $('gMsg').className='msg'; $('gMsg').textContent='商品名と価格を入力してください。'; return; }
+    const gid='g'+newTid().slice(0,8); const st=$('gStock').value.trim();
+    try { await db.ref(`tk/events/${EID}/goods/${gid}`).set({ name, price, desc:$('gDesc').value.trim(), stock: st===''?null:Number(st), image:$('gImage').value.trim()||null, open:true, sort:Object.keys(GOODS).length+1, created:TS }); $('gName').value=''; $('gDesc').value=''; $('gStock').value=''; $('gImage').value=''; $('gMsg').className='msg ok'; $('gMsg').textContent='追加しました。'; }
+    catch(e){ console.error(e); $('gMsg').className='msg'; $('gMsg').textContent='追加できませんでした。'; }
+  };
+  window._g = {
+    toggle: async gid => { await db.ref(`tk/events/${EID}/goods/${gid}/open`).set(!(GOODS[gid].open!==false)); },
+    price: async gid => { const v=prompt('価格（円）', GOODS[gid].price); if (v==null) return; await db.ref(`tk/events/${EID}/goods/${gid}/price`).set(Number(v)||0); },
+    stock: async gid => { const v=prompt('在庫数（空欄で無制限）', GOODS[gid].stock??''); if (v==null) return; await db.ref(`tk/events/${EID}/goods/${gid}/stock`).set(v.trim()===''?null:Number(v)); },
+    del: async gid => { if (!confirm(`「${GOODS[gid].name}」を削除しますか？（販売済みの引換券は残ります）`)) return; await db.ref(`tk/events/${EID}/goods/${gid}`).remove(); }
+  };
+  function renderGoods(){
+    $('gOpen').checked = !!(PUB && PUB.goodsOpen); $('gNote').value = (PUB && PUB.goodsNote) || '';
+    const sold={}, red={}; let orders=0, amount=0;
+    Object.values(VOUCH).forEach(v => { if (v.status!=='paid') return; orders++; amount+=Number(v.amountPaid||v.amount||0); const r=v.redeemed||{}; (v.items||[]).forEach(i => { sold[i.gid]=(sold[i.gid]||0)+Number(i.qty||0); red[i.gid]=(red[i.gid]||0)+Math.min(Number(i.qty||0),Number(r[i.gid]||0)); }); });
+    // 販売数を商品にも保存（購入画面の「残り」表示用）
+    Object.keys(GOODS).forEach(gid => { if ((GOODS[gid].sold||0)!==(sold[gid]||0)) db.ref(`tk/events/${EID}/goods/${gid}/sold`).set(sold[gid]||0).catch(()=>{}); });
+    $('gTbl').innerHTML = '<tr><th>商品</th><th>価格</th><th>在庫</th><th>販売</th><th>引換済</th><th>状態</th><th></th></tr>' + Object.entries(GOODS).sort((a,b)=>(a[1].sort||0)-(b[1].sort||0)).map(([gid,g]) => `<tr><td>${esc(g.name)}${g.desc?`<div class="muted">${esc(g.desc)}</div>`:''}</td><td>${yen(g.price)}</td><td>${g.stock!=null?g.stock:'無制限'}</td><td>${sold[gid]||0}</td><td>${red[gid]||0}</td><td>${g.open!==false?'<span class="tag ok">販売中</span>':'<span class="tag">停止</span>'}</td><td class="row"><button class="btn xs ghost" onclick="_g.toggle('${gid}')">${g.open!==false?'停止':'再開'}</button><button class="btn xs ghost" onclick="_g.price('${gid}')">価格</button><button class="btn xs ghost" onclick="_g.stock('${gid}')">在庫</button><button class="btn xs ghost" onclick="_g.del('${gid}')">削除</button></td></tr>`).join('') || '<tr><td class="muted">まだありません</td></tr>';
+    const fee = Math.round(amount*0.036) + Math.round(amount*(Number(PUB.feePercent||0)/100));
+    const totalSold=Object.values(sold).reduce((a,b)=>a+b,0), totalRed=Object.values(red).reduce((a,b)=>a+b,0);
+    $('gStats').innerHTML = `<div class="stat"><div class="k">注文数</div><div class="v">${orders}</div></div><div class="stat"><div class="k">販売点数</div><div class="v">${totalSold}</div></div><div class="stat"><div class="k">引換済み</div><div class="v">${totalRed}<small>/${totalSold}</small></div></div><div class="stat"><div class="k">売上</div><div class="v">${yen(amount)}</div></div><div class="stat"><div class="k">手数料の目安</div><div class="v">−${yen(fee)}</div></div><div class="stat"><div class="k">団体の手取り目安</div><div class="v">${yen(amount-fee)}</div></div>`;
+    $('vTbl').innerHTML = '<tr><th>番号</th><th>日時</th><th>氏名</th><th>内容</th><th>金額</th><th>状態</th></tr>' + Object.entries(VOUCH).sort((a,b)=>(b[1].created||0)-(a[1].created||0)).slice(0,300).map(([vid,v]) => { const r=v.redeemed||{}; const tot=(v.items||[]).reduce((a,i)=>a+Number(i.qty||0),0), dn=(v.items||[]).reduce((a,i)=>a+Math.min(Number(i.qty||0),Number(r[i.gid]||0)),0); return `<tr><td>G-${vid.slice(-6)}</td><td>${fmtTime(v.paidAt||v.created)}</td><td>${esc(v.name||'')}</td><td>${(v.items||[]).map(i=>esc(i.name)+'×'+i.qty).join('、')}</td><td>${yen(v.amountPaid||v.amount)}</td><td>${v.status!=='paid'?'<span class="tag">未決済</span>':(dn>=tot?'<span class="tag">引換済</span>':dn?`<span class="tag warn">一部 ${dn}/${tot}</span>`:'<span class="tag ok">未引換</span>')}</td></tr>`; }).join('') || '<tr><td class="muted">まだありません</td></tr>';
+  }
+  $('gCsv').onclick = () => { const rows=[['番号','日時','氏名','メール','内容','金額','状態']]; Object.entries(VOUCH).forEach(([vid,v]) => rows.push(['G-'+vid.slice(-6), fmtTime(v.paidAt||v.created), v.name||'', v.email||'', (v.items||[]).map(i=>i.name+'×'+i.qty).join(' / '), v.amountPaid||v.amount||0, v.status])); download(`グッズ引換券_${EID}.csv`, csv(rows), 'text/csv'); };
 
   /* ---- 集計・一覧 ---- */
   function render(){
