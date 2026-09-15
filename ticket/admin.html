@@ -77,7 +77,7 @@
           <div class="field"><label>日付（表示用）</label><input id="eDate" placeholder="例: 2026年11月1日（日）"></div>
           <div class="field"><label>会場</label><input id="eVenue" placeholder="例: 日本武道館"></div>
           <div class="field"><label>開場・開会（表示用）</label><input id="eOpen" placeholder="例: 開場 9:00 ／ 開会式 10:00"></div>
-          <div class="field"><label>前売券の価格（円）</label><input id="ePrice" type="number" inputmode="numeric" value="1000"></div>
+          <div class="field"><label>前売券の価格（円）</label><input id="ePrice" type="number" inputmode="numeric" value="800"></div>
           <div class="field"><label>当日券の価格（円）</label><input id="eDoorPrice" type="number" inputmode="numeric" value="1000"></div>
           <div class="field"><label>当日券の補足（任意）</label><input id="eDoorNote" placeholder="例: 北口の受付で販売します"></div>
           <div class="field"><label>前売券の決済リンク（Stripe）</label><input id="ePayLink" placeholder="https://buy.stripe.com/xxxxx"><div class="hint">空欄のあいだは「前売券を購入する」ボタンが出ません。</div></div>
@@ -259,7 +259,7 @@
   }
   function fillEvForm(p){
     $('eId').value = EID || ''; $('eName').value = p.name||''; $('eDate').value = p.date||''; $('eVenue').value = p.venue||''; $('eOpen').value = p.open||'';
-    $('ePrice').value = p.price!=null?p.price:1000; $('eDoorPrice').value = p.doorPrice!=null?p.doorPrice:1000; $('eDoorNote').value = p.doorNote||''; $('ePayLink').value = p.payLink||''; $('eDoorLink').value = p.doorLink||''; $('eDoorOpen').checked = !!p.doorOpen; $('eFeeNote').textContent = p.feePercent ? `利用料 ${p.feePercent}% 設定済み` : '';
+    $('ePrice').value = p.price!=null?p.price:800; $('eDoorPrice').value = p.doorPrice!=null?p.doorPrice:1000; $('eDoorNote').value = p.doorNote||''; $('ePayLink').value = p.payLink||''; $('eDoorLink').value = p.doorLink||''; $('eDoorOpen').checked = !!p.doorOpen; $('eFeeNote').textContent = p.feePercent ? `利用料 ${p.feePercent}% 設定済み` : '';
     $('eCap').value = p.cap!=null?p.cap:120; $('eSaleOpen').checked = p.saleOpen!==false; $('eCurrent').checked = !!EID && CURRENT===EID;
   }
   $('eSave').onclick = async () => {
