@@ -223,16 +223,19 @@
   const startNew = () => { selectEvent(null); document.querySelector('.tabs button[data-tab=ev]').click(); $('eId').value=''; $('eMsg').textContent=''; $('evFormTitle').textContent='新しい大会を作成'; $('eDelete').classList.add('hidden'); $('eName').focus(); window.scrollTo({top:$('evFormTitle').offsetTop-80, behavior:'smooth'}); };
   $('newEv').onclick = startNew; $('newEv2').onclick = startNew;
   function renderEvTable(){
-    $('evTbl').innerHTML = '<tr><th>大会名</th><th>ID</th><th>日付</th><th>受付</th><th></th></tr>' + EVENTS.map(e => `<tr${e.id===EID?' style="background:var(--gold-bg)"':''}><td>${esc(e.pub.name||'')}${e.id===CURRENT?' <span class="tag gold">現在の大会</span>':''}</td><td>${esc(e.id)}</td><td>${esc(e.pub.date||'')}</td><td>${e.pub.saleOpen===false?'<span class="tag">停止中</span>':'<span class="tag ok">受付中</span>'}</td><td><button class="btn xs ghost" onclick="_e.pick('${esc(e.id)}')">${e.id===EID?'編集中':'選択'}</button></td></tr>`).join('') || '<tr><td class="muted">まだありません。「＋ 新しい大会を追加」から作成してください。</td></tr>';
+    $('evTbl').innerHTML = '<tr><th>大会名</th><th>ID</th><th>日付</th><th>受付</th><th></th></tr>' + EVENTS.map(e => `<tr${e.id===EID?' style="background:var(--gold-bg)"':''}><td>${esc(e.pub.name||'')}${e.id===CURRENT?' <span class="tag gold">現在の大会</span>':''}</td><td>${esc(e.id)}</td><td>${esc(e.pub.date||'')}</td><td>${e.pub.saleOpen===false?'<span class="tag">停止中</span>':'<span class="tag ok">受付中</span>'}</td><td class="row" style="flex-wrap:nowrap"><button class="btn xs ghost" onclick="_e.pick('${esc(e.id)}')">${e.id===EID?'編集中':'選択'}</button><button class="btn xs ghost" onclick="_e.del('${esc(e.id)}')">削除</button></td></tr>`).join('') || '<tr><td class="muted">まだありません。「＋ 新しい大会を追加」から作成してください。</td></tr>';
   }
   window._e = { pick: id => { $('evSel').value = id; selectEvent(id); $('evFormTitle').textContent = '大会の設定'; $('eDelete').classList.remove('hidden'); renderEvTable(); } };
-  $('eDelete').onclick = async () => {
-    if (!EID) return; const e = EVENTS.find(x=>x.id===EID); const n = Object.keys(TICKETS).length;
-    if (prompt(`大会「${e?e.pub.name:EID}」を削除します。大学コードとチケット（${n}件）もすべて消えます。\n確認のため 削除 と入力してください。`) !== '削除') return;
-    const upd = { [`tk/events/${EID}`]: null, [`tk/tickets/${EID}`]: null, [`tk/counts/${EID}`]: null }; if (CURRENT===EID) upd['tk/config/currentEvent'] = null;
-    try { await db.ref().update(upd); EID = null; await loadEvents(); document.querySelector('.tabs button[data-tab=ev]').click(); }
-    catch(err){ console.error(err); $('eMsg').className='msg'; $('eMsg').textContent='削除できませんでした。'; }
-  };
+  async function deleteEvent(id){
+    if (!id) return; const e = EVENTS.find(x=>x.id===id);
+    const ts = await db.ref(`tk/tickets/${id}`).once('value').catch(()=>null); const n = ts && ts.val() ? Object.keys(ts.val()).length : 0;
+    if (prompt(`大会「${e?e.pub.name:id}」を削除します。大学コードとチケット（${n}件）もすべて消え、元に戻せません。\n確認のため 削除 と入力してください。`) !== '削除') return;
+    const upd = { [`tk/events/${id}`]: null, [`tk/tickets/${id}`]: null, [`tk/counts/${id}`]: null }; if (CURRENT===id) upd['tk/config/currentEvent'] = null;
+    try { await db.ref().update(upd); if (EID===id) EID = null; await loadEvents(); document.querySelector('.tabs button[data-tab=ev]').click(); $('eMsg').className='msg ok'; $('eMsg').textContent=`「${e?e.pub.name:id}」を削除しました。`; }
+    catch(err){ console.error(err); $('eMsg').className='msg'; $('eMsg').textContent='削除できませんでした。Firebase のルールを最新（ticket-backend/database.rules.json）に貼り直してください。'; alert('削除できませんでした。Firebase のルールを最新に貼り直してください。'); }
+  }
+  $('eDelete').onclick = () => deleteEvent(EID);
+  window._e.del = deleteEvent;
   function selectEvent(eid){
     refs.forEach(r => r.off()); refs.length = 0;
     EID = eid; PUB={}; UNIVS={}; TICKETS={}; COUNTS={};
