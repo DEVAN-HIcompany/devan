@@ -56,6 +56,9 @@ button:active{transform:scale(.985)}
 .hbtn.primary .hbtn-d{color:rgba(255,255,255,.7)}
 .hbtn.primary .hbtn-r{color:rgba(255,255,255,.5)}
 .hbtn.primary:hover{background:#000;border-color:#000}
+.hbtn.primary.gold{background:var(--gold);border-color:var(--gold)}
+.hbtn.primary.gold:hover{background:#8f7440;border-color:#8f7440}
+.hbtn.primary.gold .hbtn-d{color:rgba(255,255,255,.85)}
 .hsmall{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem}
 .hbtn.mini{padding:.85rem .9rem;margin:0;gap:0;min-width:0;align-items:flex-start}
 .hbtn.mini>div{min-width:0}
@@ -509,18 +512,18 @@ function renderHome(){
         <div><div class="hbtn-l">観客・出場者の方</div><div class="hbtn-d">大学名や氏名で出番をさがす。ログイン不要</div></div>
         <div class="hbtn-r">›</div>
       </button>
-      <button class="hbtn" onclick="renderFedHome()">
-        <div><div class="hbtn-l">学生連盟の方</div><div class="hbtn-d">閲覧用・進行用・管理用</div></div>
-        <div class="hbtn-r">›</div>
-      </button>
-      <button class="hbtn" onclick="location.href='./ticket/'">
+      <button class="hbtn primary gold" onclick="location.href='./ticket/'">
         <div><div class="hbtn-l">入場チケット</div><div class="hbtn-d">前売券の購入・拳士の無料チケット・お持ちのチケット</div></div>
         <div class="hbtn-r">›</div>
       </button>
-      <button class="hbtn" onclick="location.href='./ticket/photos.html'">
-        <div><div class="hbtn-l">大会写真</div><div class="hbtn-d">演武の写真を大学名・氏名から探して購入</div></div>
-        <div class="hbtn-r">›</div>
-      </button>
+      <div class="hsmall">
+        <button class="hbtn mini" onclick="renderFedHome()">
+          <div><div class="hbtn-l">学生連盟の方</div><div class="hbtn-d">閲覧・進行・管理</div></div>
+        </button>
+        <button class="hbtn mini" onclick="location.href='./ticket/photos.html'">
+          <div><div class="hbtn-l">大会写真</div><div class="hbtn-d">演武写真の購入</div></div>
+        </button>
+      </div>
       ${installHintHTML()}
       <div class="credit"><a href="https://hi-companyjapan.jp/" target="_blank" rel="noopener">Produced by <b>H.I. Company</b></a><span>店舗・団体のAI業務自動化</span></div>
     </div></div>`);
