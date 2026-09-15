@@ -82,7 +82,7 @@
           <div class="field"><label>当日券の補足（任意）</label><input id="eDoorNote" placeholder="例: 北口の受付で販売します"></div>
           <div class="field"><label>前売券の決済リンク（Stripe）</label><input id="ePayLink" placeholder="https://buy.stripe.com/xxxxx"><div class="hint">空欄のあいだは「前売券を購入する」ボタンが出ません。</div></div>
           <div class="field"><label>当日券の決済リンク（Stripe）</label><input id="eDoorLink" placeholder="https://buy.stripe.com/xxxxx"><div class="hint">空欄のあいだは「当日券をオンラインで購入する」ボタンが出ません。</div></div>
-          <div class="field" style="grid-column:1/-1"><div class="row"><button class="btn sm ghost" id="eMakeLinks" type="button">決済リンクを自動作成する（前売・当日）</button><span class="muted" id="eFeeNote"></span></div><div class="hint">団体の Stripe に商品と支払いリンクを作り、上の2欄に自動で入ります。DEVAN 利用料（売上の5%）が決済ごとに自動で分配される設定になります。事前に「Stripe 連携」の設定が必要です。</div><div class="msg" id="eLinkMsg"></div></div>
+          <div class="field" style="grid-column:1/-1"><div class="row"><button class="btn sm ghost" id="eMakeLinks" type="button">決済リンクを自動作成する（前売・当日）</button><span class="muted" id="eFeeNote"></span></div><div class="hint">団体の Stripe に商品と支払いリンクを作り、上の2欄に自動で入ります。DEVAN 利用料（売上の7%）が決済ごとに自動で分配される設定になります。事前に「Stripe 連携」の設定が必要です。</div><div class="msg" id="eLinkMsg"></div></div>
           <div class="field" style="grid-column:1/-1"><label>拳士の無料発行の上限（1大学あたりの既定値）</label><input id="eCap" type="number" value="120" style="max-width:160px"><div class="hint">大学コードを作るときの上限。大学ごとに後から変えられます。</div></div>
         </div>
         <div class="row" style="margin:6px 0 14px">
@@ -94,7 +94,7 @@
       </div>
       <div class="card">
         <h2>Stripe 連携（団体共通）</h2>
-        <p class="lead">お客様の支払いは団体（学連）の Stripe 口座に直接入金され、決済ごとに DEVAN 利用料 5% が H.I. Company に自動で分配されます。団体の Stripe アカウント ID（acct_ で始まる）を保存してください。手順は「チケット導入手順」の手順4。</p>
+        <p class="lead">お客様の支払いは団体（学連）の Stripe 口座に直接入金され、決済ごとに DEVAN 利用料 7% が H.I. Company に自動で分配されます。団体の Stripe アカウント ID（acct_ で始まる）を保存してください。手順は「チケット導入手順」の手順4。</p>
         <div class="field"><label>団体の Stripe アカウント ID（連結アカウント）</label><input id="cAcct" placeholder="acct_xxxxxxxxxxxx"></div>
         <div class="row"><button class="btn sm" id="cAcctSave">保存する</button><span class="msg" id="cAcctMsg"></span></div>
       </div>

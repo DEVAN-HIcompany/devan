@@ -90,7 +90,7 @@
         pending: { 'demo-gate-1': { email:'uketsuke@example.com', at: Date.now()-600000 } },
         config: { currentEvent: eid },
         events: { [eid]: {
-          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:800, doorPrice:1000, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', saleOpen:true, doorOpen:true, feePercent:5 },
+          pub: { name:'第60回少林寺拳法全日本学生大会', date:'2026年11月1日（日）', venue:'日本武道館', open:'開場 9:00 ／ 開会式 10:00', price:800, doorPrice:1000, payLink:'https://buy.stripe.com/test_demo_adv', doorLink:'https://buy.stripe.com/test_demo_door', saleOpen:true, doorOpen:true, feePercent:7 },
           univs: { u1:{name:'明治大学',code:'MEIJI1',cap:100}, u2:{name:'早稲田大学',code:'WASED2',cap:100}, u3:{name:'日本大学',code:'NIHON3',cap:100} },
           codes: { MEIJI1:'u1', WASED2:'u2', NIHON3:'u3' }
         }},
