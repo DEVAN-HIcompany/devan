@@ -25,6 +25,23 @@
   .steps div{background:var(--bg2);border-radius:10px;padding:10px 8px;font-size:12px;color:var(--ink2);text-align:center;line-height:1.5}
   .steps div b{display:block;font-family:var(--serif);font-size:15px;color:var(--gold);margin-bottom:2px}
   .tk-actions{display:grid;gap:8px;margin-top:14px}
+  .choice-btn{display:grid;grid-template-columns:1fr auto;align-items:center;width:100%;text-align:left;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:14px;padding:20px 18px;margin-bottom:12px;cursor:pointer;box-shadow:var(--sh2)}
+  .choice-btn .cl{font-size:19px;font-weight:600;letter-spacing:.04em;grid-column:1}
+  .choice-btn .cd{font-size:13px;opacity:.75;margin-top:4px;grid-column:1}
+  .choice-btn .cr{grid-column:2;grid-row:1/3;font-size:22px;opacity:.6;padding-left:12px}
+  .choice-btn.ken{background:var(--ok);border-color:var(--ok)}
+  .backlink{background:none;border:0;color:var(--muted);font-size:13px;padding:0;margin:0 0 12px;cursor:pointer}
+  .purpose{font-size:13px;color:var(--ink2);background:var(--gold-bg);border-left:3px solid var(--gold);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+  .purpose b{color:var(--ink)}
+  .buy-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:16px 16px;margin-bottom:10px;text-decoration:none;color:var(--ink);box-shadow:var(--sh)}
+  .buy-card.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+  .buy-card.gold .bd,.buy-card.gold .bp small{color:rgba(255,255,255,.85)}
+  .buy-card.plain{background:var(--bg2);border-color:transparent;box-shadow:none}
+  .buy-card .bl{font-size:16px;font-weight:600}
+  .buy-card .bd{font-size:12.5px;color:var(--ink2);margin-top:2px}
+  .buy-card .bp{font-family:var(--serif);font-size:24px;white-space:nowrap}
+  .buy-card .bp small{font-size:11px;color:var(--muted);display:block;text-align:right;letter-spacing:.04em}
+  .center{text-align:center}
   .center{text-align:center}
 </style>
 </head>
@@ -45,64 +62,57 @@
       <div class="ev"><h1 class="name" id="evName"></h1><div class="meta" id="evMeta"></div></div>
     </div>
 
-    <div class="note" style="margin:0 0 14px;border-left:3px solid var(--gold);background:var(--gold-bg);color:var(--ink)">
-      <b>入場料は、出場する拳士の参加費を減らすために使います。</b><br>
-      これまで大会の費用は出場拳士の参加費でほぼすべてまかなわれてきました。今年から観客の皆様にも入場料をお願いし、その分を出場拳士の負担軽減に充てます。ご理解とご協力をお願いいたします。
-    </div>
     <div class="mine card hidden" id="mineCard">
       <h2>お持ちのチケット</h2>
-      <p class="lead">この端末で発行・購入したチケットです。タップすると表示します。</p>
       <ul class="list" id="mineList"></ul>
     </div>
 
-    <div class="choice">
-      <div class="card">
-        <div class="head"><h2>観客の方</h2><span class="tag info">前売券</span></div>
-        <p class="lead">ご家族・OBOG・一般の方はこちら。前売がお得です。オンラインでお支払いいただくと、その場でQRチケットが表示されます。</p>
-        <div class="row between" style="margin:8px 0 12px">
-          <div class="price" id="evPrice"></div>
-          <div class="muted" id="evPriceNote">1名につき</div>
-        </div>
-        <div id="buyWrap">
-          <a class="btn w gold" id="buyBtn" href="#">前売券を購入する</a>
-          <div id="setWrap" class="hidden" style="margin-top:10px">
-            <a class="btn w" id="setBtn" href="#">記念品付き前売券を購入する</a>
-            <p class="muted" style="margin:6px 0 0" id="setNote"></p>
-          </div>
-          <p class="muted" style="margin:8px 0 0">クレジットカード等でお支払いいただけます（決済は Stripe の安全なページで行います）。購入後、この画面に戻るとチケットが表示されます。</p>
-        </div>
-        <div id="buyClosed" class="note hidden"></div>
-        <hr class="sep">
-        <h3>当日券</h3>
-        <div class="row between" style="margin:4px 0 10px"><div class="price" id="evDoorPrice"></div><div class="muted">1名につき</div></div>
-        <div id="doorWrap" class="hidden">
-          <a class="btn w" id="doorBtn" href="#">当日券をオンラインで購入する</a>
-          <p class="muted" style="margin:8px 0 0">スマホで購入すると、入口でQRを見せるだけで入場できます（列に並ばずに済みます）。</p>
-        </div>
-        <p class="lead" style="margin:8px 0 0" id="doorCash">会場入口の受付でも現金でお買い求めいただけます。<span id="evDoorNote"></span></p>
-      </div>
+    <!-- 1) 2択 -->
+    <div id="pChoose">
+      <button class="choice-btn" id="goAud">
+        <div class="cl">一般・観客・OBOGの方</div>
+        <div class="cd">入場券の購入（前売・当日）</div>
+        <div class="cr">›</div>
+      </button>
+      <button class="choice-btn ken" id="goKen">
+        <div class="cl">出場拳士・学連拳士の方</div>
+        <div class="cd">入場無料。大学コードでチケットを発行</div>
+        <div class="cr">›</div>
+      </button>
+      <p class="muted center" style="margin-top:14px">未就学児は無料です。</p>
+    </div>
 
+    <!-- 2a) 観客 -->
+    <div id="pAud" class="hidden">
+      <button class="backlink" data-back>‹ 戻る</button>
+      <div class="purpose"><b>入場料は、出場する拳士の参加費を減らすために使います。</b>ご理解とご協力をお願いいたします。</div>
+      <div id="buyWrap">
+        <a class="buy-card gold" id="buyBtn" href="#"><div><div class="bl">前売券</div><div class="bd">大会前日まで・カード決済</div></div><div class="bp" id="pAdv"></div></a>
+        <a class="buy-card hidden" id="setBtn" href="#"><div><div class="bl" id="setLabel">記念品付き前売券</div><div class="bd" id="setNote"></div></div><div class="bp" id="pSet"></div></a>
+      </div>
+      <div id="buyClosed" class="note hidden"></div>
+      <div id="doorWrap" class="hidden">
+        <a class="buy-card" id="doorBtn" href="#"><div><div class="bl">当日券（オンライン）</div><div class="bd">スマホで購入して、そのまま入場</div></div><div class="bp" id="pDoorOn"></div></a>
+      </div>
+      <div class="buy-card plain"><div><div class="bl">当日券（会場入口・現金）</div><div class="bd" id="doorCash">当日、入口の受付でお買い求めください。</div></div><div class="bp" id="pDoor"></div></div>
+      <p class="muted" style="margin-top:12px">購入後、この画面にQRチケットが表示されます（メールでも届きます）。チケットは入場時に1回だけ有効で、スクリーンショットでも入場できます。</p>
+    </div>
+
+    <!-- 2b) 拳士 -->
+    <div id="pKen" class="hidden">
+      <button class="backlink" data-back>‹ 戻る</button>
       <div class="card">
-        <div class="head"><h2>拳士の方</h2><span class="tag ok">無料</span></div>
-        <p class="lead">学生連盟に所属する拳士、および本大会に出場する拳士は入場無料です。所属大学の「大学コード」を入力して、ご自身のチケットを発行してください。</p>
-        <div class="steps"><div><b>1</b>大学コードを入力</div><div><b>2</b>氏名を入力</div><div><b>3</b>入口でQRを見せる</div></div>
+        <h2>無料チケットの発行</h2>
+        <p class="lead">主将・主務から連絡された「大学コード」と氏名を入れるだけです。お一人1枚。</p>
         <form id="freeForm" autocomplete="off">
-          <div class="field"><label>大学コード</label><input id="fCode" placeholder="例: ABC234" maxlength="8" style="text-transform:uppercase;letter-spacing:.2em" inputmode="latin"><div class="hint">主将・主務から連絡されている6文字のコードです。分からない場合は所属大学の幹部にお尋ねください。</div></div>
+          <div class="field"><label>大学コード（6文字）</label><input id="fCode" placeholder="例: ABC234" maxlength="8" style="text-transform:uppercase;letter-spacing:.2em" inputmode="latin"></div>
           <div class="field" id="fUnivWrap" style="display:none"><label>所属</label><div id="fUniv" style="font-size:16px;font-weight:600;padding:4px 0"></div></div>
           <div class="field"><label>氏名（フルネーム）</label><input id="fName" placeholder="例: 少林 太郎" maxlength="40"></div>
           <button class="btn w ok" type="submit" id="fBtn">無料チケットを発行する</button>
           <div class="msg" id="fMsg"></div>
         </form>
-        <p class="muted" style="margin-top:10px">お一人1枚です。発行されたチケットはこの端末に保存されます。入口で本人確認をお願いする場合があります。</p>
+        <p class="muted" style="margin-top:10px">コードが分からないときは所属大学の幹部にお尋ねください。当日は入口でQRを見せて入場します。</p>
       </div>
-    </div>
-
-    <div class="card" style="margin-top:14px"><div class="row between"><div><h2 style="border:0;padding:0;margin:0 0 4px">大会グッズ</h2><p class="lead" style="margin:0">記念ステッカーなどをオンラインで購入し、会場の売店で引換券（QR）と交換できます。</p></div><a class="btn ghost" href="goods.html">グッズを見る</a></div></div>
-    <div class="note" style="margin-top:14px">
-      <b>ご注意</b><br>
-      ・チケットは入場時に1回だけ有効です。他の方への譲渡・転売はご遠慮ください。<br>
-      ・QRコードはスクリーンショットでも入場できます。電波の弱い場所に備えて保存をおすすめします。<br>
-      ・未就学児は無料です。
     </div>
   </div>
 
@@ -176,36 +186,37 @@
     document.title = `入場チケット ― ${PUB.name}`;
     $('evName').textContent = PUB.name;
     $('evMeta').innerHTML = [PUB.date, PUB.venue, PUB.open].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
-    $('evPrice').innerHTML = `¥${Number(PUB.price||0).toLocaleString()}<small>税込</small>`;
-    $('evDoorPrice').innerHTML = `¥${Number(PUB.doorPrice||PUB.price||0).toLocaleString()}<small>税込</small>`;
-    const doorOpen = !!PUB.doorOpen && !!PUB.doorLink;
-    $('doorWrap').classList.toggle('hidden', !doorOpen);
-    if (doorOpen) { const du = new URL(PUB.doorLink); du.searchParams.set('client_reference_id', EID); $('doorBtn').href = du.toString(); }
-    $('evDoorNote').textContent = PUB.doorNote || '';
+    const price = Number(PUB.price||0), dprice = Number(PUB.doorPrice||PUB.price||0), sprice = Number(PUB.setPrice||0);
+    $('pAdv').innerHTML = `¥${price.toLocaleString()}`;
+    $('pDoor').innerHTML = `¥${dprice.toLocaleString()}`; $('pDoorOn').innerHTML = `¥${dprice.toLocaleString()}`;
+    if (PUB.doorNote) $('doorCash').textContent = PUB.doorNote;
     const open = !!PUB.saleOpen && !!PUB.payLink;
     $('buyWrap').classList.toggle('hidden', !open);
     $('buyClosed').classList.toggle('hidden', open);
-    if (PUB.saleOpen) {
-      const rows = [`前売券 ¥${Number(PUB.price||0).toLocaleString()}`];
-      if (Number(PUB.setPrice||0) > 0) rows.push(`${PUB.setGoodsName||'記念品'}付き前売券 ¥${Number(PUB.setPrice).toLocaleString()}（別々に買うより${Math.max(0, Number(PUB.price||0)+Number(PUB.setGoodsPrice||0)-Number(PUB.setPrice))}円お得）`);
-      rows.push(`当日券 ¥${Number(PUB.doorPrice||PUB.price||0).toLocaleString()}`);
-      $('buyClosed').innerHTML = `<b>前売券のオンライン販売は準備中です。</b>開始までしばらくお待ちください。<br><span class="muted">販売予定: ${rows.map(esc).join('　／　')}</span>`;
-    } else $('buyClosed').textContent = '前売券の販売は終了しました。当日券をご利用ください。';
     if (open) {
-      const u = new URL(PUB.payLink);
-      u.searchParams.set('client_reference_id', EID);
-      $('buyBtn').href = u.toString();
-      const setOpen = !!PUB.setLink && Number(PUB.setPrice||0) > 0;
-      $('setWrap').classList.toggle('hidden', !setOpen);
+      const u = new URL(PUB.payLink); u.searchParams.set('client_reference_id', EID); $('buyBtn').href = u.toString();
+      const setOpen = !!PUB.setLink && sprice > 0;
+      $('setBtn').classList.toggle('hidden', !setOpen);
       if (setOpen) { const su = new URL(PUB.setLink); su.searchParams.set('client_reference_id', EID); $('setBtn').href = su.toString();
-        const gname = PUB.setGoodsName || '記念品'; const save = Number(PUB.price||0) + Number(PUB.setGoodsPrice||0) - Number(PUB.setPrice||0);
-        $('setBtn').textContent = `${gname}付き前売券を購入する（¥${Number(PUB.setPrice).toLocaleString()}）`;
-        $('setNote').textContent = `前売券＋${gname}のセット。${save>0?`別々に買うより${save}円お得。`:''}記念品は入場時に入口でお渡しします。`; }
-    }
+        const gname = ((PUB.setGoodsName || '記念品').replace(PUB.name||'', '').trim()) || (PUB.setGoodsName || '記念品'); const save = price + Number(PUB.setGoodsPrice||0) - sprice;
+        $('setLabel').textContent = `${gname}付き前売券`; $('pSet').innerHTML = `¥${sprice.toLocaleString()}${save>0?`<small>${save}円お得</small>`:''}`;
+        $('setNote').textContent = `前売券＋${gname}。入場時に入口でお渡し`; }
+    } else if (PUB.saleOpen) {
+      const rows = [`前売券 ¥${price.toLocaleString()}`];
+      if (sprice > 0) rows.push(`${((PUB.setGoodsName||'記念品').replace(PUB.name||'','').trim())||'記念品'}付き前売券 ¥${sprice.toLocaleString()}`);
+      $('buyClosed').innerHTML = `<b>前売券のオンライン販売は準備中です。</b><br><span class="muted">販売予定: ${rows.map(esc).join('　／　')}</span>`;
+    } else $('buyClosed').textContent = '前売券の販売は終了しました。当日券をご利用ください。';
+    const doorOpen = !!PUB.doorOpen && !!PUB.doorLink;
+    $('doorWrap').classList.toggle('hidden', !doorOpen);
+    if (doorOpen) { const du = new URL(PUB.doorLink); du.searchParams.set('client_reference_id', EID); $('doorBtn').href = du.toString(); }
     if (!PUB.saleOpen) { $('fBtn').disabled = true; $('fMsg').textContent = '無料チケットの発行は締め切りました。入口で所属をお伝えください。'; }
     renderMine();
+    showPane(Q.get('p') === 'ken' ? 'pKen' : (Q.get('p') === 'aud' ? 'pAud' : 'pChoose'));
     show('vEvent');
   }
+  function showPane(id){ ['pChoose','pAud','pKen'].forEach(x => $(x).classList.toggle('hidden', x!==id)); if (id!=='pChoose') window.scrollTo({top:0}); if (id==='pKen') setTimeout(()=>$('fCode').focus(),100); }
+  $('goAud').onclick = () => showPane('pAud'); $('goKen').onclick = () => showPane('pKen');
+  document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => showPane('pChoose'));
   function renderMine(){
     const list = myTickets().filter(x => x.eid === EID);
     $('mineCard').classList.toggle('hidden', !list.length);
