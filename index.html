@@ -1194,6 +1194,90 @@ function parseWorkbook(wb){
   return {rounds:merged, warnings, modes:[...new Set(perSheet.map(p=>p.res.mode))]};
 }
 
+// ── C) 名簿PDF（連盟の「本選全RC 名簿」） ──
+// pdf.js は初回使用時に読み込む（cdnjs 3.11.174）
+let _pdfjsP=null;
+function ensurePdfjs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(_pdfjsP) return _pdfjsP;
+  _pdfjsP=new Promise((ok,ng)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=()=>{ try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(window.pdfjsLib); }catch(e){ ng(e); } };
+    s.onerror=()=>{ _pdfjsP=null; ng(new Error('PDF読み込み用のライブラリを取得できませんでした。通信状況を確認してください。')); };
+    document.head.appendChild(s);
+  });
+  return _pdfjsP;
+}
+// Meiryo で出る康熙部首（⽇⼤⼭…）を通常の漢字に戻し、全角英数を半角に
+const RAD2={'⻘':'青','⻑':'長','⻄':'西','⻩':'黄','⻭':'歯','⻯':'竜','⻲':'亀','⻝':'食','⻤':'鬼','⻫':'斉','⻨':'麦','⺠':'民','⻁':'虎','⻣':'骨','⻆':'角','⻗':'雨','⻥':'魚','⻦':'鳥','⻖':'阝','⻏':'阝','⺾':'艹','⻌':'辶','⻍':'辶','⻎':'辶','⺅':'亻','⺡':'氵','⺣':'灬','⺭':'礻','⻂':'衤','⺹':'耂','⻋':'車','⻢':'馬','⻜':'飛','⻛':'風','⻚':'頁','⻙':'韋'};
+function fixRad(s){ return String(s||'').normalize('NFKC').replace(/[\u2E80-\u2EFF]/g,c=>RAD2[c]||c).replace(/[\u3000\u2002\u2003]/g,' ').replace(/\s+/g,' ').trim(); }
+// 各ページの見出し「本選A 1コート 男子有段 の部」→ {round, no, cat}
+function parseRosterHead(items, H){
+  const big=items.filter(it=>it.h>=15 && it.h<40 && it.y>H*0.85).sort((a,b)=>a.x-b.x);
+  const s=fixRad(big.map(it=>it.s).join(' ')).replace(/《名簿》|\d{1,2}\/\d{1,2} \d{1,2}:\d{2}/g,'').trim();
+  const m=s.match(/(予選|本選|決勝|準決勝)?\s*([A-Z]|\d{1,2})?\s*[\s]*(\d{1,2})\s*コート\s*(.+?)\s*(?:の\s*部)?\s*$/);
+  if(!m) return null;
+  const phase=m[1]||'', rn=m[2]||'';
+  const round=(phase||rn)?((phase+' '+rn+(rn?'ラウンド':'')).trim()):'';
+  return {round, no:parseInt(m[3],10), cat:m[4].replace(/\s+/g,'').replace(/の部$/,'')};
+}
+// 同じ行（yがほぼ同じ）で隣り合う文字列をひとつにつなぐ（Qt製PDFは「選手」「の」「所属」のように分かれることがある）
+function mergeRuns(items){
+  // 行ごとにまとめる（yが2.5pt以内）→ 行内をxで並べ、隙間が小さい隣同士をつなぐ
+  const rows=[]; [...items].sort((p,q)=>q.y-p.y).forEach(it=>{ const r=rows[rows.length-1]; if(r&&Math.abs(r.y-it.y)<2.5) r.items.push(it); else rows.push({y:it.y,items:[it]}); });
+  const out=[];
+  rows.forEach(r=>{ r.items.sort((p,q)=>p.x-q.x); let l=null;
+    r.items.forEach(it=>{ const gap=l?it.x-(l.x+l.w):Infinity;
+      if(l && gap>-1 && gap<6 && Math.abs(l.h-it.h)<1.5){ l.s=l.s+(gap>1?' ':'')+it.s; l.w=(it.x+it.w)-l.x; }
+      else { l=Object.assign({},it); out.push(l); } }); });
+  return out;
+}
+async function parseRosterPdf(buf){
+  const pdfjs=await ensurePdfjs();
+  const doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;
+  const out={}; const warnings=[]; let pagesOk=0;
+  for(let p=1;p<=doc.numPages;p++){
+    const pg=await doc.getPage(p); const H=pg.getViewport({scale:1}).height;
+    const tc=await pg.getTextContent();
+    const items=mergeRuns(tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({x:i.transform[4], y:i.transform[5], h:Math.hypot(i.transform[1],i.transform[3]), w:i.width||0, s:i.str, bold:/f1$|Bold/i.test(i.fontName||'')})));
+    const head=parseRosterHead(items,H); if(!head) continue;
+    // 列見出し行（出番・所属・氏名）で列の境目を決める
+    const hdr=items.filter(it=>it.h>=10&&it.h<15&&it.y<H*0.95&&/出番|基本情報|所属|氏名|性別|資格|備考/.test(fixRad(it.s)));
+    if(!hdr.length) continue;
+    const cols=hdr.map(it=>{ const t=fixRad(it.s); return {key:/出番/.test(t)?'no':/基本情報/.test(t)?'team':/所属/.test(t)?'univ':/氏名/.test(t)?'name':'other', c:it.x+it.w/2}; }).sort((a,b)=>a.c-b.c);
+    const colOf=it=>{ const c=it.x+it.w/2; let k=cols[0].key; for(let i=0;i<cols.length;i++){ const lim=i<cols.length-1?(cols[i].c+cols[i+1].c)/2:Infinity; if(c<lim){ k=cols[i].key; break; } } return k; };
+    const hdrY=Math.min(...hdr.map(it=>it.y));
+    const body=items.filter(it=>it.y<hdrY-2 && it.h>=7.5);  // ふりがな（小さい字）と「最高武階」は除外
+    const nums=body.filter(it=>colOf(it)==='no'&&/^\d{1,3}$/.test(fixRad(it.s))).map(it=>({o:parseInt(fixRad(it.s),10),y:it.y})).sort((a,b)=>b.y-a.y);
+    if(!nums.length) continue;
+    const nearest=y=>{ let b=nums[0],d=Infinity; for(const n of nums){ const dd=Math.abs(n.y-y); if(dd<d){d=dd;b=n;} } return b; };
+    const teams={}; nums.forEach(n=>{ teams[n.o]={a:'',n:[],u:[],y:n.y}; });
+    body.forEach(it=>{
+      const k=colOf(it); if(k==='no'||k==='other') return;
+      const s=fixRad(it.s); if(!s||/最高武階/.test(s)) return;
+      const t=teams[nearest(it.y).o];
+      if(k==='team'){ if(!t.a) t.a=s; }
+      else if(k==='univ'){ t.u.push({s,y:it.y}); }
+      else if(k==='name'){ t.n.push({s:s.split(' ')[0],y:it.y}); }
+    });
+    const rk=head.round; out[rk]=out[rk]||{};
+    const ct=out[rk][head.no]=out[rk][head.no]||{cat:'',teams:[]};
+    if(head.cat&&!ct.cat) ct.cat=head.cat;
+    Object.keys(teams).map(Number).sort((a,b)=>a-b).forEach(o=>{
+      const t=teams[o]; const a=t.a||(t.u.sort((p,q)=>q.y-p.y)[0]||{}).s||'';
+      const n=t.n.sort((p,q)=>q.y-p.y).map(x=>x.s).join('・');
+      if(a||n) ct.teams.push({a,n});
+    });
+    pagesOk++;
+  }
+  if(!pagesOk) return null;
+  Object.keys(out).forEach(k=>{ if(!Object.keys(out[k]).length) delete out[k]; });
+  if(!Object.keys(out).length) return null;
+  if(pagesOk<doc.numPages) warnings.push(`見出しが読み取れなかったページを ${doc.numPages-pagesOk} ページ飛ばしました`);
+  return {rounds:out, warnings, modes:['pdf']};
+}
+
 function onImportDrop(e, target){
   e.preventDefault(); $('impbar')?.classList.remove('drag');
   const f=e.dataTransfer?.files?.[0]; if(f) onImportFile(f, target);
