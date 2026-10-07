@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="devan-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="devan-180.png">
 <link rel="apple-touch-icon" href="devan-180.png">
+<link rel="preload" as="image" href="splash-zennihon60.webp?v=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -142,6 +143,19 @@ body.beta .overlay{top:32px}
 #splash.go .sp-glow{animation:spGlow 1.4s ease-out .4s forwards}
 #splash.dock .org,#splash.dock .hsub2{animation:spTag .6s ease-out .15s forwards}
 #splash.dock .sp-glow{animation:spGlowOut .6s ease-out forwards}
+/* 大会ポスター（起動直後に全画面で見せ、ゆっくり寄ってから DEVAN のロゴへ引き継ぐ） */
+#splash .sp-poster{position:absolute;inset:0;overflow:hidden;opacity:0;pointer-events:none;background:#20243a;z-index:2}
+#splash .sp-pbg{position:absolute;inset:-48px;background:center/cover no-repeat;filter:blur(26px) saturate(1.2) brightness(1.04);transform:scale(1.2)}
+#splash .sp-pbg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,0) 30%,rgba(0,0,0,0) 55%,rgba(130,120,170,.45) 80%,rgba(60,58,90,.6))}
+#splash .sp-pimg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scale(1)}
+#splash .sp-pmark{position:absolute;left:0;right:0;bottom:max(34px,env(safe-area-inset-bottom,0px) + 21px);text-align:center;color:#fff;font-family:'Cormorant Garamond',var(--serif);font-size:19px;font-weight:600;letter-spacing:.42em;padding-left:.42em;opacity:0;text-shadow:0 1px 12px rgba(0,0,0,.35)}
+#splash .sp-pmark small{display:block;font-family:var(--serif);font-size:11px;letter-spacing:.2em;padding-left:.2em;margin-top:6px;opacity:.92}
+#splash.poster .sp-poster{opacity:1;transition:opacity .7s ease}
+#splash.poster .sp-pimg{animation:spKen 3.6s cubic-bezier(.2,.5,.3,1) forwards}
+#splash.poster .sp-pmark{animation:spTag .8s ease-out .9s forwards}
+#splash.poster-out .sp-poster{opacity:0;transition:opacity .85s ease}
+@keyframes spKen{to{transform:scale(1.06)}}
+@media(min-aspect-ratio:13/8){#splash .sp-pmark{display:none}} /* 横長画面はポスターが下端まで届くので小ロゴは出さない */
 @keyframes spRule{to{transform:scaleX(1)}}
 @keyframes spMark{to{opacity:1;transform:translateY(0);filter:blur(0);letter-spacing:.34em}}
 @keyframes spTag{to{opacity:1;transform:translateY(0)}}
@@ -410,7 +424,7 @@ body.beta .overlay{top:32px}
 </style>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><div class="home-box sp-in"><div class="sp-glow"></div><div class="hero"></div><div class="org">関東学生少林寺拳法連盟</div><div class="wordmark">DEVAN</div><div class="hsub">出番が、わかる。<br><span class="hsub2">大会の進行状況を、その場で・リアルタイムに</span></div></div></div>
+<div id="splash" aria-hidden="true"><div class="sp-poster"><div class="sp-pbg"></div><img class="sp-pimg" alt=""><div class="sp-pmark">DEVAN<small>出番が、わかる。</small></div></div><div class="home-box sp-in"><div class="sp-glow"></div><div class="hero"></div><div class="org">関東学生少林寺拳法連盟</div><div class="wordmark">DEVAN</div><div class="hsub">出番が、わかる。<br><span class="hsub2">大会の進行状況を、その場で・リアルタイムに</span></div></div></div>
 <div id="betabar" aria-live="polite"><span class="bt">BETA</span><span id="betamsg">試験運用中です。表示が乱れることがあります。</span></div>
 <div class="app" id="app"></div>
 <div class="overlay" id="ov"><div class="modal" id="mod"></div></div>
@@ -600,7 +614,7 @@ function renderHome(){
       <div class="credit"><span>Produced by <b>H.I. Company</b></span></div>
     </div></div>`);
   const sp=document.getElementById('splash');
-  if(sp){ const h=document.querySelector('#app .home'); if(h){ h.classList.add('enter'); if(sp.classList.contains('dock')){ requestAnimationFrame(()=>h.classList.add('go','landed')); } else { setTimeout(()=>{ h.classList.add('go','landed'); }, 3200); } } if(_splashResolve){ _splashResolve(); _splashResolve=null; } }
+  if(sp){ const h=document.querySelector('#app .home'); if(h){ h.classList.add('enter'); if(sp.classList.contains('dock')){ requestAnimationFrame(()=>h.classList.add('go','landed')); } else { setTimeout(()=>{ h.classList.add('go','landed'); }, splashFallbackMs); } } if(_splashResolve){ _splashResolve(); _splashResolve=null; } }
   applyTicketClosed();
 }
 
@@ -1979,7 +1993,9 @@ function loadingHTML(msg,err){ return `<div class="loader${err?' err':''}"><div 
 let _booted=false;
 show(loadingHTML());
 // ── 起動アニメーション（1セッションに1回。ロゴがホームの定位置へ着地してそのままホームになる）──
-let splashHomeReady=null, _splashResolve=null;
+let splashHomeReady=null, _splashResolve=null, splashFallbackMs=3200;
+// 大会ポスター: until の日付まで起動時に全画面で見せる（大会が終わったら自動で出なくなる。差し替えは src と until を直す）
+const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', until:'2026-11-08', hold:2600};
 (function(){
   const sp=document.getElementById('splash'); if(!sp) return;
   let shown=false; try{ shown=sessionStorage.getItem('sj_splash')==='1'; }catch(e){}
@@ -1995,8 +2011,21 @@ let splashHomeReady=null, _splashResolve=null;
     setTimeout(()=>{ const h=document.querySelector('#app .home'); if(h) h.classList.add('landed'); sp.remove(); }, 830);
   };
   const start=()=>{ sp.classList.add('go'); setTimeout(()=>{ Promise.race([splashHomeReady, new Promise(r=>setTimeout(r,2500))]).then(()=>setTimeout(dock,50)); }, 1650); };
-  const t=setTimeout(start,700);
-  if(document.fonts&&document.fonts.load){ document.fonts.load('600 46px "Cormorant Garamond"').then(()=>{ clearTimeout(t); start(); }).catch(()=>{}); }
+  // フォントの読み込みを待つ（最大 .7秒）
+  const fontReady=new Promise(res=>{ const t=setTimeout(res,700); if(document.fonts&&document.fonts.load){ document.fonts.load('600 46px "Cormorant Garamond"').then(()=>{ clearTimeout(t); res(); }).catch(()=>{}); } });
+  // 大会ポスター: 画像が読めたら全画面で hold ミリ秒見せる（画面タップで飛ばせる）→ 消えながら DEVAN のロゴへ
+  const posterOn=!!(EVENT_POSTER.src && new Date()<new Date(EVENT_POSTER.until+'T23:59:59'));
+  const poster=()=>new Promise(res=>{
+    const img=new Image(); let done=false; const fin=ok=>{ if(done) return; done=true; res(ok); };
+    const t=setTimeout(()=>fin(false),1800);
+    img.onload=()=>{ clearTimeout(t); fin(true); }; img.onerror=()=>{ clearTimeout(t); fin(false); }; img.src=EVENT_POSTER.src;
+  }).then(ok=>{ if(!ok) return; splashFallbackMs=3200+EVENT_POSTER.hold+1200; return new Promise(res=>{
+    const pe=sp.querySelector('.sp-poster'); pe.querySelector('.sp-pimg').src=EVENT_POSTER.src; pe.querySelector('.sp-pbg').style.backgroundImage=`url("${EVENT_POSTER.src}")`;
+    sp.classList.add('poster');
+    let ended=false; const end=()=>{ if(ended) return; ended=true; sp.removeEventListener('click',end); sp.classList.add('poster-out'); setTimeout(res,380); };
+    sp.addEventListener('click',end); setTimeout(end,EVENT_POSTER.hold);
+  }); });
+  (posterOn?poster():Promise.resolve()).then(()=>fontReady).then(start);
 })();
 
 auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; renderHome(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
