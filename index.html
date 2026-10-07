@@ -348,6 +348,21 @@ body.beta .overlay{top:32px}
 .oppill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--ink2);padding:6px 11px;background:#fff;border:1px solid var(--line);border-radius:20px;white-space:nowrap;letter-spacing:.04em;max-width:40vw;overflow:hidden;text-overflow:ellipsis}
 .oppill:hover{border-color:var(--gold)}
 .toast.alert{background:var(--stop);font-weight:600;letter-spacing:.06em;font-size:14px;padding:14px 20px}
+/* 競技停止の通知（右上に大きく。複数は縦に並ぶ。タップでそのコートを開く） */
+.notices{position:fixed;top:13px;right:13px;z-index:950;display:flex;flex-direction:column;gap:8px;width:min(420px,calc(100vw - 26px));pointer-events:none}
+body.beta .notices{top:47px}
+.notice{pointer-events:auto;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--stop);color:#fff;border-radius:13px;padding:16px 16px 16px 18px;box-shadow:0 12px 34px rgba(158,59,59,.35);cursor:pointer;animation:ntIn .4s cubic-bezier(.2,.7,.2,1) both;border-left:6px solid #fff}
+.notice.ok{background:var(--done);box-shadow:0 12px 34px rgba(46,107,78,.3)}
+.notice .nnum{font-family:var(--serif);font-size:40px;font-weight:600;line-height:1;letter-spacing:.02em}
+.notice .nnum small{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.12em;margin-left:3px}
+.notice .nlab{font-size:11px;font-weight:600;letter-spacing:.26em;opacity:.9;margin-bottom:4px}
+.notice .ntitle{font-size:19px;font-weight:700;letter-spacing:.06em;line-height:1.3}
+.notice .nreason{font-size:14px;margin-top:4px;line-height:1.5;opacity:.95;word-break:break-word}
+.notice .nx{background:rgba(255,255,255,.18);border:0;color:#fff;width:34px;height:34px;border-radius:50%;font-size:18px;line-height:1;align-self:start}
+.notice.out{animation:ntOut .3s ease forwards}
+@keyframes ntIn{from{opacity:0;transform:translateX(24px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes ntOut{to{opacity:0;transform:translateX(24px)}}
+@media(max-width:480px){.notice .nnum{font-size:34px}.notice .ntitle{font-size:17px}}
 .toast.ok{background:var(--done)}
 .opname .inp{font-size:17px;padding:14px 16px;text-align:center;margin:21px 0 13px}
 .ta{font-size:11.5px;font-weight:500;color:var(--muted);min-width:64px;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em}
@@ -670,6 +685,16 @@ function alertToast(msg,cls,ms){
   let t=$('toast'); if(!t){ t=document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t); }
   t.textContent=msg; t.className='toast show '+(cls||''); clearTimeout(t._tm); t._tm=setTimeout(()=>{ t.classList.remove('show'); },ms||8000);
 }
+function showNotice(o){ // o={cid,cat,reason,ok,round}
+  let box=document.querySelector('.notices'); if(!box){ box=document.createElement('div'); box.className='notices'; document.body.appendChild(box); }
+  const key='n_'+o.round+'_'+o.cid; const old=box.querySelector('[data-k="'+key+'"]'); if(old) old.remove();
+  const el=document.createElement('div'); el.className='notice'+(o.ok?' ok':''); el.dataset.k=key;
+  el.innerHTML=`<div class="nnum">${o.cid}<small>コート</small></div><div><div class="nlab">${o.ok?'再開':'競技停止'}</div><div class="ntitle">${esc(o.cat||'')}${o.ok?' 再開しました':' 停止しました'}</div>${o.ok?'':`<div class="nreason">${esc(o.reason||'停止中')}</div>`}</div><button class="nx" aria-label="閉じる">×</button>`;
+  const close=()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),300); };
+  el.querySelector('.nx').onclick=e=>{ e.stopPropagation(); close(); };
+  el.onclick=()=>{ close(); if(TD&&TD.rounds.includes(o.round)){ if(MODE!=='admin') viewRound=o.round; renderDash(); openCourtModal(o.cid); } };
+  box.prepend(el); setTimeout(close, o.ok?7000:20000);
+}
 function sysNotify(title,body){ try{ if('Notification' in window && Notification.permission==='granted' && document.visibilityState!=='visible') new Notification(title,{body,tag:'devan-stop'}); }catch(e){} }
 function askNotify(){ if(!('Notification' in window)) return; Notification.requestPermission().then(()=>{ renderDash(); }); }
 function notifyHTML(){ return ('Notification' in window && Notification.permission==='default' && MODE!=='spectator')?`<button class="syncpill" onclick="askNotify()">通知を許可</button>`:''; }
@@ -689,12 +714,12 @@ function notifyChanges(prev,now){
     }
     if(!fed) return;
     if(b.stopped){
-      alertToast(`${cid}コート${cat} 競技停止：${b.stopReason||'停止中'}`,'alert',9000);
+      showNotice({cid,cat:c&&c.cat,reason:b.stopReason,round:r});
       try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]); }catch(e){}
       if(MODE!=='view') beep(2);
       sysNotify(`${cid}コート 競技停止`, `${TD.name}${cat} ${b.stopReason||''}`);
     } else {
-      alertToast(`${cid}コート${cat} 再開しました`,'ok',6000);
+      showNotice({cid,cat:c&&c.cat,ok:true,round:r});
       try{ if(navigator.vibrate) navigator.vibrate([120]); }catch(e){}
     }
   });
@@ -2250,6 +2275,8 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
 
 function loadingHTML(msg,err){ return `<div class="loader${err?' err':''}"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">${msg||'読み込んでいます'}</div></div>`; }
 let _booted=false;
+// 直行URL（学連スタッフ用）: ?m=fed=学生連盟の画面 / op=進行セク用 / view=閲覧用 / admin=管理用 / spec=観客用。起動ポスターと最初の画面を飛ばす
+const ENTRY=(()=>{ try{ const m=new URLSearchParams(location.search).get('m'); return ['fed','op','view','admin','spec'].includes(m)?m:null; }catch(e){ return null; } })();
 show(loadingHTML());
 // ── 起動アニメーション（1セッションに1回。ロゴがホームの定位置へ着地してそのままホームになる）──
 let splashHomeReady=null, _splashResolve=null, splashFallbackMs=3200;
@@ -2257,6 +2284,7 @@ let splashHomeReady=null, _splashResolve=null, splashFallbackMs=3200;
 const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', srcPortrait:'splash-zennihon60-portrait.webp?v=1', until:'2026-11-08', hold:2800};
 (function(){
   const sp=document.getElementById('splash'); if(!sp) return;
+  if(ENTRY){ sp.remove(); return; }
   let shown=false; try{ shown=sessionStorage.getItem('sj_splash')==='1'; }catch(e){}
   if(shown || (window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){ sp.remove(); return; }
   try{ sessionStorage.setItem('sj_splash','1'); }catch(e){}
@@ -2293,7 +2321,8 @@ const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', srcPortrait:'splash-zennih
   (posterOn?poster():Promise.resolve()).then(()=>fontReady).then(start);
 })();
 
-auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; renderHome(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
+function bootEntry(){ if(ENTRY==='fed') renderFedHome(); else if(ENTRY==='op') enterOperator(); else if(ENTRY==='view') enterView(); else if(ENTRY==='admin') enterAdmin(); else if(ENTRY==='spec') enterSpectator(); else renderHome(); }
+auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; bootEntry(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
 </script>
 </body>
 </html>
