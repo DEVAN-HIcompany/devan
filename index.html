@@ -1161,10 +1161,9 @@ function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else 
 const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?'<span class="modetag">進行セク用</span>':MODE==='spectator'?'<span class="modetag">観客用</span>':'';
 function deleteTournament(id){
   if(!isAdmin()) return;
-  if(!confirm('この大会を削除しますか？')) return;
-  META(id).remove();
-  PROG(id).remove();
-  renderList();
+  askConfirm({title:'大会を削除', desc:'この大会のコート割と進行の記録をすべて消します。元に戻せません。', okLabel:'削除する', danger:true, onOk:()=>{
+    META(id).remove(); PROG(id).remove(); renderList();
+  }});
 }
 
 // ─────────────────────────────────────────
@@ -2064,7 +2063,9 @@ function deleteCurrentRound(){
   const r=curRound(); if(!r) return;
   if(TD.rounds.length<=1){ alert('ラウンドは最低1つ必要です'); return; }
   const courts=(TD.courts[r]||[]).filter(c=>c.teams&&c.teams.length).length;
-  if(!confirm(`ラウンド「${r}」を削除しますか？\n\nこのラウンドのコート割（使用中 ${courts} コート）と進行の記録がすべて消えます。元に戻せません。`)) return;
+  askConfirm({title:`ラウンド「${r}」を削除`, desc:`このラウンドのコート割（使用中 ${courts} コート）と進行の記録がすべて消えます。元に戻せません。`, okLabel:'削除する', danger:true, onOk:()=>{ _deleteRound(r); }});
+}
+function _deleteRound(r){
   TD.rounds=TD.rounds.filter(x=>x!==r);
   delete TD.courts[r];
   const patch={};
