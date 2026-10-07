@@ -214,11 +214,8 @@ body.beta .overlay{top:32px}
 .endcard .elab{font-size:11px;font-weight:600;letter-spacing:.3em;padding-left:.3em;color:var(--gold);margin-bottom:8px}
 .endcard .euni{font-family:var(--serif);font-size:28px;font-weight:700;letter-spacing:.08em;color:var(--ink);line-height:1.4}
 @media(max-width:480px){.endcard .emsg{font-size:20px}.endcard .euni{font-size:24px}}
-/* クラッカー（終了画面で総合優勝を出すとき、左右下から紙吹雪が舞い上がって落ちる。1回だけ） */
-.confetti{position:fixed;inset:0;pointer-events:none;z-index:900;overflow:hidden}
-.confetti i{position:absolute;left:var(--x);bottom:-10px;width:var(--w);height:var(--h);background:var(--c);border-radius:var(--rr);opacity:0;transform-origin:center;animation:cfPop var(--d) cubic-bezier(.15,.6,.3,1) var(--dl) forwards}
-.confetti i.rib{border-radius:2px}
-@keyframes cfPop{0%{transform:translate(0,0) rotate(0deg);opacity:0}6%{opacity:1}38%{transform:translate(var(--tx),var(--ty)) rotate(var(--r1))}100%{transform:translate(var(--tx2),35vh) rotate(var(--r2));opacity:0}}
+/* クラッカー（終了画面で総合優勝を出すとき、左右下から紙吹雪が舞い上がって落ちる。canvas で重力・空気抵抗つき、1回だけ） */
+.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:900}
 .endcard .echamp{animation:champIn .8s cubic-bezier(.2,.7,.2,1) .35s both}
 @keyframes champIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.confetti{display:none}.endcard .echamp{animation:none}}
@@ -855,7 +852,7 @@ function renderList(){
                   <div class="ticon">${String(i+1).padStart(2,'0')}</div>
                   <div class="tinfo">
                     <div class="tname">${esc(td.name)}</div>
-                    <div class="tmeta">${td.ended?`終了 ${fmtDay(td.endedAt)}${td.champion?` ・ 総合優勝 ${esc(td.champion)}`:''}`:`${(td.rounds||[]).length}ラウンド ・ ${esc((td.rounds||[]).join(' / '))}`}</div>
+                    <div class="tmeta">${td.ended?(td.champion?`総合優勝 ${esc(td.champion)}`:'終了した大会'):`${(td.rounds||[]).length}ラウンド ・ ${esc((td.rounds||[]).join(' / '))}`}</div>
                   </div>
                   ${td.ended?'<span class="endtag">終了</span>':''}
                   ${MODE==='admin'?`<button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>`:''}
@@ -936,48 +933,52 @@ function renderEnded(){
         <div class="emsg">この大会は終了しました。</div>
         <div class="ethx">ありがとうございました。</div>
         ${TD.champion?`<div class="echamp"><div class="elab">総合優勝</div><div class="euni">${esc(TD.champion)}</div></div>`:''}
-        ${TD.endedAt?`<div class="edate">${fmtDay(TD.endedAt)} 終了</div>`:''}
         <div class="ebtn"><button class="backbtn" onclick="renderList()">大会一覧へ戻る</button></div>
       </div>
     </div>`);
   if(TD.champion) setTimeout(popConfetti,250);
 }
-// クラッカー: 左右の下隅から金・桜色・紺・緑・生成りの紙片が舞い上がって落ちる（約3秒で消える）
+// クラッカー: 左右の下隅から金・桜色・紺・緑・生成りの紙片を打ち上げ、重力と空気抵抗でひらひら落ちる（約4秒で消える）
 function popConfetti(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const old=document.querySelector('.confetti'); if(old) old.remove();
-  const box=document.createElement('div'); box.className='confetti';
-  const cols=['#A8894F','#C9B37E','#F3BDDB','#2E4A7A','#2E6B4E','#F6F4EF','#E9D8A6'];
-  const rnd=(a,b)=>a+Math.random()*(b-a); let h='';
-  for(let i=0;i<90;i++){
-    const left=i%2===0; const rib=Math.random()<.35;
-    const w=rib?rnd(6,10):rnd(9,15), hh=rib?rnd(16,28):rnd(9,15);
-    const dx=rnd(18,70)*(left?1:-1), up=-rnd(45,88);
-    h+=`<i${rib?' class="rib"':''} style="--x:${left?rnd(-2,10):rnd(90,102)}vw;--w:${w.toFixed(0)}px;--h:${hh.toFixed(0)}px;--c:${cols[i%cols.length]};--rr:${rib?'2px':(Math.random()<.5?'50%':'1px')};--tx:${dx.toFixed(0)}vw;--ty:${up.toFixed(0)}vh;--tx2:${(dx+rnd(-12,12)).toFixed(0)}vw;--r1:${rnd(180,720).toFixed(0)}deg;--r2:${rnd(720,1440).toFixed(0)}deg;--d:${rnd(2.4,3.4).toFixed(2)}s;--dl:${rnd(0,.45).toFixed(2)}s"></i>`;
-  }
-  box.innerHTML=h; document.body.appendChild(box);
-  setTimeout(()=>{ if(box.parentNode) box.remove(); },4200);
-}
-// 管理用: 大会を終了（アーカイブ）／取り消し。終了すると観客・閲覧・進行用は「終了しました」の画面になる
-function toggleEnded(){
-  if(!isAdmin()||!TD) return;
-  if(TD.ended){
-    if(!confirm(`「${TD.name}」の終了を取り消して、開催中に戻しますか？`)) return;
-    delete TD.ended; delete TD.endedAt; saveMeta(); renderDash(); showToast('開催中に戻しました');
-  } else {
-    if(!confirm(`「${TD.name}」を終了しますか？\n\n観客・閲覧・進行用の画面では「この大会は終了しました。ありがとうございました。」と表示され、出番の検索や進行はできなくなります。\n（管理用からはいつでも取り消せます）`)) return;
-    const c=prompt('総合優勝の大学名を入力してください（終了画面に表示します。あとから変更できます。空欄で省略）', TD.champion||'');
-    if(c!==null){ const v=c.trim(); if(v) TD.champion=v; else delete TD.champion; }
-    TD.ended=true; TD.endedAt=new Date().toISOString(); saveMeta(); renderDash(); showToast('大会を終了しました');
-  }
-}
-// 管理用: 総合優勝の大学名を入力・変更（終了画面に表示）
-function setChampion(){
-  if(!isAdmin()||!TD) return;
-  const c=prompt('総合優勝の大学名（空欄にすると表示を消します）', TD.champion||'');
-  if(c===null) return;
-  const v=c.trim(); if(v) TD.champion=v; else delete TD.champion;
-  saveMeta(); renderDash(); showToast(v?`総合優勝: ${v}`:'総合優勝の表示を消しました');
+  const cv=document.createElement('canvas'); cv.className='confetti'; document.body.appendChild(cv);
+  const ctx=cv.getContext('2d'); const dpr=Math.min(2,window.devicePixelRatio||1);
+  const W=window.innerWidth, H=window.innerHeight; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); ctx.scale(dpr,dpr);
+  const cols=['#A8894F','#C9B37E','#F3BDDB','#F7A8C9','#2E4A7A','#2E6B4E','#F6F4EF','#E9D8A6'];
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  const P=[]; const k=H/812; // 画面の高さに合わせて勢いを調整
+  const spawn=(x,y,base)=>{ for(let i=0;i<55;i++){
+    const ang=base+rnd(-0.38,0.38), sp=rnd(1350,2250)*k;
+    const rib=Math.random()<.4;
+    P.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,w:rib?rnd(5,8):rnd(8,13),h:rib?rnd(14,24):rnd(8,13),
+      rot:rnd(0,Math.PI*2),vr:rnd(-6,6),flip:rnd(0,Math.PI*2),vf:rnd(5,11),ph:rnd(0,Math.PI*2),
+      c:cols[(Math.random()*cols.length)|0],life:rnd(2.8,4.0),t:0,delay:rnd(0,0.12)});
+  } };
+  spawn(-6,H+6,-Math.PI/2+0.42);   // 左下 → 右上へ
+  spawn(W+6,H+6,-Math.PI/2-0.42);  // 右下 → 左上へ
+  const G=2300*k; let last=performance.now(), alive=true;
+  const step=now=>{
+    const dt=Math.min(0.034,(now-last)/1000); last=now;
+    ctx.clearRect(0,0,W,H); alive=false;
+    for(const p of P){
+      if(p.delay>0){ p.delay-=dt; alive=true; continue; }
+      p.t+=dt; if(p.t>p.life) continue; alive=true;
+      // 速いうちは空気抵抗が強く、落下は紙らしくゆっくり（終端速度あり）
+      const drag=Math.pow(0.12,dt); p.vx*=drag; p.vy*=drag;
+      p.vy+=G*dt; const vmax=260*k; if(p.vy>vmax) p.vy=vmax;
+      // 落下中のひらひら（左右に揺れる）
+      const falling=p.vy>0; p.x+=p.vx*dt+(falling?Math.sin(p.t*4+p.ph)*55*dt:0); p.y+=p.vy*dt;
+      p.rot+=p.vr*dt*(falling?0.5:1); p.flip+=p.vf*dt;
+      const fade=p.t>p.life-0.7?(p.life-p.t)/0.7:1;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.globalAlpha=Math.max(0,fade);
+      ctx.fillStyle=p.c; const ww=p.w*Math.max(0.15,Math.abs(Math.cos(p.flip)));
+      ctx.fillRect(-ww/2,-p.h/2,ww,p.h); ctx.restore();
+    }
+    if(alive && cv.parentNode) requestAnimationFrame(step); else if(cv.parentNode) cv.remove();
+  };
+  requestAnimationFrame(step);
+  setTimeout(()=>{ if(cv.parentNode) cv.remove(); },5200);
 }
 
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
