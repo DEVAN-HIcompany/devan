@@ -195,6 +195,22 @@ body.beta .overlay{top:32px}
 .tdel{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--muted);font-size:11.5px;flex-shrink:0}
 .tdel:hover{border-color:var(--stop);color:var(--stop)}
 .tarr{color:var(--line2);font-size:18px;flex-shrink:0}
+/* 終了した大会（アーカイブ） */
+.tsec{font-size:11px;font-weight:600;letter-spacing:.2em;color:var(--muted);margin:21px 0 8px;padding-left:2px}
+.titem.ended{background:rgba(255,255,255,.55);box-shadow:none}
+.titem.ended .tname{color:var(--ink2)}
+.titem.ended .ticon{color:var(--muted)}
+.endtag{font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:3px 7px;white-space:nowrap;flex-shrink:0}
+.modetag.end{color:var(--muted);border-color:var(--line2)}
+.rtabadd.end{color:var(--gold);border-color:var(--gold2)}.rtabadd.end:hover{background:#fff;border-color:var(--gold);color:var(--gold)}
+.endcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:55px 21px 34px;text-align:center;box-shadow:var(--sh);margin-top:13px;animation:ldIn .6s ease both}
+.endcard .hero{margin-bottom:21px}
+.endcard .ename{font-family:var(--serif);font-size:17px;font-weight:600;letter-spacing:.06em;color:var(--ink2);margin-bottom:21px;line-height:1.6}
+.endcard .emsg{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:.1em;color:var(--ink);line-height:1.7}
+.endcard .ethx{font-family:var(--serif);font-size:18px;letter-spacing:.14em;color:var(--ink2);margin-top:8px}
+.endcard .edate{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-top:21px}
+.endcard .ebtn{margin-top:34px}
+@media(max-width:480px){.endcard .emsg{font-size:20px}}
 
 /* ── 作成画面 ── */
 .scard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1.4rem;margin-bottom:1rem;box-shadow:var(--sh)}
@@ -575,8 +591,10 @@ function saveProg(){ if(!canOperate()) return; PROG(CUR_ID).set(PROG_DATA).catch
 // ─────────────────────────────────────────
 // リアルタイムリスナー（進行状態のみ）
 // ─────────────────────────────────────────
+let endedListener=null;
 function startProgListener(id){
   stopProgListener();
+  if(MODE!=='admin'){ endedListener=META(id).child('ended'); endedListener.on('value', snap=>{ if(snap.val()===true && TD && CUR_ID===id){ TD.ended=true; META(id).child('endedAt').once('value').then(s2=>{ TD.endedAt=s2.val()||''; stopProgListener(); closeModal(); renderEnded(); }); } }); }
   progListener = PROG(id);
   progListener.on('value', snap=>{
     setSync(true);
@@ -594,6 +612,7 @@ function startProgListener(id){
 }
 function stopProgListener(){
   if(progListener){ progListener.off(); progListener = null; }
+  if(endedListener){ endedListener.off(); endedListener = null; }
 }
 
 // ─────────────────────────────────────────
@@ -819,6 +838,18 @@ function renderList(){
   METAS.once('value').then(snap=>{
     const val = snap.val();
     const list = val ? Object.values(val) : [];
+    const active=list.filter(td=>!td.ended), ended=list.filter(td=>td.ended).sort((a,b)=>String(b.endedAt||'').localeCompare(String(a.endedAt||'')));
+    const item=(td,i)=>`
+                <div class="titem${td.ended?' ended':''}" onclick="openTournament('${esc(td.id)}')">
+                  <div class="ticon">${String(i+1).padStart(2,'0')}</div>
+                  <div class="tinfo">
+                    <div class="tname">${esc(td.name)}</div>
+                    <div class="tmeta">${td.ended?`終了 ${fmtDay(td.endedAt)}`:`${(td.rounds||[]).length}ラウンド ・ ${esc((td.rounds||[]).join(' / '))}`}</div>
+                  </div>
+                  ${td.ended?'<span class="endtag">終了</span>':''}
+                  ${MODE==='admin'?`<button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>`:''}
+                  <div class="tarr">›</div>
+                </div>`;
     show(`
       <div class="wrap">
         <div class="phead">
@@ -829,17 +860,9 @@ function renderList(){
         <div class="tlist">
           ${list.length===0
             ? '<div class="empty">保存された大会がありません</div>'
-            : list.map((td,i)=>`
-                <div class="titem" onclick="openTournament('${esc(td.id)}')">
-                  <div class="ticon">${String(i+1).padStart(2,'0')}</div>
-                  <div class="tinfo">
-                    <div class="tname">${esc(td.name)}</div>
-                    <div class="tmeta">${td.rounds.length}ラウンド ・ ${esc(td.rounds.join(' / '))}</div>
-                  </div>
-                  ${MODE==='admin'?`<button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>`:''}
-                  <div class="tarr">›</div>
-                </div>`).join('')}
+            : active.length===0 ? '<div class="empty">開催中・開催予定の大会はありません</div>' : active.map(item).join('')}
         </div>
+        ${ended.length?`<div class="tsec">終了した大会</div><div class="tlist">${ended.map(item).join('')}</div>`:''}
       </div>`);
   }).catch(e=>{
     console.error('renderList error:', e);
@@ -864,6 +887,7 @@ function openTournament(id){
   META(id).once('value').then(snap=>{
     const td = snap.val();
     if(!td){ show(loadingHTML('大会データが見つかりません。大会一覧に戻ります。',true)); setTimeout(renderList,1500); return; }
+    if(td.ended && MODE!=='admin'){ stopProgListener(); CUR_ID=id; TD=clone(td); renderEnded(); return; }
     CUR_ID = id;
     TD = clone(td);
     // Firebaseは空配列を保存しないので、teamsがない場合は空配列に補完
@@ -882,6 +906,39 @@ function openTournament(id){
     show(loadingHTML('読み込みエラー。もう一度お試しください。',true));
     setTimeout(renderList, 2000);
   });
+}
+
+// ── 終了した大会（アーカイブ）──
+function fmtDay(iso){ if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; }
+function renderEnded(){
+  if(!TD) return;
+  show(`
+    <div class="wrap">
+      <div class="phead">
+        <button class="backbtn" onclick="renderList()">← 一覧</button>
+        <div class="ptitle">大会</div>
+        ${modeTag()}
+      </div>
+      <div class="endcard">
+        <div class="hero"></div>
+        <div class="ename">${esc(TD.name)}</div>
+        <div class="emsg">この大会は終了しました。</div>
+        <div class="ethx">ありがとうございました。</div>
+        ${TD.endedAt?`<div class="edate">${fmtDay(TD.endedAt)} 終了</div>`:''}
+        <div class="ebtn"><button class="backbtn" onclick="renderList()">大会一覧へ戻る</button></div>
+      </div>
+    </div>`);
+}
+// 管理用: 大会を終了（アーカイブ）／取り消し。終了すると観客・閲覧・進行用は「終了しました」の画面になる
+function toggleEnded(){
+  if(!isAdmin()||!TD) return;
+  if(TD.ended){
+    if(!confirm(`「${TD.name}」の終了を取り消して、開催中に戻しますか？`)) return;
+    delete TD.ended; delete TD.endedAt; saveMeta(); renderDash(); showToast('開催中に戻しました');
+  } else {
+    if(!confirm(`「${TD.name}」を終了しますか？\n\n観客・閲覧・進行用の画面では「この大会は終了しました。ありがとうございました。」と表示され、出番の検索や進行はできなくなります。\n（管理用からはいつでも取り消せます）`)) return;
+    TD.ended=true; TD.endedAt=new Date().toISOString(); saveMeta(); renderDash(); showToast('大会を終了しました');
+  }
 }
 
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
@@ -1666,7 +1723,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}`:'');
+  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -1674,7 +1731,7 @@ function renderDash(){
         <div style="display:flex;align-items:center;gap:10px;min-width:0">
           <button class="backbtn" onclick="renderList()">← 一覧</button>
           <div class="dtitle">${esc(TD.name)}</div>
-          ${modeTag()}
+          ${TD.ended?'<span class="modetag end">終了</span>':''}${modeTag()}
         </div>
         <div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div>
       </div>
