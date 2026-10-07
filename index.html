@@ -369,6 +369,12 @@ body.beta .notices{top:47px}
 @media(max-width:480px){.notice .nnum{font-size:34px}.notice .ntitle{font-size:17px}}
 .toast.ok{background:var(--done)}
 .opname .inp{font-size:17px;padding:14px 16px;text-align:center;margin:21px 0 13px}
+.askdesc{font-size:13px;color:var(--ink2);line-height:1.8;margin:-.4rem 0 1rem;white-space:pre-line}
+.askinp{font-size:17px;padding:14px 16px;margin-bottom:13px}
+.askbtns{display:flex;gap:8px;justify-content:flex-end}
+.askbtns .mbtn{min-width:96px;justify-content:center}
+.opline{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);margin:-.6rem 0 1rem;letter-spacing:.04em}
+.opline b{font-weight:500;color:var(--ink2)}
 .ta{font-size:11.5px;font-weight:500;color:var(--muted);min-width:64px;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em}
 .tn{flex:1;font-size:14.5px;font-weight:600;color:var(--ink);min-width:0;letter-spacing:.02em}
 .macts{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:1rem;position:sticky;top:-1.2rem;background:#fff;padding:.4rem 0;z-index:2}
@@ -880,8 +886,10 @@ function saveOpName(){
   if(CUR_ID&&TD) renderDash(); else renderList();
 }
 function changeOpName(){
-  const v=prompt('担当者名を変更', OP_NAME||''); if(v===null) return;
-  const t=v.trim(); if(!t) return; OP_NAME=t; try{ localStorage.setItem('sj_opname',t); }catch(e){} renderDash(); showToast(`担当者名: ${t}`);
+  askText({title:'担当者名を変更', desc:'操作したコートに「担当」として表示される名前です（学連の画面のみ）。', value:OP_NAME, placeholder:'例：山田', okLabel:'変更する', onOk:t=>{
+    OP_NAME=t; try{ localStorage.setItem('sj_opname',t); }catch(e){}
+    if(CUR_ID&&TD) renderDash(); else renderList(); showToast(`担当者名を「${t}」にしました`);
+  }});
 }
 function takeCourt(){ // このコートの担当になる（進行は変えない）
   if(MODE!=='operator'||!OP_NAME) return;
@@ -1007,6 +1015,7 @@ function renderList(){
           <div class="ptitle">大会を選択</div>
           ${modeTag()}
         </div>
+        ${MODE==='operator'?`<div class="opline">担当者名: <b>${esc(OP_NAME||'未入力')}</b><button class="abtn" onclick="changeOpName()">変更する</button></div>`:''}
         <div class="tlist">
           ${list.length===0
             ? '<div class="empty">保存された大会がありません</div>'
@@ -1127,22 +1136,25 @@ function popConfetti(){
 function toggleEnded(){
   if(!isAdmin()||!TD) return;
   if(TD.ended){
-    if(!confirm(`「${TD.name}」の終了を取り消して、開催中に戻しますか？`)) return;
-    delete TD.ended; delete TD.endedAt; saveMeta(); renderDash(); showToast('開催中に戻しました');
+    askConfirm({title:'終了を取り消す', desc:`「${TD.name}」を開催中に戻します。`, okLabel:'開催中に戻す', onOk:()=>{
+      delete TD.ended; delete TD.endedAt; saveMeta(); renderDash(); showToast('開催中に戻しました');
+    }});
   } else {
-    if(!confirm(`「${TD.name}」を終了しますか？\n\n観客・閲覧・進行用の画面では「この大会は終了しました。ありがとうございました。」と表示され、出番の検索や進行はできなくなります。\n（管理用からはいつでも取り消せます）`)) return;
-    const c=prompt('総合優勝の大学名を入力してください（終了画面に表示します。あとから変更できます。空欄で省略）', TD.champion||'');
-    if(c!==null){ const v=c.trim(); if(v) TD.champion=v; else delete TD.champion; }
-    TD.ended=true; TD.endedAt=new Date().toISOString(); saveMeta(); renderDash(); showToast('大会を終了しました');
+    askConfirm({title:'大会を終了する', desc:`「${TD.name}」を終了します。\n観客・閲覧・進行用の画面では「この大会は終了しました。ありがとうございました。」と表示され、出番の検索や進行はできなくなります。\n管理用からはいつでも取り消せます。`, okLabel:'終了する', danger:true, onOk:()=>{
+      askText({title:'総合優勝の大学名', desc:'終了画面に表示します。あとから変更できます。空欄のまま「終了する」で省略できます。', value:TD.champion||'', placeholder:'例：明治大学', okLabel:'終了する', allowEmpty:true, onOk:v=>{
+        if(v) TD.champion=v; else delete TD.champion;
+        TD.ended=true; TD.endedAt=new Date().toISOString(); saveMeta(); renderDash(); showToast('大会を終了しました');
+      }});
+    }});
   }
 }
 // 管理用: 総合優勝の大学名を入力・変更（終了画面に表示）
 function setChampion(){
   if(!isAdmin()||!TD) return;
-  const c=prompt('総合優勝の大学名（空欄にすると表示を消します）', TD.champion||'');
-  if(c===null) return;
-  const v=c.trim(); if(v) TD.champion=v; else delete TD.champion;
-  saveMeta(); renderDash(); showToast(v?`総合優勝: ${v}`:'総合優勝の表示を消しました');
+  askText({title:'総合優勝の大学名', desc:'終了画面に表示します。空欄にすると表示を消します。', value:TD.champion||'', placeholder:'例：明治大学', okLabel:'保存する', allowEmpty:true, onOk:v=>{
+    if(v) TD.champion=v; else delete TD.champion;
+    saveMeta(); renderDash(); showToast(v?`総合優勝: ${v}`:'総合優勝の表示を消しました');
+  }});
 }
 
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
@@ -2081,6 +2093,19 @@ function openCourtModal(id){
   modalCourtId=id; modalTab='prog'; stopFormOpen=false;
   if(MODE==='spectator') stat('courtViews');
   drawModal(); $('ov').classList.add('open');
+}
+// アプリ内の入力・確認ダイアログ（window.prompt / confirm は iPhone のホーム画面アプリで動かないため使わない）
+function askText(o){ // {title, desc, value, placeholder, okLabel, allowEmpty, onOk(value)}
+  modalCourtId=null; stopFormOpen=false;
+  $('mod').innerHTML=`<div class="mhead"><div class="mtitle">${esc(o.title)}</div><button class="xbtn" onclick="closeModal()">×</button></div>${o.desc?`<div class="askdesc">${esc(o.desc)}</div>`:''}<input class="inp askinp" id="askinp" value="${esc(o.value||'')}" placeholder="${esc(o.placeholder||'')}" autocomplete="off"><div class="askbtns"><button class="mbtn" onclick="closeModal()">キャンセル</button><button class="mbtn p" id="askok">${esc(o.okLabel||'決定')}</button></div>`;
+  $('ov').classList.add('open'); const inp=$('askinp'); setTimeout(()=>{ inp.focus(); inp.select(); },60);
+  const ok=()=>{ const v=inp.value.trim(); if(!v&&!o.allowEmpty){ inp.focus(); return; } closeModal(); o.onOk(v); };
+  $('askok').onclick=ok; inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); ok(); } };
+}
+function askConfirm(o){ // {title, desc, okLabel, danger, onOk}
+  modalCourtId=null; stopFormOpen=false;
+  $('mod').innerHTML=`<div class="mhead"><div class="mtitle">${esc(o.title)}</div><button class="xbtn" onclick="closeModal()">×</button></div>${o.desc?`<div class="askdesc">${esc(o.desc)}</div>`:''}<div class="askbtns"><button class="mbtn" onclick="closeModal()">キャンセル</button><button class="mbtn ${o.danger?'d':'p'}" id="askok">${esc(o.okLabel||'OK')}</button></div>`;
+  $('ov').classList.add('open'); $('askok').onclick=()=>{ closeModal(); o.onOk(); };
 }
 function closeModal(){
   $('ov').classList.remove('open'); modalCourtId=null; stopFormOpen=false;
