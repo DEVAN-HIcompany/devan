@@ -474,6 +474,25 @@ body.beta .notices{top:47px}
 .notice.soon{background:#A8894F;box-shadow:0 12px 34px rgba(168,137,79,.4)}
 .notice.soon .nx{color:#A8894F}
 .notice .nnum.txt{font-size:19px;letter-spacing:.04em;line-height:1.2;white-space:nowrap}
+/* 会場案内 */
+.vimg{width:100%;border-radius:10px;border:1px solid var(--line);margin-bottom:13px;display:block}
+.vtext{font-size:14px;line-height:1.9;color:var(--ink);white-space:pre-line;word-break:break-word}
+.vedit textarea{width:100%;min-height:160px;font:inherit;font-size:14px;line-height:1.7;padding:12px;border:1px solid var(--line2);border-radius:8px;resize:vertical;margin-bottom:10px}
+.vedit .flabel{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin:6px 0 6px;letter-spacing:.04em}
+/* 種目別の入賞者 */
+.awlist{display:grid;gap:10px;margin-bottom:13px}
+.awrow{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.awrow .awcat{font-weight:600;font-size:13.5px;color:var(--ink);margin-bottom:6px;letter-spacing:.02em}
+.awrow .awin{display:grid;grid-template-columns:52px 1fr;gap:6px 8px;align-items:center;font-size:12px;color:var(--muted)}
+.awrow .awin .inp{padding:8px 10px;font-size:13.5px}
+.eawards{margin:34px auto 0;max-width:420px;text-align:left}
+.eawards .elab{text-align:center;margin-bottom:13px}
+.eaw{padding:11px 0;border-top:1px solid var(--line)}
+.eaw:last-child{border-bottom:1px solid var(--line)}
+.eaw .eacat{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:.04em}
+.eaw .ear{display:grid;grid-template-columns:64px 1fr;gap:4px 10px;font-size:13.5px;color:var(--ink2);line-height:1.6}
+.eaw .ear b{font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--gold);padding-top:3px}
+.eaw .ear span.v{color:var(--ink)}
 .guide{display:grid;gap:10px;margin-bottom:1.25rem}
 .guide.compact{padding:1rem;background:#fff;border:1px solid var(--line);border-radius:12px}
 .gstep{display:flex;align-items:center;gap:12px}
@@ -736,6 +755,51 @@ function setNotice(){
   askText({title:'運営からのお知らせ', desc:'観客と学連の全員の画面上部に表示します（例：昼休憩 12:00〜13:00、閉会式は14:30から）。空欄にして保存すると消えます。', value:(PROG_DATA&&PROG_DATA.notice&&PROG_DATA.notice.text)||'', placeholder:'例：昼休憩 12:00〜13:00', okLabel:'表示する', allowEmpty:true, onOk:v=>{
     PROG(CUR_ID).child('notice').set(v?{text:v,at:new Date().toISOString()}:null).then(()=>showToast(v?'お知らせを表示しました':'お知らせを消しました')).catch(_saveErr);
   }});
+}
+// ── 会場案内（管理用が入力。観客の「会場案内」ボタンで表示）──
+function openVenueGuide(){
+  const g=(TD&&TD.guide)||{}; if(!g.text&&!g.img) return;
+  modalCourtId=null; $('mod').innerHTML=`<div class="mhead"><div class="mtitle">会場案内</div><button class="xbtn" onclick="closeModal()">×</button></div>${g.img?`<img class="vimg" src="${esc(g.img)}" alt="会場案内図" loading="lazy">`:''}${g.text?`<div class="vtext">${esc(g.text)}</div>`:''}`;
+  $('ov').classList.add('open');
+}
+function openGuideEdit(){
+  if(!isAdmin()||!TD) return; const g=TD.guide||{};
+  modalCourtId=null; $('mod').innerHTML=`<div class="mhead"><div class="mtitle">会場案内</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <div class="askdesc">観客の画面の「会場案内」ボタンから見られます。コート配置図は画像のURL（GitHub や Google ドライブの公開リンクなど）を貼ってください。</div>
+    <div class="vedit"><label class="flabel">案内文（トイレ・売店・観客席の入口・撮影のルールなど）</label><textarea id="gtext" placeholder="例：\n観客席は2階です（1階は選手・役員のみ）\nトイレは各階の東西\n売店は1階ロビー\n撮影は観客席からのみ。フラッシュ禁止">${esc(g.text||'')}</textarea>
+    <label class="flabel">コート配置図の画像URL（省略可）</label><input class="inp" id="gimg" value="${esc(g.img||'')}" placeholder="https://..." autocomplete="off" style="margin-bottom:13px">
+    ${g.img?`<img class="vimg" src="${esc(g.img)}" alt="">`:''}</div>
+    <div class="askbtns"><button class="mbtn" onclick="closeModal()">キャンセル</button><button class="mbtn p" onclick="saveGuide()">保存する</button></div>`;
+  $('ov').classList.add('open');
+}
+function saveGuide(){
+  if(!isAdmin()||!TD) return;
+  const text=($('gtext')?$('gtext').value:'').trim(), img=($('gimg')?$('gimg').value:'').trim();
+  if(text||img) TD.guide={text,img}; else delete TD.guide;
+  saveMeta(); closeModal(); renderDash(); showToast(text||img?'会場案内を保存しました':'会場案内を消しました');
+}
+// ── 種目別の入賞者（管理用が入力。終了画面に表示）──
+const AWARD_RANKS=[['g','最優秀賞'],['s','優秀賞'],['b','優良賞']];
+function allCats(){ const out=[]; (TD.rounds||[]).forEach(r=>{ (TD.courts[r]||[]).forEach(c=>{ const k=(c.cat||'').trim(); if(k&&!out.includes(k)) out.push(k); }); }); return out; }
+function awardCount(){ const a=(TD&&TD.awards)||{}; return Object.keys(a).filter(k=>a[k]&&(a[k].g||a[k].s||a[k].b)).length; }
+function awardsHTML(){
+  const a=(TD&&TD.awards)||{}; const cats=allCats().filter(k=>a[k]&&(a[k].g||a[k].s||a[k].b)); Object.keys(a).forEach(k=>{ if(!cats.includes(k)&&a[k]&&(a[k].g||a[k].s||a[k].b)) cats.push(k); });
+  if(!cats.length) return '';
+  return `<div class="eawards"><div class="elab">種目別の入賞</div>${cats.map(k=>`<div class="eaw"><div class="eacat">${esc(k)}</div><div class="ear">${AWARD_RANKS.filter(([key])=>a[k][key]).map(([key,lab])=>`<b>${lab}</b><span class="v">${esc(a[k][key])}</span>`).join('')}</div></div>`).join('')}</div>`;
+}
+function openAwardsEdit(){
+  if(!isAdmin()||!TD) return; const a=TD.awards||{}; const cats=allCats(); Object.keys(a).forEach(k=>{ if(!cats.includes(k)) cats.push(k); });
+  modalCourtId=null; $('mod').innerHTML=`<div class="mhead"><div class="mtitle">種目別の入賞者</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <div class="askdesc">大会を終了したあと、終了画面に表示します（総合優勝の下）。空欄の種目は表示されません。入力例：明治大学 石藤・栗田</div>
+    ${cats.length?`<div class="awlist">${cats.map((k,i)=>`<div class="awrow"><div class="awcat">${esc(k)}</div><div class="awin">${AWARD_RANKS.map(([key,lab])=>`<span>${lab}</span><input class="inp" id="aw_${i}_${key}" value="${esc((a[k]||{})[key]||'')}" placeholder="大学名 氏名" autocomplete="off">`).join('')}</div></div>`).join('')}</div>`:'<div class="askdesc">種目名が登録されたコートがありません。先にコート割を読み込んでください。</div>'}
+    <div class="askbtns"><button class="mbtn" onclick="closeModal()">キャンセル</button><button class="mbtn p" onclick="saveAwards()">保存する</button></div>`;
+  window._awCats=cats; $('ov').classList.add('open');
+}
+function saveAwards(){
+  if(!isAdmin()||!TD) return; const cats=window._awCats||[]; const out={};
+  cats.forEach((k,i)=>{ const o={}; AWARD_RANKS.forEach(([key])=>{ const el=$(`aw_${i}_${key}`); const v=el?el.value.trim():''; if(v) o[key]=v; }); if(Object.keys(o).length) out[k]=o; });
+  if(Object.keys(out).length) TD.awards=out; else delete TD.awards;
+  saveMeta(); closeModal(); renderDash(); showToast(`入賞者を保存しました（${Object.keys(out).length}種目）`);
 }
 function askNotify(){ if(!('Notification' in window)) return; Notification.requestPermission().then(()=>{ renderDash(); }); }
 function notifyHTML(){ return ('Notification' in window && Notification.permission==='default' && MODE!=='spectator')?`<button class="syncpill" onclick="askNotify()">通知を許可</button>`:''; }
@@ -1123,6 +1187,7 @@ function renderEnded(){
         <div class="emsg">この大会は終了しました。</div>
         <div class="ethx">ありがとうございました。</div>
         ${TD.champion?`<div class="echamp"><div class="elab">総合優勝</div><div class="euni">${esc(TD.champion)}</div></div>`:''}
+        ${awardsHTML()}
         <div class="ebtn"><button class="backbtn" onclick="renderList()">大会一覧へ戻る</button></div>
       </div>
     </div>`);
@@ -1939,7 +2004,7 @@ function renderSpectator(){
         <div><button class="backbtn" onclick="renderList()">← 一覧</button><div class="dtitle">${esc(TD.name)}</div><span class="modetag">観客用</span></div>
         <div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div>
       </div>
-      <div class="rtabs"><button class="rtab${specTab==='search'?' on':''}" onclick="specTab='search';renderSpectator()">出番をさがす</button><button class="rtab${specTab==='courts'?' on':''}" onclick="specTab='courts';renderSpectator()">コート一覧</button><button class="rtabadd" onclick="openSpecGuide()">使い方</button></div>
+      <div class="rtabs"><button class="rtab${specTab==='search'?' on':''}" onclick="specTab='search';renderSpectator()">出番をさがす</button><button class="rtab${specTab==='courts'?' on':''}" onclick="specTab='courts';renderSpectator()">コート一覧</button>${(TD.guide&&(TD.guide.text||TD.guide.img))?`<button class="rtabadd" onclick="openVenueGuide()">会場案内</button>`:''}<button class="rtabadd" onclick="openSpecGuide()">使い方</button></div>
     </div>
     ${noticeBarHTML()}${body}
     <div id="speccourts"></div>`;
@@ -1999,7 +2064,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + ((MODE==='admin'||MODE==='operator')?`<button class="rtabadd" onclick="setNotice()">${PROG_DATA.notice&&PROG_DATA.notice.text?'お知らせを変更':'お知らせ'}</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  ).join('') + ((MODE==='admin'||MODE==='operator')?`<button class="rtabadd" onclick="setNotice()">${PROG_DATA.notice&&PROG_DATA.notice.text?'お知らせを変更':'お知らせ'}</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd" onclick="openAwardsEdit()">入賞者${awardCount()?`（${awardCount()}種目）`:''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
