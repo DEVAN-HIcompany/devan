@@ -160,12 +160,12 @@ body.beta .overlay{top:32px}
 @keyframes spKen{to{transform:scale(1.06)}}
 /* 縦画面はスマホ用ポスター（文字なし・日本武道館と花びら）を全面に敷き、題字を上に重ねる */
 #splash.portrait .sp-pimg{object-fit:cover;object-position:center 60%;-webkit-mask-image:none;mask-image:none}
-#splash .sp-ptitle{position:absolute;left:0;right:0;top:max(12vh,calc(env(safe-area-inset-top,0px) + 10vh));text-align:center;color:#fff;font-family:var(--serif);opacity:0;pointer-events:none;text-shadow:0 2px 18px rgba(120,80,140,.35),0 0 2px rgba(120,80,140,.35);display:none}
-#splash .sp-ptitle b{display:block;font-size:min(15.5vw,60px);font-weight:700;letter-spacing:.14em;padding-left:.14em;line-height:1.1}
-#splash .sp-ptitle small{display:block;font-size:min(4.3vw,16px);font-weight:600;letter-spacing:.12em;padding-left:.12em;margin-top:13px}
+#splash .sp-ptitle{position:absolute;left:0;right:0;top:50%;transform:translateY(-58%);text-align:center;color:#fff;font-family:var(--serif);opacity:0;pointer-events:none;text-shadow:0 2px 24px rgba(120,80,140,.45),0 0 3px rgba(120,80,140,.4);display:none}
+#splash .sp-ptitle b{display:block;font-size:min(21.5vw,120px);font-weight:700;letter-spacing:.08em;padding-left:.08em;line-height:1.1}
+#splash .sp-ptitle small{display:block;font-size:min(5.6vw,24px);font-weight:600;letter-spacing:.1em;padding-left:.1em;margin-top:21px}
 #splash.portrait .sp-ptitle{display:block}
 #splash.poster.portrait .sp-ptitle{animation:spTitle 1.3s cubic-bezier(.2,.7,.2,1) .35s forwards}
-@keyframes spTitle{from{opacity:0;transform:translateY(12px);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes spTitle{from{opacity:0;transform:translateY(-58%) scale(.94);filter:blur(8px)}to{opacity:1;transform:translateY(-58%) scale(1);filter:blur(0)}}
 
 @keyframes spFall{0%{transform:translate(0,0) rotate(var(--r));opacity:0}6%{opacity:.9}90%{opacity:.85}100%{transform:translate(var(--dx),112vh) rotate(calc(var(--r) + 300deg));opacity:0}}
 @keyframes spSway{from{transform:translateX(-9px) rotateY(0deg) rotate(-18deg)}to{transform:translateX(9px) rotateY(160deg) rotate(22deg)}}
