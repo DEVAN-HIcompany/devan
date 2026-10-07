@@ -299,6 +299,58 @@ body.beta .overlay{top:32px}
 .cnext.now .lab{color:var(--run)}
 .ccard.last1 .cnext.now .lab{color:var(--l1)}.ccard.last3 .cnext.now .lab{color:var(--l3)}
 .cnext.stop{color:var(--stop);border-color:#E7CACA}.cnext.fin{color:var(--done);border-color:#CFE0D6}
+.cmeta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--muted);letter-spacing:.03em;margin-top:6px}
+.cmeta b{font-weight:600;color:var(--ink2)}
+.cmeta .late{color:var(--l1);font-weight:600}
+.ccard.late{border-color:#D9B7A4;box-shadow:0 0 0 2px rgba(168,85,43,.18)}
+.badge.blate{background:var(--l1);color:#fff}
+.badge.bcall{background:var(--run);color:#fff}
+.alertrow.call{background:var(--run-bg);border-color:var(--run);color:var(--run)}
+.alertrow.late{background:var(--l1-bg);border-color:var(--l1);color:var(--l1)}
+.callbox{margin:0 0 1rem;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.callbox .cl{font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--muted);margin-bottom:8px}
+.callbtns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.callbtns .mbtn{justify-content:center;font-size:13px;padding:10px 8px}
+.callbtns .mbtn.on{background:var(--run);color:#fff;border-color:var(--run)}
+.callnow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--run);font-weight:600;margin-bottom:8px}
+.callnow .mbtn{margin-left:auto;font-size:12px;padding:7px 12px}
+.notice.call{background:var(--run);box-shadow:0 12px 34px rgba(46,74,122,.35)}
+.notice.call .nx{color:var(--run)}
+.notice.late{background:var(--l1);box-shadow:0 12px 34px rgba(168,85,43,.35)}
+.notice.late .nx{color:var(--l1)}
+.noticebar.to{border-left-color:var(--run)}.noticebar.to .nlab{color:var(--run)}
+.chk{display:grid;gap:8px;margin-bottom:13px}
+.chkrow{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;line-height:1.6}
+.chkrow.ng{border-color:#E7CACA;background:var(--stop-bg)}
+.chkrow.ok{border-color:#CFE0D6;background:var(--done-bg)}
+.chkrow .ck{flex-shrink:0;font-size:10px;font-weight:600;letter-spacing:.14em;padding:3px 7px;border-radius:4px;margin-top:3px}
+.chkrow.ng .ck{background:var(--stop);color:#fff}.chkrow.ok .ck{background:var(--done);color:#fff}
+.chkrow b{color:var(--ink)}
+.cnum{white-space:nowrap}
+/* 本部モニター用の大画面モード（閲覧用・管理用の「大画面」ボタン） */
+body.big{font-size:17px}
+body.big .app{max-width:none;padding:1rem 1.4rem}
+body.big #betabar,body.big .legend,body.big .statline,body.big .syncpill{display:none}
+body.big .dtitle{font-size:30px}
+body.big .rtab{font-size:17px;padding:12px 20px}
+body.big .rtabadd{font-size:15px}
+body.big .sumbar{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+body.big .sumn{font-size:40px}body.big .suml{font-size:14px}
+body.big .alertrow{font-size:20px;padding:14px 18px}
+body.big .cgrid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+body.big .ccard{min-height:210px;padding:1.1rem 1.2rem 1.2rem}
+body.big .cnum{font-size:44px}body.big .cnum small{font-size:14px}
+body.big .ccat{font-size:19px;margin:.5rem 0 .7rem}
+body.big .cnext{font-size:17px;padding:9px 0}
+body.big .badge{font-size:14px;padding:6px 12px}
+body.big .ccount{font-size:15px}
+body.big .tdot{width:12px;height:12px;border-radius:3px}
+body.big .cmeta{font-size:14px}body.big .cstaff{font-size:14px}
+body.big .barwrap{height:8px}
+body.big .notice{width:min(560px,calc(100vw - 26px))}body.big .notice .ntitle{font-size:24px}body.big .notice .nnum{font-size:52px}
+body.big .noticebar{font-size:18px}
+.bigclock{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.06em;color:var(--ink);flex-shrink:0;display:none}
+body.big .bigclock{display:block}
 .barwrap{background:var(--bg2);border-radius:2px;height:4px;margin-bottom:6px;overflow:hidden;margin-top:auto}
 .ccard.done .barwrap,.ccard.stopped .barwrap,.ccard.last1 .barwrap,.ccard.last3 .barwrap{background:rgba(0,0,0,.06)}
 .barfill{height:4px;border-radius:2px;transition:width .4s}
@@ -700,7 +752,7 @@ function startProgListener(id){
       courts: val.courts || {},
       notice: val.notice || null
     };
-    if(prev && PROG_DATA.notice && PROG_DATA.notice.text && (!prevNotice || prevNotice.text!==PROG_DATA.notice.text)) showNotice({num:'お知らせ',lab:'運営から',title:PROG_DATA.notice.text,cls:'info',ms:30000});
+    if(prev && PROG_DATA.notice && PROG_DATA.notice.text && (!prevNotice || prevNotice.text!==PROG_DATA.notice.text || prevNotice.to!==PROG_DATA.notice.to) && noticeFor(PROG_DATA.notice)){ const n=PROG_DATA.notice; showNotice({num:n.to?`${n.to}コート`:'お知らせ',lab:n.to?'本部から担当へ':'運営から',title:n.text,cls:'info',ms:30000}); if(n.to&&MODE==='operator'){ try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){} beep(1); } }
     // teamsがないコートを補完
     if(TD) TD.rounds.forEach(r=>{ (TD.courts[r]||[]).forEach(c=>{ if(!c.teams) c.teams=[]; }); });
     if(prev) notifyChanges(prev, PROG_DATA.courts);
@@ -734,13 +786,44 @@ function showNotice(o){ // o={cid,cat,reason,ok,round}
   clr.insertAdjacentElement('afterend',el); refresh(); setTimeout(close, o.ms||(o.ok?7000:20000));
 }
 function sysNotify(title,body){ try{ if('Notification' in window && Notification.permission==='granted' && document.visibilityState!=='visible') new Notification(title,{body,tag:'devan-stop'}); }catch(e){} }
-function noticeBarHTML(){ const n=PROG_DATA&&PROG_DATA.notice; if(!n||!n.text) return ''; const d=n.at?new Date(n.at):null; const tm=d&&!isNaN(d)?`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')} 更新`:''; return `<div class="noticebar"><span class="nlab">お知らせ</span><div>${esc(n.text)}${tm?`<span class="ntime">${tm}</span>`:''}</div></div>`; }
+function noticeFor(n){ // この端末に見せるお知らせか（宛先つきは その担当の進行セク と 管理用・閲覧用 だけ）
+  if(!n||!n.text) return false; if(!n.to) return true; if(MODE==='admin'||MODE==='view') return true;
+  if(MODE==='operator'){ const cs=(PROG_DATA&&PROG_DATA.courts&&PROG_DATA.courts[courtKey(n.toRound||curRound(),n.to)])||{}; return !!(OP_NAME&&(cs.staff===OP_NAME||!cs.staff)); }
+  return false;
+}
+function noticeBarHTML(){ const n=PROG_DATA&&PROG_DATA.notice; if(!noticeFor(n)) return ''; const d=n.at?new Date(n.at):null; const tm=d&&!isNaN(d)?`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')} 更新`:''; return `<div class="noticebar${n.to?' to':''}"><span class="nlab">${n.to?`${n.to}コート担当へ`:'お知らせ'}</span><div>${esc(n.text)}${tm?`<span class="ntime">${tm}</span>`:''}</div></div>`; }
 // 運営からのお知らせ（管理用・進行セク用が入力。全員の画面上部に出る。空欄で消す）
 function setNotice(){
-  if(!canOperate()||!CUR_ID) return;
-  askText({title:'運営からのお知らせ', desc:'観客と学連の全員の画面上部に表示します（例：昼休憩 12:00〜13:00、閉会式は14:30から）。空欄にして保存すると消えます。', value:(PROG_DATA&&PROG_DATA.notice&&PROG_DATA.notice.text)||'', placeholder:'例：昼休憩 12:00〜13:00', okLabel:'表示する', allowEmpty:true, onOk:v=>{
-    PROG(CUR_ID).child('notice').set(v?{text:v,at:new Date().toISOString()}:null).then(()=>showToast(v?'お知らせを表示しました':'お知らせを消しました')).catch(_saveErr);
-  }});
+  if(!canOperate()||!CUR_ID) return; const n=(PROG_DATA&&PROG_DATA.notice)||{};
+  const courts=(TD.courts[curRound()]||[]).filter(c=>(c.teams||[]).length);
+  modalCourtId=null; $('mod').innerHTML=`<div class="mhead"><div class="mtitle">お知らせ・呼び出し</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <div class="askdesc">「全員」は観客と学連の全員の画面に出ます。コートを選ぶと、そのコートの担当（進行セク）と本部の画面にだけ出ます。空欄で保存すると消えます。</div>
+    <label class="flabel" style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px">宛先</label>
+    <select class="inp" id="nto" style="margin-bottom:10px"><option value="">全員（観客を含む）</option>${courts.map(c=>`<option value="${c.id}"${String(n.to||'')===String(c.id)?' selected':''}>${c.id}コートの担当${progCS(curRound(),c.id).staff?`（${esc(progCS(curRound(),c.id).staff)}）`:''}</option>`).join('')}</select>
+    <input class="inp askinp" id="askinp" value="${esc(n.text||'')}" placeholder="例：昼休憩 12:00〜13:00 ／ 本部まで来てください" autocomplete="off">
+    <div class="askbtns"><button class="mbtn" onclick="closeModal()">キャンセル</button><button class="mbtn p" id="askok">表示する</button></div>`;
+  $('ov').classList.add('open'); const inp=$('askinp'); setTimeout(()=>inp.focus(),60);
+  const ok=()=>{ const v=inp.value.trim(); const to=$('nto').value?+$('nto').value:null; closeModal();
+    PROG(CUR_ID).child('notice').set(v?{text:v,at:new Date().toISOString(),to,toRound:to?curRound():null}:null).then(()=>showToast(v?(to?`${to}コートの担当に送りました`:'お知らせを表示しました'):'お知らせを消しました')).catch(_saveErr); };
+  $('askok').onclick=ok; inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); ok(); } };
+}
+// ── 開始前チェック（管理用）──
+function openPrecheck(){
+  if(!isAdmin()||!TD) return; const r=curRound(); const courts=TD.courts[r]||[]; const rows=[];
+  const used=courts.filter(c=>(c.teams||[]).length);
+  const noCat=used.filter(c=>!(c.cat||'').trim()); rows.push([noCat.length?'ng':'ok', noCat.length?`種目名が未設定のコート: <b>${noCat.map(c=>c.id+'コート').join('・')}</b>`:'種目名はすべて設定済み']);
+  const catOnly=courts.filter(c=>(c.cat||'').trim()&&!(c.teams||[]).length); rows.push([catOnly.length?'ng':'ok', catOnly.length?`種目名はあるのに出場組が空のコート: <b>${catOnly.map(c=>c.id+'コート').join('・')}</b>`:'出場組はすべて入っています']);
+  const noMin=[...new Set(used.filter(c=>!(+c.min>0)).map(c=>c.cat||c.id+'コート'))]; rows.push([noMin.length?'ng':'ok', noMin.length?`1組あたりの目安（分）が未設定: <b>${noMin.join('・')}</b>（既定の ${MIN_PER_TEAM} 分で計算します。コートを開いて「編集」で設定）`:'目安の分数はすべて設定済み']);
+  const noStaff=used.filter(c=>!progCS(r,c.id).staff); rows.push([noStaff.length?'ng':'ok', noStaff.length?`担当者がまだいないコート: <b>${noStaff.map(c=>c.id+'コート').join('・')}</b>（進行セクがコートを開いて「このコートの担当になる」を押すと入ります）`:'担当者は全コートに付いています']);
+  const stopped=used.filter(c=>progCS(r,c.id).stopped); if(stopped.length) rows.push(['ng',`停止中のコートがあります: <b>${stopped.map(c=>c.id+'コート').join('・')}</b>`]);
+  const started=used.filter(c=>isStarted(progCS(r,c.id))); rows.push([started.length?'ng':'ok', started.length?`すでに開始しているコート: <b>${started.map(c=>c.id+'コート').join('・')}</b>（前日のテストなら「戻す」で開始前に）`:'全コートが開始前です']);
+  rows.push([TD.guide&&(TD.guide.text||TD.guide.img)?'ok':'ng', TD.guide&&(TD.guide.text||TD.guide.img)?'会場案内は設定済み':'会場案内が未設定（観客の「会場案内」ボタンが出ません）']);
+  const ng=rows.filter(x=>x[0]==='ng').length;
+  modalCourtId=null; $('mod').innerHTML=`<div class="mhead"><div class="mtitle">開始前チェック<span>${esc(r)}</span></div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <div class="askdesc">${ng?`直したほうがよい項目が ${ng} 件あります。`:'このラウンドは問題ありません。'}使用コート ${used.length}・出場 ${used.reduce((a,c)=>a+c.teams.length,0)} 組</div>
+    <div class="chk">${rows.map(([k,t])=>`<div class="chkrow ${k}"><span class="ck">${k==='ok'?'OK':'確認'}</span><div>${t}</div></div>`).join('')}</div>
+    <div class="askbtns"><button class="mbtn p" onclick="closeModal()">閉じる</button></div>`;
+  $('ov').classList.add('open');
 }
 // ── 会場案内（管理用が入力。観客の「会場案内」ボタンで表示）──
 function openVenueGuide(){
@@ -764,6 +847,14 @@ function saveGuide(){
   if(text||img) TD.guide={text,img}; else delete TD.guide;
   saveMeta(); closeModal(); renderDash(); showToast(text||img?'会場案内を保存しました':'会場案内を消しました');
 }
+// 本部モニター用の大画面モード（端末に記憶。全画面にもする）
+function toggleBig(){
+  const on=!document.body.classList.contains('big'); document.body.classList.toggle('big',on);
+  try{ localStorage.setItem('sj_big',on?'1':'0'); }catch(e){}
+  try{ if(on&&document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); else if(!on&&document.fullscreenElement&&document.exitFullscreen) document.exitFullscreen().catch(()=>{}); }catch(e){}
+  renderDash(); showToast(on?'大画面モード。もう一度押すと戻ります':'通常画面に戻しました');
+}
+try{ if(localStorage.getItem('sj_big')==='1') document.body.classList.add('big'); }catch(e){}
 function askNotify(){ if(!('Notification' in window)) return; Notification.requestPermission().then(()=>{ renderDash(); }); }
 function notifyHTML(){ return ('Notification' in window && Notification.permission==='default' && MODE!=='spectator')?`<button class="syncpill" onclick="askNotify()">通知を許可</button>`:''; }
 function notifyChanges(prev,now){
@@ -779,6 +870,11 @@ function notifyChanges(prev,now){
       else if(b.k==='done'&&a.k!=='done'){ showToast(`${who} の演武が終わりました`); }
     });
   }
+  if(MODE==='admin'||MODE==='view'){ Object.keys(now).forEach(k=>{ const a=(prev[k]||{}).call, b=(now[k]||{}).call; const ak=a&&a.kind||'', bk=b&&b.kind||''; if(ak===bk) return;
+    const i=k.lastIndexOf('_'); const r=k.slice(0,i), cid=+k.slice(i+1);
+    if(bk){ showNotice({key:'call_'+k,cid,lab:'コートから連絡',title:bk,reason:(b.by?`担当 ${b.by}`:'')+(b.at?` ${fmtClock(b.at)}`:''),cls:'call',ms:60000,round:r,cid}); try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){} if(MODE==='admin') beep(1); sysNotify(`${cid}コートから連絡`, bk); }
+    else { const el=document.querySelector('.notice[data-k="n_call_'+k+'"]'); if(el) el.remove(); }
+  }); }
   Object.keys(now).forEach(k=>{
     const a=prev[k]||{}, b=now[k]||{}; if(!!a.stopped===!!b.stopped) return;
     const i=k.lastIndexOf('_'); const r=k.slice(0,i), cid=+k.slice(i+1);
@@ -2026,7 +2122,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + ((MODE==='admin'||MODE==='operator')?`<button class="rtabadd" onclick="setNotice()">${PROG_DATA.notice&&PROG_DATA.notice.text?'お知らせを変更':'お知らせ'}</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  ).join('') + ((MODE==='admin'||MODE==='operator')?`<button class="rtabadd" onclick="setNotice()">${PROG_DATA.notice&&PROG_DATA.notice.text?'お知らせを変更':'お知らせ'}</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -2036,11 +2132,11 @@ function renderDash(){
           <div class="dtitle">${esc(TD.name)}</div>
           ${TD.ended?'<span class="modetag end">終了</span>':''}${modeTag()}
         </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">${MODE==='operator'?`<button class="oppill" onclick="changeOpName()" title="担当者名を変更">担当: ${esc(OP_NAME||'未入力')}</button>`:''}${notifyHTML()}<div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div></div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span class="bigclock">${fmtClock(Date.now())}</span>${MODE==='operator'?`<button class="oppill" onclick="changeOpName()" title="担当者名を変更">担当: ${esc(OP_NAME||'未入力')}</button>`:''}${(MODE==='view'||MODE==='admin')?`<button class="oppill" onclick="toggleBig()">${document.body.classList.contains('big')?'通常画面':'大画面'}</button>`:''}${notifyHTML()}<div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div></div>
       </div>
       <div class="rtabs">${rHTML}</div>
     </div>
-    ${statsLineHTML()}${noticeBarHTML()}
+    ${statsLineHTML()}${noticeBarHTML()}${(()=>{ const e=roundEta(); return e?`<div class="cmeta" style="margin:-.4rem 0 .8rem;font-size:12px">このラウンドの終了見込み <b>${fmtClock(e)}</b><span>（残り組数×目安分。停止中のコートは含まず）</span></div>`:''; })()}
     <div class="sumbar">${buildSummary()}</div>
     <div class="legend">
       <div class="legitem"><div class="legdot" style="background:${PAL.done}"></div>完了</div>
@@ -2084,11 +2180,36 @@ function buildSummary(){
     .map(s=>`<div class="sumcard" style="--sc:${s.c}"><div class="sumn">${s.n}</div><div class="suml">${s.l}</div></div>`).join('');
 }
 
+// 経過時間と見込み（学連の画面用）
+const CALL_KINDS=['審判待ち','選手が来ない','機材トラブル','本部に来てほしい'];
+const fmtMin=ms=>{ const m=Math.floor(ms/60000); return m<60?`${m}分`:`${Math.floor(m/60)}時間${m%60}分`; };
+const fmtClock=ts=>{ const d=new Date(ts); return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; };
+function courtTiming(c,cs){ // {elapsed, late, eta, remain, stoppedFor}
+  const t=(c.teams||[]).length, min=(+c.min>0?+c.min:MIN_PER_TEAM), now=Date.now();
+  let remain=0; for(let i=(cs.current||0);i<t;i++) if(!isAbs(cs,i)) remain++;
+  const running=isStarted(cs)&&!cs.stopped&&(cs.current||0)<t&&remain>0;
+  const elapsed=running&&cs.at?now-cs.at:0;
+  const late=running&&cs.at&&elapsed>min*60000*2;
+  const eta=running?now+remain*min*60000:null;
+  const stoppedFor=cs.stopped&&cs.stoppedAt?now-cs.stoppedAt:0;
+  return {elapsed,late,eta,remain,stoppedFor,min};
+}
+function roundEta(){ let m=null; (TD.courts[curRound()]||[]).forEach(c=>{ if(!(c.teams||[]).length) return; const tm=courtTiming(c,progCS(curRound(),c.id)); if(tm.eta&&(m===null||tm.eta>m)) m=tm.eta; }); return m; }
+let _lateNotified={};
+function checkLate(){ // 進行セク: 自分が担当するコートの押し忘れを知らせる（コート×組ごとに1回）
+  if(MODE!=='operator'||!TD||!PROG_DATA) return;
+  (TD.courts[curRound()]||[]).forEach(c=>{ const cs=progCS(curRound(),c.id); if(cs.staff&&OP_NAME&&cs.staff!==OP_NAME) return; const tm=courtTiming(c,cs); if(!tm.late) return; const key=courtKey(curRound(),c.id)+'_'+cs.current; if(_lateNotified[key]) return; _lateNotified[key]=1;
+    showNotice({key:'late_'+c.id,cid:c.id,lab:'押し忘れていませんか',title:`${c.cat||''} 演武 ${fmtMin(tm.elapsed)}経過`,reason:`目安 ${tm.min}分の2倍を超えています。終わっていたら「次の組へ」を押してください`,cls:'late',ms:30000,round:curRound()}); try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){} });
+}
+setInterval(()=>{ if(TD&&PROG_DATA&&MODE!=='spectator'&&!document.hidden&&$('app').querySelector('.cgrid')){ renderDash(); checkLate(); } }, 30000);
 function buildAlerts(){
-  return (TD.courts[curRound()]||[])
-    .filter(c=>c.teams.length&&progCS(curRound(),c.id).stopped)
-    .map(c=>{const cs=progCS(curRound(),c.id);
-      return `<div class="alertrow" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">停止</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート（${esc(c.cat)}）</strong> ${esc(cs.stopReason||'停止中')}</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`;}).join('');
+  const fed=MODE!=='spectator'; const out=[];
+  (TD.courts[curRound()]||[]).forEach(c=>{ if(!c.teams.length) return; const cs=progCS(curRound(),c.id); const tm=courtTiming(c,cs);
+    if(cs.stopped) out.push(`<div class="alertrow" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">停止</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート（${esc(c.cat)}）</strong> ${esc(cs.stopReason||'停止中')}${tm.stoppedFor?` <b>${fmtMin(tm.stoppedFor)}</b>`:''}</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
+    if(fed&&cs.call&&cs.call.kind) out.push(`<div class="alertrow call" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">連絡</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート</strong> ${esc(cs.call.kind)}${cs.call.by?`（担当 ${esc(cs.call.by)}）`:''}${cs.call.at?` ${fmtClock(cs.call.at)}`:''}</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
+    if(fed&&tm.late) out.push(`<div class="alertrow late" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">長引き</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート</strong> 演武 ${fmtMin(tm.elapsed)}経過（目安 ${tm.min}分）押し忘れの可能性</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
+  });
+  return out.join('');
 }
 
 function buildGrid(){
@@ -2099,7 +2220,9 @@ function buildGrid(){
     const st=courtStatus(c,cs);
     const bc={stopped:PAL.stop,done:PAL.done,last1:PAL.l1,last3:PAL.l3,running:PAL.run}[st]||PAL.run;
     let badge='';
-    if(st==='stopped')badge='<span class="badge bstop">停止</span>';
+    const tm=courtTiming(c,cs); const fed=MODE!=='spectator';
+    if(st==='stopped')badge=`<span class="badge bstop">停止${tm.stoppedFor?' '+fmtMin(tm.stoppedFor):''}</span>`;
+    else if(fed&&tm.late)badge=`<span class="badge blate">長引き ${fmtMin(tm.elapsed)}</span>`;
     else if(st==='done')badge='<span class="badge bdone">完了</span>';
     else if(st==='last1')badge='<span class="badge bl1">残り1組</span>';
     else if(st==='last3')badge=`<span class="badge bl3">残り${rem}組</span>`;
@@ -2117,13 +2240,14 @@ function buildGrid(){
     if(t&&st!=='done'&&st!=='stopped'&&ni<t){ const nt=c.teams[ni]; next=`<div class="cnext${isStarted(cs)?' now':''}"><span class="lab">${isStarted(cs)?'演武中':'次'}</span><b>${esc(nt.a)}</b> ${esc(nt.n)}</div>`; }
     else if(st==='stopped'){ next=`<div class="cnext stop">${esc(cs.stopReason||'停止中')}</div>`; }
     else if(st==='done'){ next=`<div class="cnext fin">全 ${t} 組 終了</div>`; }
-    return `<div class="ccard ${st}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
+    const meta=fed&&t?[cs.call&&cs.call.kind?`<span class="badge bcall">連絡: ${esc(cs.call.kind)}</span>`:'', tm.elapsed?`<span class="${tm.late?'late':''}">演武 ${fmtMin(tm.elapsed)}</span>`:'', tm.eta?`<span>終了見込み <b>${fmtClock(tm.eta)}</b></span>`:''].filter(Boolean).join(''):'';
+    return `<div class="ccard ${st}${fed&&tm.late?' late':''}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
       <div class="ctop"><div class="cnum">${c.id}<small>コート</small></div>${badge}</div>
       <div class="ccat">${esc(c.cat)||'（種目未設定）'}</div>
       ${next}
       ${t?`<div class="barwrap"><div class="barfill" style="background:${bc};width:${pct}%"></div></div>
       <div class="ccount"><span>${dn} / ${t} 組</span><span>${pct}%</span></div>
-      <div class="tdots">${dots}</div>${MODE!=='spectator'&&cs.staff?`<div class="cstaff">担当 <b>${esc(cs.staff)}</b></div>`:''}`:`<div class="edithint">${MODE==='admin'?'未使用 ― タップして設定':'未使用'}</div>`}
+      <div class="tdots">${dots}</div>${meta?`<div class="cmeta">${meta}</div>`:''}${MODE!=='spectator'&&cs.staff?`<div class="cstaff">担当 <b>${esc(cs.staff)}</b></div>`:''}`:`<div class="edithint">${MODE==='admin'?'未使用 ― タップして設定':'未使用'}</div>`}
     </div>`;}).join('');
 }
 
@@ -2260,6 +2384,7 @@ function drawProgTab(c,cs){
       <button class="abtn${ab?' on':''}" onclick="event.stopPropagation();toggleAbsent(${i})">${ab?'欠場を取消':'欠場'}</button>
     </div>`;}).join('');
   const nAbs=absCount(cs,t);
+  const callBox=`<div class="callbox"><div class="cl">本部への連絡</div>${cs.call&&cs.call.kind?`<div class="callnow">連絡中: ${esc(cs.call.kind)}${cs.call.at?`（${fmtClock(cs.call.at)}）`:''}<button class="mbtn s" onclick="clearCall()">解決した</button></div>`:''}<div class="callbtns">${CALL_KINDS.map(k=>`<button class="mbtn${cs.call&&cs.call.kind===k?' on':''}" onclick="sendCall('${esc(k)}')">${esc(k)}</button>`).join('')}</div></div>`;
   const staffRow=`<div class="mstaff">担当: <b>${esc(cs.staff||'未設定')}</b>${nAbs?`<span>・欠場 ${nAbs} 組</span>`:''}${MODE==='operator'&&OP_NAME&&cs.staff!==OP_NAME?`<button class="abtn" onclick="takeCourt()">このコートの担当になる</button>`:''}</div>`;
   const sBanner=cs.stopped?`<div class="stopbanner">
     <div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div>
@@ -2273,7 +2398,7 @@ function drawProgTab(c,cs){
     </div></div>`:'';
   const done=dn>=t||rem===0;
   const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
-  return `${staffRow}${sBanner}
+  return `${staffRow}${sBanner}${callBox}
     <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
     <div class="macts">
       <button class="mbtn" onclick="prevTeam()" ${dn<=0&&!isStarted(cs)?'disabled':''}>戻す</button>
@@ -2344,12 +2469,21 @@ function doStop(){
   if(!canOperate()) return;
   const inp=$('stopinp'); const reason=(inp?inp.value.trim():'')||'競技停止中';
   const cs=progCS(curRound(),modalCourtId); cs.stopped=true; cs.stopReason=reason; stopFormOpen=false;
-  writeCourt(courtKey(curRound(),modalCourtId),{stopped:true,stopReason:reason}); drawModal(); renderDash();
+  writeCourt(courtKey(curRound(),modalCourtId),{stopped:true,stopReason:reason,stoppedAt:Date.now()}); drawModal(); renderDash();
 }
 function doResume(){
   if(!canOperate()) return;
   const cs=progCS(curRound(),modalCourtId); cs.stopped=false; cs.stopReason='';
-  writeCourt(courtKey(curRound(),modalCourtId),{stopped:false,stopReason:''}); drawModal(); renderDash();
+  writeCourt(courtKey(curRound(),modalCourtId),{stopped:false,stopReason:'',stoppedAt:null,at:Date.now()}); drawModal(); renderDash();
+}
+function sendCall(kind){
+  if(!canOperate()) return; const k=courtKey(curRound(),modalCourtId); const cs=progCS(curRound(),modalCourtId);
+  if(cs.call&&cs.call.kind===kind){ clearCall(); return; }
+  cs.call={kind,at:Date.now(),by:OP_NAME||''}; writeCourt(k,{call:cs.call}); drawModal(); renderDash(); showToast(`本部に「${kind}」を送りました`);
+}
+function clearCall(){
+  if(!canOperate()) return; const k=courtKey(curRound(),modalCourtId); const cs=progCS(curRound(),modalCourtId);
+  delete cs.call; writeCourt(k,{call:null}); drawModal(); renderDash();
 }
 function _lockActs(on){ document.querySelectorAll('.macts .mbtn').forEach(b=>{ b.disabled=on||b.disabled; }); }
 function nextTeam(){
@@ -2360,9 +2494,9 @@ function nextTeam(){
   txCourt(courtKey(curRound(),modalCourtId), cs=>{
     if(cs.stopped) return;
     if(isStarted(cs)!==exp.st || (cs.current||0)!==exp.cur) return; // 他の人が先に操作した
-    if(!isStarted(cs)){ cs.started=true; cs.current=skipAbs(cs,0,t); return cs; } // 最初の1回は「競技を開始する」
+    if(!isStarted(cs)){ cs.started=true; cs.current=skipAbs(cs,0,t); cs.at=Date.now(); return cs; } // 最初の1回は「競技を開始する」
     if(cs.current>=t) return;
-    cs.current=skipAbs(cs,cs.current+1,t); return cs;
+    cs.current=skipAbs(cs,cs.current+1,t); cs.at=Date.now(); return cs;
   }).then(ok=>{ if(!ok) alertToast('他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 function prevTeam(){
@@ -2371,7 +2505,7 @@ function prevTeam(){
   _busy=true; _lockActs(true);
   txCourt(courtKey(curRound(),modalCourtId), cs=>{
     if(isStarted(cs)!==exp.st || (cs.current||0)!==exp.cur) return;
-    if(cs.current>0){ let j=cs.current-1; while(j>=0&&isAbs(cs,j)) j--; if(j>=0){ cs.current=j; cs.started=true; } else { cs.current=0; cs.started=false; } return cs; }
+    if(cs.current>0){ let j=cs.current-1; while(j>=0&&isAbs(cs,j)) j--; if(j>=0){ cs.current=j; cs.started=true; } else { cs.current=0; cs.started=false; } cs.at=Date.now(); return cs; }
     if(isStarted(cs)){ cs.started=false; cs.current=0; return cs; } // 開始前に戻す
     return;
   }).then(ok=>{ if(!ok) alertToast('他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
@@ -2380,7 +2514,7 @@ function toggleTeam(idx){
   if(!canOperate()||_busy) return;
   const c=_court(); if(!c) return; const t=c.teams.length;
   _busy=true;
-  txCourt(courtKey(curRound(),modalCourtId), cs=>{ if(isAbs(cs,idx)) return; cs.current=idx<(cs.current||0)?idx:skipAbs(cs,idx+1,t); cs.started=true; return cs; })
+  txCourt(courtKey(curRound(),modalCourtId), cs=>{ if(isAbs(cs,idx)) return; cs.current=idx<(cs.current||0)?idx:skipAbs(cs,idx+1,t); cs.started=true; cs.at=Date.now(); return cs; })
     .finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 // 欠場の切替（進行セク・管理用）。演武中の組を欠場にしたら次の組へ進める
