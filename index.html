@@ -460,6 +460,20 @@ body.beta .notices{top:47px}
 .sfav svg{color:var(--gold)}
 .sfav.on{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:600}
 .sfav.on svg{color:#fff}
+.sshare{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:6px 10px;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--muted);white-space:nowrap}
+.sshare:hover{border-color:var(--ink);color:var(--ink)}
+.ufav{display:flex;align-items:center;gap:10px;margin:0 0 .6rem;padding:10px 12px;background:var(--gold-bg);border:1px solid var(--gold2);border-radius:10px;font-size:12.5px;color:var(--ink2)}
+.ufav b{color:var(--ink)}
+.ufav .sfav{margin-left:auto}.ufav .sfav span{display:inline}
+.shead .sfav,.shead .sshare,.shead .syncpill{margin-left:auto}
+.noticebar{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;margin-bottom:1rem;background:#fff;border:1px solid var(--gold2);border-left:5px solid var(--gold);border-radius:10px;font-size:14px;line-height:1.7;color:var(--ink)}
+.noticebar .nlab{flex-shrink:0;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--gold);margin-top:5px}
+.noticebar .ntime{display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:2px}
+.notice.info{background:var(--ink);box-shadow:0 12px 34px rgba(0,0,0,.3)}
+.notice.info .nx{color:var(--ink)}
+.notice.soon{background:#A8894F;box-shadow:0 12px 34px rgba(168,137,79,.4)}
+.notice.soon .nx{color:#A8894F}
+.notice .nnum.txt{font-size:19px;letter-spacing:.04em;line-height:1.2;white-space:nowrap}
 .guide{display:grid;gap:10px;margin-bottom:1.25rem}
 .guide.compact{padding:1rem;background:#fff;border:1px solid var(--line);border-radius:12px}
 .gstep{display:flex;align-items:center;gap:12px}
@@ -675,10 +689,13 @@ function startProgListener(id){
     const val = snap.val();
     if(!val) return;
     const prev=(!first&&PROG_DATA&&PROG_DATA.courts)||null; first=false;
+    const prevNotice=(PROG_DATA&&PROG_DATA.notice)||null;
     PROG_DATA = {
       currentRound: TD && TD.rounds.includes(val.currentRound) ? val.currentRound : (TD?TD.rounds[0]:''),
-      courts: val.courts || {}
+      courts: val.courts || {},
+      notice: val.notice || null
     };
+    if(prev && PROG_DATA.notice && PROG_DATA.notice.text && (!prevNotice || prevNotice.text!==PROG_DATA.notice.text)) showNotice({num:'お知らせ',lab:'運営から',title:PROG_DATA.notice.text,cls:'info',ms:30000});
     // teamsがないコートを補完
     if(TD) TD.rounds.forEach(r=>{ (TD.courts[r]||[]).forEach(c=>{ if(!c.teams) c.teams=[]; }); });
     if(prev) notifyChanges(prev, PROG_DATA.courts);
@@ -697,23 +714,44 @@ function alertToast(msg,cls,ms){
 }
 function showNotice(o){ // o={cid,cat,reason,ok,round}
   let box=document.querySelector('.notices'); if(!box){ box=document.createElement('div'); box.className='notices'; document.body.appendChild(box); }
-  const key='n_'+o.round+'_'+o.cid; const old=box.querySelector('[data-k="'+key+'"]'); if(old) old.remove();
+  const key='n_'+(o.key||(o.round+'_'+o.cid)); const old=box.querySelector('[data-k="'+key+'"]'); if(old) old.remove();
   let clr=box.querySelector('.nclear'); if(!clr){ clr=document.createElement('button'); clr.className='nclear'; clr.textContent='通知をすべて消す'; clr.onclick=()=>{ box.querySelectorAll('.notice').forEach(n=>{ n.classList.add('out'); setTimeout(()=>n.remove(),300); }); clr.hidden=true; }; box.prepend(clr); }
-  const el=document.createElement('div'); el.className='notice'+(o.ok?' ok':''); el.dataset.k=key;
-  el.innerHTML=`<div class="nnum">${o.cid}<small>コート</small></div><div><div class="nlab">${o.ok?'再開':'競技停止'}</div><div class="ntitle">${esc(o.cat||'')}${o.ok?' 再開しました':' 停止しました'}</div>${o.ok?'':`<div class="nreason">${esc(o.reason||'停止中')}</div>`}</div><button class="nx" aria-label="この通知を消す" title="消す">×</button>`;
+  const el=document.createElement('div'); el.className='notice'+(o.cls?' '+o.cls:(o.ok?' ok':'')); el.dataset.k=key;
+  const num=o.num!==undefined?`<div class="nnum txt">${esc(String(o.num))}</div>`:`<div class="nnum">${o.cid}<small>コート</small></div>`;
+  const lab=o.lab!==undefined?o.lab:(o.ok?'再開':'競技停止');
+  const title=o.title!==undefined?o.title:(`${o.cat||''}${o.ok?' 再開しました':' 停止しました'}`);
+  const reason=o.reason!==undefined?o.reason:(o.ok?'':'停止中');
+  el.innerHTML=`${num}<div><div class="nlab">${esc(lab)}</div><div class="ntitle">${esc(title)}</div>${reason?`<div class="nreason">${esc(reason)}</div>`:''}</div><button class="nx" aria-label="この通知を消す" title="消す">×</button>`;
   const refresh=()=>{ clr.hidden=box.querySelectorAll('.notice:not(.out)').length<2; };
   const close=()=>{ el.classList.add('out'); setTimeout(()=>{ el.remove(); refresh(); },300); refresh(); };
   el.querySelector('.nx').onclick=e=>{ e.stopPropagation(); close(); };
-  el.onclick=()=>{ close(); if(TD&&TD.rounds.includes(o.round)){ if(MODE!=='admin') viewRound=o.round; renderDash(); openCourtModal(o.cid); } };
-  clr.insertAdjacentElement('afterend',el); refresh(); setTimeout(close, o.ok?7000:20000);
+  el.onclick=()=>{ close(); if(o.round&&o.cid&&TD&&TD.rounds.includes(o.round)){ if(MODE!=='admin') viewRound=o.round; renderDash(); openCourtModal(o.cid); } };
+  clr.insertAdjacentElement('afterend',el); refresh(); setTimeout(close, o.ms||(o.ok?7000:20000));
 }
 function sysNotify(title,body){ try{ if('Notification' in window && Notification.permission==='granted' && document.visibilityState!=='visible') new Notification(title,{body,tag:'devan-stop'}); }catch(e){} }
+function noticeBarHTML(){ const n=PROG_DATA&&PROG_DATA.notice; if(!n||!n.text) return ''; const d=n.at?new Date(n.at):null; const tm=d&&!isNaN(d)?`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')} 更新`:''; return `<div class="noticebar"><span class="nlab">お知らせ</span><div>${esc(n.text)}${tm?`<span class="ntime">${tm}</span>`:''}</div></div>`; }
+// 運営からのお知らせ（管理用・進行セク用が入力。全員の画面上部に出る。空欄で消す）
+function setNotice(){
+  if(!canOperate()||!CUR_ID) return;
+  askText({title:'運営からのお知らせ', desc:'観客と学連の全員の画面上部に表示します（例：昼休憩 12:00〜13:00、閉会式は14:30から）。空欄にして保存すると消えます。', value:(PROG_DATA&&PROG_DATA.notice&&PROG_DATA.notice.text)||'', placeholder:'例：昼休憩 12:00〜13:00', okLabel:'表示する', allowEmpty:true, onOk:v=>{
+    PROG(CUR_ID).child('notice').set(v?{text:v,at:new Date().toISOString()}:null).then(()=>showToast(v?'お知らせを表示しました':'お知らせを消しました')).catch(_saveErr);
+  }});
+}
 function askNotify(){ if(!('Notification' in window)) return; Notification.requestPermission().then(()=>{ renderDash(); }); }
 function notifyHTML(){ return ('Notification' in window && Notification.permission==='default' && MODE!=='spectator')?`<button class="syncpill" onclick="askNotify()">通知を許可</button>`:''; }
 function notifyChanges(prev,now){
   if(!TD) return;
   const fed=MODE==='operator'||MODE==='admin'||MODE==='view';
   const favs=MODE==='spectator'?getFavs():[];
+  if(MODE==='spectator'&&favs.length){ // お気に入りの出番: あと3組以内・演武中・終了 を知らせる
+    allEntries().filter(e=>favs.includes(entryId(e))).forEach(e=>{
+      const k=courtKey(e.r,e.c); const a=statusFromCS(prev[k],e), b=statusFromCS(now[k],e); if(a.k===b.k&&a.ahead===b.ahead) return;
+      const who=`${e.a} ${e.n}`.trim(), where=`${e.c}コート ${e.i+1}番`;
+      if(b.k==='now'&&a.k!=='now'){ showNotice({key:'f_'+entryId(e),num:'演武中',lab:'出番です',title:who,reason:where,cls:'soon',ms:15000,round:e.r,cid:e.c}); try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]); }catch(x){} sysNotify('演武中です',`${who}（${where}）`); }
+      else if(b.k==='wait'&&b.ahead<=3&&(a.k!=='wait'||a.ahead>3)){ showNotice({key:'f_'+entryId(e),num:`あと${b.ahead}組`,lab:'まもなく出番',title:who,reason:`${where}・目安 約${Math.round(b.ahead*(e.min||MIN_PER_TEAM))}分後`,cls:'soon',ms:20000,round:e.r,cid:e.c}); try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(x){} sysNotify(`まもなく出番（あと${b.ahead}組）`,`${who}（${where}）`); }
+      else if(b.k==='done'&&a.k!=='done'){ showToast(`${who} の演武が終わりました`); }
+    });
+  }
   Object.keys(now).forEach(k=>{
     const a=prev[k]||{}, b=now[k]||{}; if(!!a.stopped===!!b.stopped) return;
     const i=k.lastIndexOf('_'); const r=k.slice(0,i), cid=+k.slice(i+1);
@@ -1056,7 +1094,8 @@ function openTournament(id){
     });
     PROG_DATA = { currentRound: TD.rounds[0], courts: {} };
     STATS_CACHE=null;
-    if(MODE==='spectator'){ stat('opens'); statDevice(); }
+    if(MODE==='spectator'){ stat('opens'); statDevice();
+      if(SHARE.e.length&&SHARE.t===id){ const ok=allEntries().map(entryId); const add=SHARE.e.filter(x=>ok.includes(x)); SHARE.e=[]; if(add.length){ const f=getFavs(); add.forEach(x=>{ if(!f.includes(x)) f.push(x); }); setFavs(f); setTimeout(()=>showToast(`共有された出番 ${add.length}件をお気に入りに入れました`),400); } } }
     if(MODE==='admin'){ loadStats(id).then(()=>renderDash()); }
     renderDash();
     startProgListener(id);
@@ -1837,16 +1876,29 @@ function setFavs(a){ try{ localStorage.setItem(favKey(), JSON.stringify(a)); }ca
 const entryId = e => e.r+'|'+e.c+'|'+e.i;
 function isFav(e){ return getFavs().includes(entryId(e)); }
 function toggleFav(id){ let f=getFavs(); const add=!f.includes(id); f = add ? [...f,id] : f.filter(x=>x!==id); setFavs(f); if(add) stat('favs'); renderSpectator(); }
+function favUniv(u,add){ const ids=allEntries().filter(e=>e.a===u).map(entryId); let f=getFavs(); if(add){ ids.forEach(id=>{ if(!f.includes(id)) f.push(id); }); stat('favs'); } else f=f.filter(x=>!ids.includes(x)); setFavs(f); renderSpectator(); showToast(add?`${u}の${ids.length}組をお気に入りに入れました`:`${u}をお気に入りから外しました`); }
+// 出番の共有: 開くとその大会の観客用が開き、共有された出番がお気に入りに入る
+function shareEntries(ids){
+  if(!ids||!ids.length||!CUR_ID) return;
+  const ents=allEntries().filter(e=>ids.includes(entryId(e)));
+  const url=location.origin+location.pathname+'?m=spec&t='+encodeURIComponent(CUR_ID)+'&e='+encodeURIComponent(ids.join(','));
+  const text=ents.length===1?`${ents[0].a} ${ents[0].n} の出番（${ents[0].r} ${ents[0].c}コート ${ents[0].i+1}番）— DEVAN で今の状況が見られます`:`${TD.name} の出番 ${ents.length}件 — DEVAN で今の状況が見られます`;
+  if(navigator.share){ navigator.share({title:'DEVAN 出番の共有',text,url}).catch(()=>{}); return; }
+  const done=()=>showToast('リンクをコピーしました。LINEなどに貼って送れます');
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(()=>{ prompt('このリンクを送ってください',url); });
+  else { try{ const ta=document.createElement('textarea'); ta.value=url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done(); }catch(e){} }
+}
 
 // 全出番を一覧化
 function allEntries(){
   const out=[];
-  TD.rounds.forEach((r,ri)=>{ (TD.courts[r]||[]).forEach(c=>{ (c.teams||[]).forEach((t,i)=>{ out.push({r,ri,c:c.id,cat:c.cat||'',i,a:t.a||'',n:t.n||'',total:c.teams.length}); }); }); });
+  TD.rounds.forEach((r,ri)=>{ (TD.courts[r]||[]).forEach(c=>{ (c.teams||[]).forEach((t,i)=>{ out.push({r,ri,c:c.id,cat:c.cat||'',i,a:t.a||'',n:t.n||'',total:c.teams.length,min:(+c.min>0?+c.min:MIN_PER_TEAM)}); }); }); });
   return out;
 }
 // 出番の状態
-function entryStatus(e){
-  const cs=progCS(e.r,e.c); const dn=Math.min(cs.current,e.total);
+function entryStatus(e){ return statusFromCS(progCS(e.r,e.c),e); }
+function statusFromCS(cs,e){
+  cs=cs||{current:0}; const dn=Math.min(cs.current||0,e.total);
   if(isAbs(cs,e.i)) return {k:'absent',label:'欠場',ahead:-1};
   if(e.i<dn) return {k:'done',label:'終了',ahead:-1};
   const from=isStarted(cs)?dn:0; let ahead=0; for(let i=from;i<e.i;i++) if(!isAbs(cs,i)) ahead++; // 自分より前の、まだ演武していない組（欠場は数えない）
@@ -1889,7 +1941,7 @@ function renderSpectator(){
       </div>
       <div class="rtabs"><button class="rtab${specTab==='search'?' on':''}" onclick="specTab='search';renderSpectator()">出番をさがす</button><button class="rtab${specTab==='courts'?' on':''}" onclick="specTab='courts';renderSpectator()">コート一覧</button><button class="rtabadd" onclick="openSpecGuide()">使い方</button></div>
     </div>
-    ${body}
+    ${noticeBarHTML()}${body}
     <div id="speccourts"></div>`;
   if(specTab==='courts'){ renderDashInto('speccourts'); }
   setSync(true);
@@ -1899,26 +1951,32 @@ function renderSpectator(){
 
 function specRowHTML(e,favs){
   const st=entryStatus(e); const fav=favs.includes(entryId(e)); const cur=e.r===PROG_DATA.currentRound;
-  const mins=st.k==='wait'&&st.ahead>0?`<span class="smin">目安 約${st.ahead*MIN_PER_TEAM}分後</span>`:'';
+  const mins=st.k==='wait'&&st.ahead>0?`<span class="smin">目安 約${Math.round(st.ahead*(e.min||MIN_PER_TEAM))}分後</span>`:'';
   return `<div class="srow ${st.k}" onclick="viewRound='${esc(e.r)}';openCourtModal(${e.c})">
     <div class="sleft"><div class="swhere">${esc(e.r)}${cur?'<span class="scur">進行中のラウンド</span>':''}</div><div class="scourt">${e.c}<small>コート</small><span class="scat">${esc(e.cat)}</span></div></div>
     <div class="smid"><div class="sno">${e.i+1}<small>番</small></div><div><div class="suniv">${esc(e.a)}</div><div class="sname">${esc(e.n)}</div></div></div>
     <div class="sright"><span class="schip ${st.k}">${st.label}</span>${mins}
-      <button class="sfav${fav?' on':''}" onclick="event.stopPropagation();toggleFav('${esc(entryId(e))}')" aria-label="お気に入り">${ICO.star(fav)}<span>${fav?'お気に入り':'お気に入りに入れる'}</span></button></div>
+      <span style="display:flex;gap:5px"><button class="sfav${fav?' on':''}" onclick="event.stopPropagation();toggleFav('${esc(entryId(e))}')" aria-label="お気に入り">${ICO.star(fav)}<span>${fav?'お気に入り':'お気に入りに入れる'}</span></button><button class="sshare" onclick="event.stopPropagation();shareEntries(['${esc(entryId(e))}'])" aria-label="共有">共有</button></span></div>
   </div>`;
 }
 function renderSpectatorResultsHTML(results,favEntries,row,q){
   const searching=!!(q||specUniv);
   let favHTML;
   if(favEntries.length){
-    favHTML=`<div class="shead"><span class="sheadico">${ICO.star(true)}</span>お気に入り <small>${favEntries.length}件・自動で更新されます</small></div><div class="slist">${favEntries.map(row).join('')}</div>`;
+    const np=('Notification' in window && Notification.permission==='default')?`<button class="syncpill" onclick="askNotify()">通知を許可</button>`:'';
+    favHTML=`<div class="shead"><span class="sheadico">${ICO.star(true)}</span>お気に入り <small>${favEntries.length}件・出番が近づくと知らせます</small>${np}<button class="sshare" onclick="shareEntries(getFavs())">まとめて共有</button></div><div class="slist">${favEntries.map(row).join('')}</div>`;
   }else{
     favHTML=`<div class="favempty"><span class="sheadico">${ICO.star(false)}</span><div><b>お気に入りはまだありません</b><span>${searching?'下の一覧で星を押すと、ここに固定されて見逃しません':'さがした出番の星を押すと、ここに固定されます'}</span></div></div>`;
   }
   let resHTML='';
   if(!searching) resHTML=specGuideHTML(true);
   else if(!results.length) resHTML=`<div class="shint">見つかりませんでした。<br>大学名の一部（例：明治）や、姓だけ（例：山田）でお試しください。</div>`;
-  else resHTML=`<div class="shead">見つかった出番 <small>${results.length}件</small><span class="stap">${ICO.tap} 行を押すとコートの全体が見られます</span></div><div class="slist">${results.map(row).join('')}</div>`;
+  else {
+    const univs=[...new Set(results.map(e=>e.a).filter(Boolean))]; let uf='';
+    if(univs.length===1&&results.length>1){ const u=univs[0]; const favs=getFavs(); const all=results.every(e=>favs.includes(entryId(e)));
+      uf=`<div class="ufav"><span><b>${esc(u)}</b> の ${results.length} 組</span><button class="sfav${all?' on':''}" onclick="favUniv('${esc(u)}',${all?'false':'true'})">${ICO.star(all)}<span>${all?'全員をお気に入りから外す':'全員をお気に入りに入れる'}</span></button></div>`; }
+    resHTML=`<div class="shead">見つかった出番 <small>${results.length}件</small><span class="stap">${ICO.tap} 行を押すとコートの全体が見られます</span></div>${uf}<div class="slist">${results.map(row).join('')}</div>`;
+  }
   return favHTML+resHTML;
 }
 function renderSpectatorResults(){
@@ -1941,7 +1999,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  ).join('') + ((MODE==='admin'||MODE==='operator')?`<button class="rtabadd" onclick="setNotice()">${PROG_DATA.notice&&PROG_DATA.notice.text?'お知らせを変更':'お知らせ'}</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -1955,7 +2013,7 @@ function renderDash(){
       </div>
       <div class="rtabs">${rHTML}</div>
     </div>
-    ${statsLineHTML()}
+    ${statsLineHTML()}${noticeBarHTML()}
     <div class="sumbar">${buildSummary()}</div>
     <div class="legend">
       <div class="legitem"><div class="legdot" style="background:${PAL.done}"></div>完了</div>
@@ -2203,6 +2261,8 @@ function drawEditTab(c){
   return `<div>
     <label class="flabel">種目名</label>
     <input class="inp" id="etcat" value="${esc(c.cat)}" placeholder="例：男子初段" style="margin-bottom:12px">
+    <label class="flabel">1組あたりの目安（分）<span style="font-size:10px;color:#bbb;font-weight:400;margin-left:6px">観客の「約○分後」に使います。空欄は ${MIN_PER_TEAM} 分</span></label>
+    <input class="inp" id="etmin" type="number" inputmode="decimal" min="0.5" step="0.5" value="${+c.min>0?c.min:''}" placeholder="${MIN_PER_TEAM}" style="margin-bottom:12px;max-width:160px">
     <span class="eplabel">出場チーム <span style="font-size:10px;color:#bbb;font-weight:400">（空欄行は無視）</span></span>
     <div id="etrows">${rows}</div>
     <button class="addbtn" style="margin:.5rem 0" onclick="addERow('et','etrows')">＋ 行を追加</button>
@@ -2215,6 +2275,7 @@ function drawEditTab(c){
 function commitEdit(){
   const c=(TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId); if(!c)return;
   const el=$('etcat'); if(el) c.cat=el.value.trim();
+  const em=$('etmin'); if(em){ const v=parseFloat(em.value); if(v>0) c.min=v; else delete c.min; }
   const teams=collectERows('et'); c.teams=teams;
   const cs=progCS(curRound(),modalCourtId); if(cs.current>teams.length) cs.current=teams.length;
 }
@@ -2331,6 +2392,7 @@ function loadingHTML(msg,err){ return `<div class="loader${err?' err':''}"><div 
 let _booted=false;
 // 直行URL（学連スタッフ用）: ?m=fed=学生連盟の画面 / op=進行セク用 / view=閲覧用 / admin=管理用 / spec=観客用。起動ポスターと最初の画面を飛ばす
 const ENTRY=(()=>{ try{ const m=new URLSearchParams(location.search).get('m'); return ['fed','op','view','admin','spec'].includes(m)?m:null; }catch(e){ return null; } })();
+const SHARE=(()=>{ try{ const q=new URLSearchParams(location.search); return {t:q.get('t')||'', e:(q.get('e')||'').split(',').filter(Boolean)}; }catch(e){ return {t:'',e:[]}; } })();
 show(loadingHTML());
 // ── 起動アニメーション（1セッションに1回。ロゴがホームの定位置へ着地してそのままホームになる）──
 let splashHomeReady=null, _splashResolve=null, splashFallbackMs=3200;
@@ -2375,7 +2437,7 @@ const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', srcPortrait:'splash-zennih
   (posterOn?poster():Promise.resolve()).then(()=>fontReady).then(start);
 })();
 
-function bootEntry(){ if(ENTRY==='fed') renderFedHome(); else if(ENTRY==='op') enterOperator(); else if(ENTRY==='view') enterView(); else if(ENTRY==='admin') enterAdmin(); else if(ENTRY==='spec') enterSpectator(); else renderHome(); }
+function bootEntry(){ if(ENTRY==='fed') renderFedHome(); else if(ENTRY==='op') enterOperator(); else if(ENTRY==='view') enterView(); else if(ENTRY==='admin') enterAdmin(); else if(ENTRY==='spec'){ enterSpectator(); if(SHARE.t) openTournament(SHARE.t); } else renderHome(); }
 auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; bootEntry(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
 </script>
 </body>
