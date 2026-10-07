@@ -318,7 +318,6 @@ body.beta .overlay{top:32px}
 .notice.call .nx{color:var(--run)}
 .notice.late{background:var(--l1);box-shadow:0 12px 34px rgba(168,85,43,.35)}
 .notice.late .nx{color:var(--l1)}
-.noticebar.to{border-left-color:var(--run)}.noticebar.to .nlab{color:var(--run)}
 .chk{display:grid;gap:8px;margin-bottom:13px}
 .chkrow{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;line-height:1.6}
 .chkrow.ng{border-color:#E7CACA;background:var(--stop-bg)}
@@ -348,8 +347,7 @@ body.big .tdot{width:12px;height:12px;border-radius:3px}
 body.big .cmeta{font-size:14px}body.big .cstaff{font-size:14px}
 body.big .barwrap{height:8px}
 body.big .notice{width:min(560px,calc(100vw - 26px))}body.big .notice .ntitle{font-size:24px}body.big .notice .nnum{font-size:52px}
-body.big .noticebar{font-size:18px}
-.bigclock{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.06em;color:var(--ink);flex-shrink:0;display:none}
+body.big .bigclock{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.06em;color:var(--ink);flex-shrink:0;display:none}
 body.big .bigclock{display:block}
 .etaline{margin:.2rem 0 .9rem;font-size:12px}
 body.big.beta .app{padding-top:1rem}body.big.beta .dtop{top:0}body.big.beta .notices{top:13px}body.big.beta .overlay{top:0}
@@ -522,9 +520,6 @@ body.beta .notices{top:47px}
 .ufav b{color:var(--ink)}
 .ufav .sfav{margin-left:auto}.ufav .sfav span{display:inline}
 .shead .sfav,.shead .sshare,.shead .syncpill{margin-left:auto}
-.noticebar{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;margin-bottom:1rem;background:#fff;border:1px solid var(--gold2);border-left:5px solid var(--gold);border-radius:10px;font-size:14px;line-height:1.7;color:var(--ink)}
-.noticebar .nlab{flex-shrink:0;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--gold);margin-top:5px}
-.noticebar .ntime{display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:2px}
 .notice.info{background:var(--ink);box-shadow:0 12px 34px rgba(0,0,0,.3)}
 .notice.info .nx{color:var(--ink)}
 .notice.soon{background:#A8894F;box-shadow:0 12px 34px rgba(168,137,79,.4)}
@@ -750,13 +745,10 @@ function startProgListener(id){
     const val = snap.val();
     if(!val) return;
     const prev=(!first&&PROG_DATA&&PROG_DATA.courts)||null; first=false;
-    const prevNotice=(PROG_DATA&&PROG_DATA.notice)||null;
     PROG_DATA = {
       currentRound: TD && TD.rounds.includes(val.currentRound) ? val.currentRound : (TD?TD.rounds[0]:''),
-      courts: val.courts || {},
-      notice: val.notice || null
+      courts: val.courts || {}
     };
-    if(prev && PROG_DATA.notice && PROG_DATA.notice.text && (!prevNotice || prevNotice.text!==PROG_DATA.notice.text || prevNotice.to!==PROG_DATA.notice.to) && noticeFor(PROG_DATA.notice)){ const n=PROG_DATA.notice; showNotice({num:n.to?`${n.to}コート`:'お知らせ',lab:(n.by?`${n.by} から`:'お知らせ')+(n.to?`（${n.to}コート担当へ）`:''),title:n.text,cls:'info',ms:30000}); if(n.to&&MODE==='operator'){ try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){} beep(1); } }
     // teamsがないコートを補完
     if(TD) TD.rounds.forEach(r=>{ (TD.courts[r]||[]).forEach(c=>{ if(!c.teams) c.teams=[]; }); });
     if(prev) notifyChanges(prev, PROG_DATA.courts);
@@ -790,33 +782,6 @@ function showNotice(o){ // o={cid,cat,reason,ok,round}
   clr.insertAdjacentElement('afterend',el); refresh(); setTimeout(close, o.ms||(o.ok?7000:20000));
 }
 function sysNotify(title,body){ try{ if('Notification' in window && Notification.permission==='granted' && document.visibilityState!=='visible') new Notification(title,{body,tag:'devan-stop'}); }catch(e){} }
-function noticeFor(n){ // この端末に見せるお知らせか（宛先つきは その担当の進行セク と 管理用・閲覧用 だけ）
-  if(!n||!n.text) return false; if(MODE==='spectator') return false; // 観客には出さない（学連の連絡用）
-  if(!n.to) return true; if(MODE==='admin'||MODE==='view') return true;
-  if(MODE==='operator'){ const cs=(PROG_DATA&&PROG_DATA.courts&&PROG_DATA.courts[courtKey(n.toRound||curRound(),n.to)])||{}; return !!(OP_NAME&&(cs.staff===OP_NAME||!cs.staff)); }
-  return false;
-}
-function noticeBarHTML(){ const n=PROG_DATA&&PROG_DATA.notice; if(!noticeFor(n)) return ''; const d=n.at?new Date(n.at):null; const tm=d&&!isNaN(d)?`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')} 更新`:''; return `<div class="noticebar${n.to?' to':''}"><span class="nlab">${n.by?`${esc(n.by)} から`:'お知らせ'}${n.to?`<br>${n.to}コート担当へ`:''}</span><div style="flex:1;min-width:0">${esc(n.text)}${tm?`<span class="ntime">${tm}</span>`:''}</div>${canOperate()?`<button class="abtn" onclick="clearNotice()" title="お知らせを消す">消す</button>`:''}</div>`; }
-function clearNotice(){
-  if(!canOperate()||!CUR_ID) return;
-  askConfirm({title:'お知らせを消す', desc:'学連の全員の画面からお知らせを消します。', okLabel:'消す', danger:true, onOk:()=>{ PROG(CUR_ID).child('notice').set(null).then(()=>showToast('お知らせを消しました')).catch(_saveErr); }});
-}
-// 運営からのお知らせ（管理用・進行セク用が入力。全員の画面上部に出る。空欄で消す）
-function setNotice(){
-  if(!canOperate()||!CUR_ID) return; const n=(PROG_DATA&&PROG_DATA.notice)||{};
-  const courts=(TD.courts[curRound()]||[]).filter(c=>(c.teams||[]).length);
-  modalCourtId=null; $('mod').innerHTML=`<div class="mhead"><div class="mtitle">お知らせ・呼び出し</div><button class="xbtn" onclick="closeModal()">×</button></div>
-    <div class="askdesc">学連の画面（管理用・進行セク用・閲覧用）に出ます。観客には出ません。コートを選ぶと、そのコートの担当（進行セク）と本部の画面にだけ出ます。空欄で保存すると消えます。</div>
-    <label class="flabel" style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px">宛先</label>
-    <select class="inp" id="nto" style="margin-bottom:10px"><option value="">学連の全員</option>${courts.map(c=>`<option value="${c.id}"${String(n.to||'')===String(c.id)?' selected':''}>${c.id}コートの担当${progCS(curRound(),c.id).staff?`（${esc(progCS(curRound(),c.id).staff)}）`:''}</option>`).join('')}</select>
-    <input class="inp askinp" id="askinp" value="${esc(n.text||'')}" placeholder="例：昼休憩 12:00〜13:00 ／ 本部まで来てください" autocomplete="off">
-    <div class="askbtns">${n.text?`<button class="mbtn d" style="margin-right:auto" onclick="closeModal();clearNotice()">お知らせを消す</button>`:''}<button class="mbtn" onclick="closeModal()">キャンセル</button><button class="mbtn p" id="askok">表示する</button></div>`;
-  $('ov').classList.add('open'); const inp=$('askinp'); setTimeout(()=>inp.focus(),60);
-  const ok=()=>{ const v=inp.value.trim(); const to=$('nto').value?+$('nto').value:null; closeModal();
-    const by=OP_NAME||(MODE==='admin'?'本部':'');
-    PROG(CUR_ID).child('notice').set(v?{text:v,at:new Date().toISOString(),to,toRound:to?curRound():null,by}:null).then(()=>showToast(v?(to?`${to}コートの担当に送りました`:'お知らせを表示しました'):'お知らせを消しました')).catch(_saveErr); };
-  $('askok').onclick=ok; inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); ok(); } };
-}
 // ── 開始前チェック（管理用）──
 function openPrecheck(){
   if(!isAdmin()||!TD) return; const r=curRound(); const courts=TD.courts[r]||[]; const rows=[];
@@ -2132,7 +2097,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + ((MODE==='admin'||MODE==='operator')?`<button class="rtabadd" onclick="setNotice()">${PROG_DATA.notice&&PROG_DATA.notice.text?'お知らせを変更':'お知らせ'}</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -2146,7 +2111,7 @@ function renderDash(){
       </div>
       <div class="rtabs">${rHTML}</div>
     </div>
-    ${statsLineHTML()}${noticeBarHTML()}${(()=>{ const e=roundEta(); return e?`<div class="cmeta etaline">このラウンドの終了見込み <b>${fmtClock(e)}</b><span>（残り組数×目安分。停止中のコートは含まず）</span></div>`:''; })()}
+    ${statsLineHTML()}${(()=>{ const e=roundEta(); return e?`<div class="cmeta etaline">このラウンドの終了見込み <b>${fmtClock(e)}</b><span>（残り組数×目安分。停止中のコートは含まず）</span></div>`:''; })()}
     <div class="sumbar">${buildSummary()}</div>
     <div class="legend">
       <div class="legitem"><div class="legdot" style="background:${PAL.done}"></div>完了</div>
