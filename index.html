@@ -210,7 +210,10 @@ body.beta .overlay{top:32px}
 .endcard .ethx{font-family:var(--serif);font-size:18px;letter-spacing:.14em;color:var(--ink2);margin-top:8px}
 .endcard .edate{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-top:21px}
 .endcard .ebtn{margin-top:34px}
-@media(max-width:480px){.endcard .emsg{font-size:20px}}
+.endcard .echamp{margin:34px auto 0;padding:21px 13px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);max-width:340px}
+.endcard .elab{font-size:11px;font-weight:600;letter-spacing:.3em;padding-left:.3em;color:var(--gold);margin-bottom:8px}
+.endcard .euni{font-family:var(--serif);font-size:28px;font-weight:700;letter-spacing:.08em;color:var(--ink);line-height:1.4}
+@media(max-width:480px){.endcard .emsg{font-size:20px}.endcard .euni{font-size:24px}}
 
 /* ── 作成画面 ── */
 .scard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1.4rem;margin-bottom:1rem;box-shadow:var(--sh)}
@@ -844,7 +847,7 @@ function renderList(){
                   <div class="ticon">${String(i+1).padStart(2,'0')}</div>
                   <div class="tinfo">
                     <div class="tname">${esc(td.name)}</div>
-                    <div class="tmeta">${td.ended?`終了 ${fmtDay(td.endedAt)}`:`${(td.rounds||[]).length}ラウンド ・ ${esc((td.rounds||[]).join(' / '))}`}</div>
+                    <div class="tmeta">${td.ended?`終了 ${fmtDay(td.endedAt)}${td.champion?` ・ 総合優勝 ${esc(td.champion)}`:''}`:`${(td.rounds||[]).length}ラウンド ・ ${esc((td.rounds||[]).join(' / '))}`}</div>
                   </div>
                   ${td.ended?'<span class="endtag">終了</span>':''}
                   ${MODE==='admin'?`<button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>`:''}
@@ -924,6 +927,7 @@ function renderEnded(){
         <div class="ename">${esc(TD.name)}</div>
         <div class="emsg">この大会は終了しました。</div>
         <div class="ethx">ありがとうございました。</div>
+        ${TD.champion?`<div class="echamp"><div class="elab">総合優勝</div><div class="euni">${esc(TD.champion)}</div></div>`:''}
         ${TD.endedAt?`<div class="edate">${fmtDay(TD.endedAt)} 終了</div>`:''}
         <div class="ebtn"><button class="backbtn" onclick="renderList()">大会一覧へ戻る</button></div>
       </div>
@@ -937,8 +941,18 @@ function toggleEnded(){
     delete TD.ended; delete TD.endedAt; saveMeta(); renderDash(); showToast('開催中に戻しました');
   } else {
     if(!confirm(`「${TD.name}」を終了しますか？\n\n観客・閲覧・進行用の画面では「この大会は終了しました。ありがとうございました。」と表示され、出番の検索や進行はできなくなります。\n（管理用からはいつでも取り消せます）`)) return;
+    const c=prompt('総合優勝の大学名を入力してください（終了画面に表示します。あとから変更できます。空欄で省略）', TD.champion||'');
+    if(c!==null){ const v=c.trim(); if(v) TD.champion=v; else delete TD.champion; }
     TD.ended=true; TD.endedAt=new Date().toISOString(); saveMeta(); renderDash(); showToast('大会を終了しました');
   }
+}
+// 管理用: 総合優勝の大学名を入力・変更（終了画面に表示）
+function setChampion(){
+  if(!isAdmin()||!TD) return;
+  const c=prompt('総合優勝の大学名（空欄にすると表示を消します）', TD.champion||'');
+  if(c===null) return;
+  const v=c.trim(); if(v) TD.champion=v; else delete TD.champion;
+  saveMeta(); renderDash(); showToast(v?`総合優勝: ${v}`:'総合優勝の表示を消しました');
 }
 
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
@@ -1723,7 +1737,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>`:'');
+  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
