@@ -8,7 +8,8 @@
 <link rel="icon" type="image/png" sizes="192x192" href="devan-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="devan-180.png">
 <link rel="apple-touch-icon" href="devan-180.png">
-<link rel="preload" as="image" href="splash-zennihon60.webp?v=1">
+<link rel="preload" as="image" href="splash-zennihon60.webp?v=1" media="(orientation: landscape)">
+<link rel="preload" as="image" href="splash-zennihon60-portrait.webp?v=1" media="(orientation: portrait)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -157,6 +158,15 @@ body.beta .overlay{top:32px}
 #splash.poster .sp-pmark{animation:spTag .8s ease-out .9s forwards}
 #splash.poster-out .sp-poster{opacity:0;transition:opacity .85s ease}
 @keyframes spKen{to{transform:scale(1.06)}}
+/* 縦画面はスマホ用ポスター（文字なし・日本武道館と花びら）を全面に敷き、題字を上に重ねる */
+#splash.portrait .sp-pimg{object-fit:cover;object-position:center 60%;-webkit-mask-image:none;mask-image:none}
+#splash .sp-ptitle{position:absolute;left:0;right:0;top:max(12vh,calc(env(safe-area-inset-top,0px) + 10vh));text-align:center;color:#fff;font-family:var(--serif);opacity:0;pointer-events:none;text-shadow:0 2px 18px rgba(120,80,140,.35),0 0 2px rgba(120,80,140,.35);display:none}
+#splash .sp-ptitle b{display:block;font-size:min(15.5vw,60px);font-weight:700;letter-spacing:.14em;padding-left:.14em;line-height:1.1}
+#splash .sp-ptitle small{display:block;font-size:min(4.3vw,16px);font-weight:600;letter-spacing:.12em;padding-left:.12em;margin-top:13px}
+#splash.portrait .sp-ptitle{display:block}
+#splash.poster.portrait .sp-ptitle{animation:spTitle 1.3s cubic-bezier(.2,.7,.2,1) .35s forwards}
+@keyframes spTitle{from{opacity:0;transform:translateY(12px);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
+
 @keyframes spFall{0%{transform:translate(0,0) rotate(var(--r));opacity:0}6%{opacity:.9}90%{opacity:.85}100%{transform:translate(var(--dx),112vh) rotate(calc(var(--r) + 300deg));opacity:0}}
 @keyframes spSway{from{transform:translateX(-9px) rotateY(0deg) rotate(-18deg)}to{transform:translateX(9px) rotateY(160deg) rotate(22deg)}}
 @media(min-aspect-ratio:13/8){#splash .sp-pmark{display:none}} /* 横長画面はポスターが下端まで届くので小ロゴは出さない */
@@ -428,7 +438,7 @@ body.beta .overlay{top:32px}
 </style>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><div class="sp-poster"><div class="sp-pbg"></div><img class="sp-pimg" alt=""><div class="sp-petals"></div><div class="sp-pmark">DEVAN<small>出番が、わかる。</small></div></div><div class="home-box sp-in"><div class="sp-glow"></div><div class="hero"></div><div class="org">関東学生少林寺拳法連盟</div><div class="wordmark">DEVAN</div><div class="hsub">出番が、わかる。<br><span class="hsub2">大会の進行状況を、その場で・リアルタイムに</span></div></div></div>
+<div id="splash" aria-hidden="true"><div class="sp-poster"><div class="sp-pbg"></div><img class="sp-pimg" alt=""><div class="sp-petals"></div><div class="sp-ptitle"><b>花様年華</b><small>第60回少林寺拳法全日本学生大会</small></div><div class="sp-pmark">DEVAN<small>出番が、わかる。</small></div></div><div class="home-box sp-in"><div class="sp-glow"></div><div class="hero"></div><div class="org">関東学生少林寺拳法連盟</div><div class="wordmark">DEVAN</div><div class="hsub">出番が、わかる。<br><span class="hsub2">大会の進行状況を、その場で・リアルタイムに</span></div></div></div>
 <div id="betabar" aria-live="polite"><span class="bt">BETA</span><span id="betamsg">試験運用中です。表示が乱れることがあります。</span></div>
 <div class="app" id="app"></div>
 <div class="overlay" id="ov"><div class="modal" id="mod"></div></div>
@@ -1999,7 +2009,7 @@ show(loadingHTML());
 // ── 起動アニメーション（1セッションに1回。ロゴがホームの定位置へ着地してそのままホームになる）──
 let splashHomeReady=null, _splashResolve=null, splashFallbackMs=3200;
 // 大会ポスター: until の日付まで起動時に全画面で見せる（大会が終わったら自動で出なくなる。差し替えは src と until を直す）
-const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', until:'2026-11-08', hold:2600};
+const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', srcPortrait:'splash-zennihon60-portrait.webp?v=1', until:'2026-11-08', hold:2800};
 (function(){
   const sp=document.getElementById('splash'); if(!sp) return;
   let shown=false; try{ shown=sessionStorage.getItem('sj_splash')==='1'; }catch(e){}
@@ -2019,16 +2029,17 @@ const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', until:'2026-11-08', hold:2
   const fontReady=new Promise(res=>{ const t=setTimeout(res,700); if(document.fonts&&document.fonts.load){ document.fonts.load('600 46px "Cormorant Garamond"').then(()=>{ clearTimeout(t); res(); }).catch(()=>{}); } });
   // 大会ポスター: 画像が読めたら全画面で hold ミリ秒見せる（画面タップで飛ばせる）→ 消えながら DEVAN のロゴへ
   const posterOn=!!(EVENT_POSTER.src && new Date()<new Date(EVENT_POSTER.until+'T23:59:59'));
+  const isPortrait=window.innerHeight>window.innerWidth && !!EVENT_POSTER.srcPortrait; const posterSrc=isPortrait?EVENT_POSTER.srcPortrait:EVENT_POSTER.src;
   const poster=()=>new Promise(res=>{
     const img=new Image(); let done=false; const fin=ok=>{ if(done) return; done=true; res(ok); };
     const t=setTimeout(()=>fin(false),1800);
-    img.onload=()=>{ clearTimeout(t); fin(true); }; img.onerror=()=>{ clearTimeout(t); fin(false); }; img.src=EVENT_POSTER.src;
+    img.onload=()=>{ clearTimeout(t); fin(true); }; img.onerror=()=>{ clearTimeout(t); fin(false); }; img.src=posterSrc;
   }).then(ok=>{ if(!ok) return; splashFallbackMs=3200+EVENT_POSTER.hold+1200; return new Promise(res=>{
-    const pe=sp.querySelector('.sp-poster'); pe.querySelector('.sp-pimg').src=EVENT_POSTER.src;
+    const pe=sp.querySelector('.sp-poster'); pe.querySelector('.sp-pimg').src=posterSrc; if(isPortrait) sp.classList.add('portrait');
     // 桜の花びら（大きさ・速さ・ゆれをばらばらに。奥の花びらは小さくぼかす）
     const pc=pe.querySelector('.sp-petals'); const rnd=(a,b)=>a+Math.random()*(b-a); let ph='';
-    for(let i=0;i<22;i++){ const far=Math.random()<.4; const sz=far?rnd(8,13):rnd(14,24);
-      ph+=`<i style="--x:${rnd(-4,100).toFixed(1)}vw;--s:${sz.toFixed(0)}px;--d:${rnd(far?9:6.5,far?14:10.5).toFixed(1)}s;--dl:${(-rnd(0,12)).toFixed(1)}s;--w:${rnd(1.6,3).toFixed(1)}s;--r:${rnd(0,360).toFixed(0)}deg;--dx:${rnd(-18,18).toFixed(0)}vw;--b:${far?'1.2px':'0px'}"><b></b></i>`; }
+    for(let i=0;i<(isPortrait?14:22);i++){ const far=Math.random()<.35; const sz=far?rnd(14,22):rnd(28,52);
+      ph+=`<i style="--x:${rnd(-4,100).toFixed(1)}vw;--s:${sz.toFixed(0)}px;--d:${rnd(far?9:6.5,far?14:10.5).toFixed(1)}s;--dl:${(-rnd(0,12)).toFixed(1)}s;--w:${rnd(1.6,3).toFixed(1)}s;--r:${rnd(0,360).toFixed(0)}deg;--dx:${rnd(-18,18).toFixed(0)}vw;--b:${far?'1.5px':'0px'}"><b></b></i>`; }
     pc.innerHTML=ph;
     sp.classList.add('poster');
     let ended=false; const end=()=>{ if(ended) return; ended=true; sp.removeEventListener('click',end); sp.classList.add('poster-out'); setTimeout(res,380); };
