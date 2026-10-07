@@ -2191,6 +2191,7 @@ function buildSummary(){
 
 // 経過時間と見込み（学連の画面用）
 const CALL_KINDS=['審判待ち','選手が来ない','機材トラブル','本部に来てほしい'];
+const LATE_MIN=5; // 押し忘れ・長引きとみなす分数（社長指示 2026-10-07: 目安の2倍ではなく5分固定）
 const fmtMin=ms=>{ const m=Math.floor(ms/60000); return m<60?`${m}分`:`${Math.floor(m/60)}時間${m%60}分`; };
 const fmtClock=ts=>{ const d=new Date(ts); return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; };
 function courtTiming(c,cs){ // {elapsed, late, eta, remain, stoppedFor}
@@ -2198,7 +2199,7 @@ function courtTiming(c,cs){ // {elapsed, late, eta, remain, stoppedFor}
   let remain=0; for(let i=(cs.current||0);i<t;i++) if(!isAbs(cs,i)) remain++;
   const running=isStarted(cs)&&!cs.stopped&&(cs.current||0)<t&&remain>0;
   const elapsed=running&&cs.at?now-cs.at:0;
-  const late=running&&cs.at&&elapsed>min*60000*2;
+  const late=running&&cs.at&&elapsed>LATE_MIN*60000;
   const eta=running?now+remain*min*60000:null;
   const stoppedFor=cs.stopped&&cs.stoppedAt?now-cs.stoppedAt:0;
   return {elapsed,late,eta,remain,stoppedFor,min};
@@ -2208,7 +2209,7 @@ let _lateNotified={};
 function checkLate(){ // 進行セク: 自分が担当するコートの押し忘れを知らせる（コート×組ごとに1回）
   if(MODE!=='operator'||!TD||!PROG_DATA) return;
   (TD.courts[curRound()]||[]).forEach(c=>{ const cs=progCS(curRound(),c.id); if(cs.staff&&OP_NAME&&cs.staff!==OP_NAME) return; const tm=courtTiming(c,cs); if(!tm.late) return; const key=courtKey(curRound(),c.id)+'_'+cs.current; if(_lateNotified[key]) return; _lateNotified[key]=1;
-    showNotice({key:'late_'+c.id,cid:c.id,lab:'押し忘れていませんか',title:`${c.cat||''} 演武 ${fmtMin(tm.elapsed)}経過`,reason:`目安 ${tm.min}分の2倍を超えています。終わっていたら「次の組へ」を押してください`,cls:'late',ms:30000,round:curRound()}); try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){} });
+    showNotice({key:'late_'+c.id,cid:c.id,lab:'押し忘れていませんか',title:`${c.cat||''} 演武 ${fmtMin(tm.elapsed)}経過`,reason:`この組が始まって${LATE_MIN}分を超えています。終わっていたら「次の組へ」を押してください`,cls:'late',ms:30000,round:curRound()}); try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){} });
 }
 setInterval(()=>{ if(TD&&PROG_DATA&&MODE!=='spectator'&&!document.hidden&&$('app').querySelector('.cgrid')){ renderDash(); checkLate(); } }, 30000);
 function buildAlerts(){
@@ -2216,7 +2217,7 @@ function buildAlerts(){
   (TD.courts[curRound()]||[]).forEach(c=>{ if(!c.teams.length) return; const cs=progCS(curRound(),c.id); const tm=courtTiming(c,cs);
     if(cs.stopped) out.push(`<div class="alertrow" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">停止</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート（${esc(c.cat)}）</strong> ${esc(cs.stopReason||'停止中')}${tm.stoppedFor?` <b>${fmtMin(tm.stoppedFor)}</b>`:''}</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
     if(fed&&cs.call&&cs.call.kind) out.push(`<div class="alertrow call" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">連絡</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート</strong> ${esc(cs.call.kind)}${cs.call.by?`（担当 ${esc(cs.call.by)}）`:''}${cs.call.at?` ${fmtClock(cs.call.at)}`:''}</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
-    if(fed&&tm.late) out.push(`<div class="alertrow late" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">長引き</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート</strong> 演武 ${fmtMin(tm.elapsed)}経過（目安 ${tm.min}分）押し忘れの可能性</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
+    if(fed&&tm.late) out.push(`<div class="alertrow late" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">長引き</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート</strong> 演武 ${fmtMin(tm.elapsed)}経過（${LATE_MIN}分超）押し忘れの可能性</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
   });
   return out.join('');
 }
