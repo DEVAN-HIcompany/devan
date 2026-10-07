@@ -791,23 +791,24 @@ function showNotice(o){ // o={cid,cat,reason,ok,round}
 }
 function sysNotify(title,body){ try{ if('Notification' in window && Notification.permission==='granted' && document.visibilityState!=='visible') new Notification(title,{body,tag:'devan-stop'}); }catch(e){} }
 function noticeFor(n){ // この端末に見せるお知らせか（宛先つきは その担当の進行セク と 管理用・閲覧用 だけ）
-  if(!n||!n.text) return false; if(!n.to) return true; if(MODE==='admin'||MODE==='view') return true;
+  if(!n||!n.text) return false; if(MODE==='spectator') return false; // 観客には出さない（学連の連絡用）
+  if(!n.to) return true; if(MODE==='admin'||MODE==='view') return true;
   if(MODE==='operator'){ const cs=(PROG_DATA&&PROG_DATA.courts&&PROG_DATA.courts[courtKey(n.toRound||curRound(),n.to)])||{}; return !!(OP_NAME&&(cs.staff===OP_NAME||!cs.staff)); }
   return false;
 }
 function noticeBarHTML(){ const n=PROG_DATA&&PROG_DATA.notice; if(!noticeFor(n)) return ''; const d=n.at?new Date(n.at):null; const tm=d&&!isNaN(d)?`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')} 更新`:''; return `<div class="noticebar${n.to?' to':''}"><span class="nlab">${n.by?`${esc(n.by)} から`:'お知らせ'}${n.to?`<br>${n.to}コート担当へ`:''}</span><div style="flex:1;min-width:0">${esc(n.text)}${tm?`<span class="ntime">${tm}</span>`:''}</div>${canOperate()?`<button class="abtn" onclick="clearNotice()" title="お知らせを消す">消す</button>`:''}</div>`; }
 function clearNotice(){
   if(!canOperate()||!CUR_ID) return;
-  askConfirm({title:'お知らせを消す', desc:'全員の画面からお知らせを消します。', okLabel:'消す', danger:true, onOk:()=>{ PROG(CUR_ID).child('notice').set(null).then(()=>showToast('お知らせを消しました')).catch(_saveErr); }});
+  askConfirm({title:'お知らせを消す', desc:'学連の全員の画面からお知らせを消します。', okLabel:'消す', danger:true, onOk:()=>{ PROG(CUR_ID).child('notice').set(null).then(()=>showToast('お知らせを消しました')).catch(_saveErr); }});
 }
 // 運営からのお知らせ（管理用・進行セク用が入力。全員の画面上部に出る。空欄で消す）
 function setNotice(){
   if(!canOperate()||!CUR_ID) return; const n=(PROG_DATA&&PROG_DATA.notice)||{};
   const courts=(TD.courts[curRound()]||[]).filter(c=>(c.teams||[]).length);
   modalCourtId=null; $('mod').innerHTML=`<div class="mhead"><div class="mtitle">お知らせ・呼び出し</div><button class="xbtn" onclick="closeModal()">×</button></div>
-    <div class="askdesc">「全員」は観客と学連の全員の画面に出ます。コートを選ぶと、そのコートの担当（進行セク）と本部の画面にだけ出ます。空欄で保存すると消えます。</div>
+    <div class="askdesc">学連の画面（管理用・進行セク用・閲覧用）に出ます。観客には出ません。コートを選ぶと、そのコートの担当（進行セク）と本部の画面にだけ出ます。空欄で保存すると消えます。</div>
     <label class="flabel" style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px">宛先</label>
-    <select class="inp" id="nto" style="margin-bottom:10px"><option value="">全員（観客を含む）</option>${courts.map(c=>`<option value="${c.id}"${String(n.to||'')===String(c.id)?' selected':''}>${c.id}コートの担当${progCS(curRound(),c.id).staff?`（${esc(progCS(curRound(),c.id).staff)}）`:''}</option>`).join('')}</select>
+    <select class="inp" id="nto" style="margin-bottom:10px"><option value="">学連の全員</option>${courts.map(c=>`<option value="${c.id}"${String(n.to||'')===String(c.id)?' selected':''}>${c.id}コートの担当${progCS(curRound(),c.id).staff?`（${esc(progCS(curRound(),c.id).staff)}）`:''}</option>`).join('')}</select>
     <input class="inp askinp" id="askinp" value="${esc(n.text||'')}" placeholder="例：昼休憩 12:00〜13:00 ／ 本部まで来てください" autocomplete="off">
     <div class="askbtns">${n.text?`<button class="mbtn d" style="margin-right:auto" onclick="closeModal();clearNotice()">お知らせを消す</button>`:''}<button class="mbtn" onclick="closeModal()">キャンセル</button><button class="mbtn p" id="askok">表示する</button></div>`;
   $('ov').classList.add('open'); const inp=$('askinp'); setTimeout(()=>inp.focus(),60);
@@ -2073,7 +2074,7 @@ function renderSpectator(){
       </div>
       <div class="rtabs"><button class="rtab${specTab==='search'?' on':''}" onclick="specTab='search';renderSpectator()">出番をさがす</button><button class="rtab${specTab==='courts'?' on':''}" onclick="specTab='courts';renderSpectator()">コート一覧</button>${(TD.guide&&(TD.guide.text||TD.guide.img))?`<button class="rtabadd" onclick="openVenueGuide()">会場案内</button>`:''}<button class="rtabadd" onclick="openSpecGuide()">使い方</button></div>
     </div>
-    ${noticeBarHTML()}${body}
+    ${body}
     <div id="speccourts"></div>`;
   if(specTab==='courts'){ renderDashInto('speccourts'); }
   setSync(true);
