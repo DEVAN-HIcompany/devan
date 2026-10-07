@@ -244,7 +244,7 @@ body.beta .overlay{top:32px}
 .dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:nowrap;gap:10px}
 .dhead>div:first-child{flex:1;min-width:0;display:flex;align-items:center;gap:12px}
 .dtitle{font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-@media(max-width:480px){.dtitle{font-size:16px}.backbtn{padding:7px 10px;font-size:11.5px}}
+@media(max-width:480px){.dtitle{font-size:16px}.backbtn{padding:7px 10px;font-size:11.5px}.oppill{max-width:24vw;padding:6px 8px;font-size:10.5px}}
 .syncpill{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:500;color:var(--muted);padding:6px 11px;background:#fff;border:1px solid var(--line);border-radius:20px;flex-shrink:0;white-space:nowrap;letter-spacing:.06em}
 @media(max-width:480px){.syncpill span:last-child{display:none}.syncpill{padding:8px}}
 .sdot{width:7px;height:7px;border-radius:50%;background:var(--line2);transition:background .4s}
@@ -333,6 +333,23 @@ body.beta .overlay{top:32px}
 .teamrow.done .tn,.teamrow.done .ta{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line2)}
 .ti{font-family:var(--serif);font-size:13px;font-weight:600;color:var(--muted);width:22px;flex-shrink:0;text-align:right}
 .teamrow.cur .ti{color:var(--run)}.teamrow.done .ti{color:var(--done)}
+.teamrow.absent{background:var(--bg);border-color:transparent;opacity:.75}
+.teamrow.absent .tn,.teamrow.absent .ta{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line2)}
+.achip{font-size:10px;font-weight:600;letter-spacing:.14em;color:var(--stop);border:1px solid #E7CACA;border-radius:4px;padding:3px 7px;flex-shrink:0;background:#fff}
+.abtn{font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px 9px;flex-shrink:0;white-space:nowrap}
+.abtn:hover{border-color:var(--stop);color:var(--stop)}
+.abtn.on{background:var(--stop);border-color:var(--stop);color:#fff}
+.tdot.abs{background:#fff!important;border:1px solid var(--line2);box-sizing:border-box}
+.cstaff{font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cstaff b{font-weight:500;color:var(--ink2)}
+.mstaff{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);letter-spacing:.04em;margin:-.4rem 0 .9rem}
+.mstaff b{font-weight:500;color:var(--ink2)}
+.mstaff .abtn{margin-left:auto}
+.oppill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--ink2);padding:6px 11px;background:#fff;border:1px solid var(--line);border-radius:20px;white-space:nowrap;letter-spacing:.04em;max-width:40vw;overflow:hidden;text-overflow:ellipsis}
+.oppill:hover{border-color:var(--gold)}
+.toast.alert{background:var(--stop);font-weight:600;letter-spacing:.06em;font-size:14px;padding:14px 20px}
+.toast.ok{background:var(--done)}
+.opname .inp{font-size:17px;padding:14px 16px;text-align:center;margin:21px 0 13px}
 .ta{font-size:11.5px;font-weight:500;color:var(--muted);min-width:64px;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em}
 .tn{flex:1;font-size:14.5px;font-weight:600;color:var(--ink);min-width:0;letter-spacing:.02em}
 .macts{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:1rem;position:sticky;top:-1.2rem;background:#fff;padding:.4rem 0;z-index:2}
@@ -393,6 +410,7 @@ body.beta .overlay{top:32px}
 .sname{font-size:15px;font-weight:600;color:var(--ink);letter-spacing:.02em}
 .sright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
 .schip{font-size:11px;font-weight:600;letter-spacing:.06em;padding:4px 10px;border-radius:4px;white-space:nowrap}
+.schip.absent{background:var(--wait-bg);color:var(--stop);border:1px solid #E7CACA}.srow.absent{border-left-color:#E7CACA;opacity:.6}
 .schip.now{background:var(--run);color:#fff}.schip.standby{background:var(--wait-bg);color:var(--ink2);border:1px solid var(--line2)}.srow.standby{border-left-color:#CBD5E1}.schip.wait{background:var(--ink);color:#fff}.schip.done{background:var(--wait-bg);color:var(--muted)}.schip.stopped{background:var(--stop);color:#fff}
 .smin{font-size:10px;color:var(--muted);white-space:nowrap}
 .sfav{font-size:11px;padding:4px 9px;border:1px solid var(--line2);border-radius:4px;background:#fff;color:var(--ink2);white-space:nowrap}
@@ -492,6 +510,7 @@ const auth = firebase.auth();
 // ─────────────────────────────────────────
 let MODE = null;      // 'admin' | 'operator' | 'view'
 let ROLE = null;      // ログイン後の権限: 'admin' | 'operator'
+let OP_NAME=''; try{ OP_NAME=(localStorage.getItem('sj_opname')||'').trim(); }catch(e){} // 進行セクの担当者名（端末に記憶。学連の画面にだけ表示）
 let viewRound = null; // 進行用・閲覧用で見ているラウンド（端末内だけ。共有の currentRound は管理用だけが変える）
 let isAdmin = () => MODE==='admin' && ROLE==='admin' && !!auth.currentUser;
 let canOperate = () => (MODE==='admin'||MODE==='operator') && !!auth.currentUser;
@@ -595,6 +614,27 @@ function isStarted(cs){ return !!(cs && (cs.started || cs.current>0));
 // ─────────────────────────────────────────
 function saveMeta(){ if(!isAdmin()) return; META(CUR_ID).set(TD).catch(e=>{ console.error('meta save',e); showToast('保存できませんでした（管理者としてログインしているか確認してください）'); }); }
 function saveProg(){ if(!canOperate()) return; PROG(CUR_ID).set(PROG_DATA).catch(e=>{ console.error('prog save',e); showToast('保存できませんでした（管理者としてログインしているか確認してください）'); }); }
+// ── 同時操作対策 ──
+//  進行の操作は PROG 全体を上書きせず、そのコートの節（sj/prog/{id}/courts/{round_court}）だけを書く。
+//  「次へ」「戻す」はトランザクションで「自分が見ていた状態のまま」のときだけ進める（他の人が先に押していたら無視して知らせる）。
+const courtKey=(r,cid)=>r+'_'+cid;
+let courtRef=k=>PROG(CUR_ID).child('courts/'+k); // let: 動作確認で差し替えられるように
+const _saveErr=e=>{ console.error('court save',e); showToast('保存できませんでした（通信状況とログインを確認してください）'); };
+function writeCourt(k,patch){ if(!canOperate()) return Promise.resolve(false); if(MODE==='operator'&&OP_NAME) patch.staff=OP_NAME; return courtRef(k).update(patch).then(()=>true).catch(e=>{ _saveErr(e); return false; }); }
+function txCourt(k,fn){
+  if(!canOperate()) return Promise.resolve(false);
+  return courtRef(k).transaction(cur=>{
+    const cs=Object.assign({current:0,stopped:false,stopReason:'',started:false},cur||{});
+    const out=fn(cs); if(out===undefined) return; // undefined = 中止
+    if(MODE==='operator'&&OP_NAME) out.staff=OP_NAME;
+    return out;
+  }).then(r=>!!r.committed).catch(e=>{ _saveErr(e); return false; });
+}
+// 欠場: cs.absent = {t0:true, t3:true}（番号は出番順の添字）
+const isAbs=(cs,i)=>!!(cs&&cs.absent&&cs.absent['t'+i]);
+const skipAbs=(cs,i,t)=>{ while(i<t&&isAbs(cs,i)) i++; return i; };
+const absCount=(cs,t)=>{ let n=0; for(let i=0;i<t;i++) if(isAbs(cs,i)) n++; return n; };
+let _busy=false; // 同じ端末での連打防止
 
 // ─────────────────────────────────────────
 // リアルタイムリスナー（進行状態のみ）
@@ -604,19 +644,60 @@ function startProgListener(id){
   stopProgListener();
   if(MODE!=='admin'){ endedListener=META(id).child('ended'); endedListener.on('value', snap=>{ if(snap.val()===true && TD && CUR_ID===id){ TD.ended=true; META(id).child('endedAt').once('value').then(s2=>{ TD.endedAt=s2.val()||''; stopProgListener(); closeModal(); renderEnded(); }); } }); }
   progListener = PROG(id);
+  let first=true;
   progListener.on('value', snap=>{
     setSync(true);
     const val = snap.val();
     if(!val) return;
+    const prev=(!first&&PROG_DATA&&PROG_DATA.courts)||null; first=false;
     PROG_DATA = {
       currentRound: TD && TD.rounds.includes(val.currentRound) ? val.currentRound : (TD?TD.rounds[0]:''),
       courts: val.courts || {}
     };
     // teamsがないコートを補完
     if(TD) TD.rounds.forEach(r=>{ (TD.courts[r]||[]).forEach(c=>{ if(!c.teams) c.teams=[]; }); });
+    if(prev) notifyChanges(prev, PROG_DATA.courts);
     renderDash();
     if(modalCourtId !== null) drawModal();
   }, () => setSync(false));
+}
+// ── 競技停止・再開の通知（画面の帯＋振動＋進行セク/管理用は音。許可があればブラウザ通知）──
+let _ac=null;
+function primeAudio(){ if(MODE!=='operator'&&MODE!=='admin') return; try{ if(!_ac) _ac=new (window.AudioContext||window.webkitAudioContext)(); if(_ac.state==='suspended') _ac.resume(); }catch(e){} }
+document.addEventListener('pointerdown', primeAudio, {passive:true});
+function beep(n){ if(!_ac) return; try{ for(let i=0;i<(n||1);i++){ const o=_ac.createOscillator(), g=_ac.createGain(); o.type='sine'; g.gain.value=0.0001; o.connect(g); g.connect(_ac.destination); const t=_ac.currentTime+i*0.45; o.frequency.setValueAtTime(880,t); o.frequency.setValueAtTime(660,t+0.18); g.gain.exponentialRampToValueAtTime(0.25,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.38); o.start(t); o.stop(t+0.4); } }catch(e){} }
+function alertToast(msg,cls,ms){
+  let t=$('toast'); if(!t){ t=document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent=msg; t.className='toast show '+(cls||''); clearTimeout(t._tm); t._tm=setTimeout(()=>{ t.classList.remove('show'); },ms||8000);
+}
+function sysNotify(title,body){ try{ if('Notification' in window && Notification.permission==='granted' && document.visibilityState!=='visible') new Notification(title,{body,tag:'devan-stop'}); }catch(e){} }
+function askNotify(){ if(!('Notification' in window)) return; Notification.requestPermission().then(()=>{ renderDash(); }); }
+function notifyHTML(){ return ('Notification' in window && Notification.permission==='default' && MODE!=='spectator')?`<button class="syncpill" onclick="askNotify()">通知を許可</button>`:''; }
+function notifyChanges(prev,now){
+  if(!TD) return;
+  const fed=MODE==='operator'||MODE==='admin'||MODE==='view';
+  const favs=MODE==='spectator'?getFavs():[];
+  Object.keys(now).forEach(k=>{
+    const a=prev[k]||{}, b=now[k]||{}; if(!!a.stopped===!!b.stopped) return;
+    const i=k.lastIndexOf('_'); const r=k.slice(0,i), cid=+k.slice(i+1);
+    const c=(TD.courts[r]||[]).find(x=>x.id===cid); const cat=c&&c.cat?`（${c.cat}）`:'';
+    if(MODE==='spectator'){ // お気に入りがそのコートにあるときだけ
+      if(!favs.some(f=>f.startsWith(r+'|'+cid+'|'))) return;
+      if(b.stopped) alertToast(`${cid}コート${cat} 競技停止：${b.stopReason||'停止中'}`,'alert',9000); else alertToast(`${cid}コート${cat} 再開しました`,'ok',6000);
+      try{ if(navigator.vibrate) navigator.vibrate(b.stopped?[200,100,200]:[120]); }catch(e){}
+      return;
+    }
+    if(!fed) return;
+    if(b.stopped){
+      alertToast(`${cid}コート${cat} 競技停止：${b.stopReason||'停止中'}`,'alert',9000);
+      try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]); }catch(e){}
+      if(MODE!=='view') beep(2);
+      sysNotify(`${cid}コート 競技停止`, `${TD.name}${cat} ${b.stopReason||''}`);
+    } else {
+      alertToast(`${cid}コート${cat} 再開しました`,'ok',6000);
+      try{ if(navigator.vibrate) navigator.vibrate([120]); }catch(e){}
+    }
+  });
 }
 function stopProgListener(){
   if(progListener){ progListener.off(); progListener = null; }
@@ -743,7 +824,37 @@ async function enterOperator(){
   show(loadingHTML('確認しています'));
   await loadRole();
   if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('進行用'); return; }
-  MODE='operator'; viewRound=null; renderList();
+  MODE='operator'; viewRound=null;
+  if(!OP_NAME){ renderOpName(); return; }
+  renderList();
+}
+// 進行セク: 最初に担当者名を入れる（コート担当として学連の画面に表示。観客には出ない）
+function renderOpName(){
+  show(`
+    <div class="home"><div class="home-box opname">
+      <div class="hero"></div>
+      <div class="org">進行セク用</div>
+      <div class="wordmark">DEVAN</div>
+      <div class="hsub">お名前を入力してください<br><span class="hsub2">操作したコートに「担当」として表示されます（学連の画面のみ）</span></div>
+      <input class="inp" id="opname" placeholder="例：山田" value="${esc(OP_NAME)}" autocomplete="off" onkeydown="if(event.key==='Enter') saveOpName()">
+      <button class="hbtn primary" onclick="saveOpName()"><div><div class="hbtn-l">はじめる</div><div class="hbtn-d">大会を選んでコートを操作する</div></div><div class="hbtn-r">›</div></button>
+      <div class="hactions"><button class="hact" onclick="renderFedHome()">‹ 戻る</button></div>
+    </div></div>`);
+  setTimeout(()=>{ const i=$('opname'); if(i) i.focus(); },50);
+}
+function saveOpName(){
+  const v=($('opname')?$('opname').value:'').trim();
+  if(!v){ showToast('お名前を入力してください'); return; }
+  OP_NAME=v; try{ localStorage.setItem('sj_opname',v); }catch(e){}
+  if(CUR_ID&&TD) renderDash(); else renderList();
+}
+function changeOpName(){
+  const v=prompt('担当者名を変更', OP_NAME||''); if(v===null) return;
+  const t=v.trim(); if(!t) return; OP_NAME=t; try{ localStorage.setItem('sj_opname',t); }catch(e){} renderDash(); showToast(`担当者名: ${t}`);
+}
+function takeCourt(){ // このコートの担当になる（進行は変えない）
+  if(MODE!=='operator'||!OP_NAME) return;
+  writeCourt(courtKey(curRound(),modalCourtId),{}).then(ok=>{ if(ok) showToast(`${modalCourtId}コートの担当になりました`); });
 }
 function renderGateOnly(what){
   const u=auth.currentUser;
@@ -949,7 +1060,7 @@ function popConfetti(){
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const P=[]; const k=H/812; // 画面の高さに合わせて勢いを調整
   const spawn=(x,y,base)=>{ for(let i=0;i<55;i++){
-    const ang=base+rnd(-0.38,0.38), sp=rnd(1350,2250)*k;
+    const ang=base+rnd(-0.34,0.34), sp=rnd(2000,3000)*k;
     const rib=Math.random()<.4;
     P.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,w:rib?rnd(5,8):rnd(8,13),h:rib?rnd(14,24):rnd(8,13),
       rot:rnd(0,Math.PI*2),vr:rnd(-6,6),flip:rnd(0,Math.PI*2),vf:rnd(5,11),ph:rnd(0,Math.PI*2),
@@ -965,7 +1076,7 @@ function popConfetti(){
       if(p.delay>0){ p.delay-=dt; alive=true; continue; }
       p.t+=dt; if(p.t>p.life) continue; alive=true;
       // 速いうちは空気抵抗が強く、落下は紙らしくゆっくり（終端速度あり）
-      const drag=Math.pow(0.12,dt); p.vx*=drag; p.vy*=drag;
+      const drag=Math.pow(p.vy<0?0.25:0.12,dt); p.vx*=drag; p.vy*=drag; // 上昇中は抵抗を弱く（上まで届く）、落下は紙らしく
       p.vy+=G*dt; const vmax=260*k; if(p.vy>vmax) p.vy=vmax;
       // 落下中のひらひら（左右に揺れる）
       const falling=p.vy>0; p.x+=p.vx*dt+(falling?Math.sin(p.t*4+p.ph)*55*dt:0); p.y+=p.vy*dt;
@@ -1522,6 +1633,7 @@ function openImportPreview(fname){
 }
 
 function applyImport(){
+  const progPatch={};
   if(!importResult) return;
   const live=importTarget==='live';
   const td=_impTD(), cur=_impCurRound();
@@ -1548,13 +1660,13 @@ function applyImport(){
       const src=courts[no];
       if(src.cat) c.cat=src.cat;
       c.teams=src.teams.filter(t=>t.a||t.n);
-      if(live){ const cs=(PROG_DATA.courts||{})[rname+'_'+no]; if(cs&&cs.current>c.teams.length) cs.current=c.teams.length; }
+      if(live){ const cs=(PROG_DATA.courts||{})[rname+'_'+no]; if(cs&&cs.current>c.teams.length){ cs.current=c.teams.length; progPatch['courts/'+rname+'_'+no+'/current']=cs.current; } }
     });
     if(firstRound===null) firstRound=rname;
   });
   importResult=null;
   if(live){
-    saveMeta(); saveProg(); closeModal(); renderDash();
+    saveMeta(); if(Object.keys(progPatch).length) PROG(CUR_ID).update(progPatch).catch(_saveErr); closeModal(); renderDash();
     showToast(added.length?`読み込みました。ラウンド「${added.join('」「')}」を追加しました（上のタブから開けます）`:'コート割を更新しました');
   }else{
     if(firstRound!==null) createRI=Math.max(0,td.rounds.indexOf(firstRound));
@@ -1671,16 +1783,18 @@ function allEntries(){
 // 出番の状態
 function entryStatus(e){
   const cs=progCS(e.r,e.c); const dn=Math.min(cs.current,e.total);
+  if(isAbs(cs,e.i)) return {k:'absent',label:'欠場',ahead:-1};
   if(e.i<dn) return {k:'done',label:'終了',ahead:-1};
-  if(cs.stopped) return {k:'stopped',label:'停止中',ahead:e.i-dn};
-  if(!isStarted(cs)){ // まだ始まっていないコート：1組目は待機中、以降は「あと○組」
-    if(e.i===0) return {k:'standby',label:'待機中',ahead:0};
-    return {k:'wait',label:'あと'+e.i+'組',ahead:e.i};
+  const from=isStarted(cs)?dn:0; let ahead=0; for(let i=from;i<e.i;i++) if(!isAbs(cs,i)) ahead++; // 自分より前の、まだ演武していない組（欠場は数えない）
+  if(cs.stopped) return {k:'stopped',label:'停止中',ahead};
+  if(!isStarted(cs)){ // まだ始まっていないコート：最初の組は待機中、以降は「あと○組」
+    if(ahead===0) return {k:'standby',label:'待機中',ahead:0};
+    return {k:'wait',label:'あと'+ahead+'組',ahead};
   }
-  if(e.i===dn) return {k:'now',label:'演武中',ahead:0};
-  return {k:'wait',label:'あと'+(e.i-dn)+'組',ahead:e.i-dn};
+  if(ahead===0) return {k:'now',label:'演武中',ahead:0};
+  return {k:'wait',label:'あと'+ahead+'組',ahead};
 }
-function specSortKey(e){ const s=entryStatus(e); return s.k==='now'?-1:s.k==='done'?1e6+e.ri*1000+e.i:s.ahead+e.ri*1000+(s.k==='standby'?0.5:0); }
+function specSortKey(e){ const s=entryStatus(e); return s.k==='now'?-1:(s.k==='done'||s.k==='absent')?1e6+e.ri*1000+e.i:s.ahead+e.ri*1000+(s.k==='standby'?0.5:0); }
 
 function renderSpectator(){
   if(!TD||!PROG_DATA) return;
@@ -1773,7 +1887,7 @@ function renderDash(){
           <div class="dtitle">${esc(TD.name)}</div>
           ${TD.ended?'<span class="modetag end">終了</span>':''}${modeTag()}
         </div>
-        <div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">${MODE==='operator'?`<button class="oppill" onclick="changeOpName()" title="担当者名を変更">担当: ${esc(OP_NAME||'未入力')}</button>`:''}${notifyHTML()}<div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div></div>
       </div>
       <div class="rtabs">${rHTML}</div>
     </div>
@@ -1794,13 +1908,15 @@ function renderDash(){
 
 function setRound(r){
   if(MODE!=='admin'){ viewRound=r; renderDash(); return; }
-  PROG_DATA.currentRound=r; saveProg(); renderDash();
+  PROG_DATA.currentRound=r; PROG(CUR_ID).child('currentRound').set(r).catch(_saveErr); renderDash();
 }
 
 function courtStatus(c, cs){
   const t=(c.teams||[]).length; if(!t)return 'inactive';
   if(cs.stopped)return 'stopped'; if(cs.current>=t)return 'done';
-  const st=isStarted(cs), rem=t-cs.current;
+  let rem=0; for(let i=cs.current;i<t;i++) if(!isAbs(cs,i)) rem++;
+  if(rem===0) return 'done';
+  const st=isStarted(cs);
   if(st&&rem===1)return 'last1'; if(st&&rem<=3)return 'last3';
   if(st)return 'running'; return 'waiting';
 }
@@ -1842,12 +1958,14 @@ function buildGrid(){
     else if(st==='waiting')badge='<span class="badge bwait">待機</span>';
     else badge='<span class="badge bedit">未使用</span>';
     const dots=t?c.teams.map((_,i)=>{
+      if(isAbs(cs,i)) return `<div class="tdot abs" title="欠場"></div>`;
       const bg=i<dn?(st==='stopped'?PAL.stop:PAL.done):i===dn&&dn<t?PAL.run:'#E7E2D9';
       const brd=i===dn&&dn<t&&st!=='stopped'?`outline:1.5px solid ${PAL.run};outline-offset:1px;`:'';
       return `<div class="tdot" style="background:${bg};${brd}"></div>`;}).join(''):'';
-    // 次に演武する組（進行中・待機・残りわずか）
+    // 次に演武する組（進行中・待機・残りわずか。欠場は飛ばす）
     let next='';
-    if(t&&st!=='done'&&st!=='stopped'&&dn<t){ const nt=c.teams[dn]; next=`<div class="cnext${isStarted(cs)?' now':''}"><span class="lab">${isStarted(cs)?'演武中':'次'}</span><b>${esc(nt.a)}</b> ${esc(nt.n)}</div>`; }
+    const ni=skipAbs(cs,dn,t);
+    if(t&&st!=='done'&&st!=='stopped'&&ni<t){ const nt=c.teams[ni]; next=`<div class="cnext${isStarted(cs)?' now':''}"><span class="lab">${isStarted(cs)?'演武中':'次'}</span><b>${esc(nt.a)}</b> ${esc(nt.n)}</div>`; }
     else if(st==='stopped'){ next=`<div class="cnext stop">${esc(cs.stopReason||'停止中')}</div>`; }
     else if(st==='done'){ next=`<div class="cnext fin">全 ${t} 組 終了</div>`; }
     return `<div class="ccard ${st}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
@@ -1856,7 +1974,7 @@ function buildGrid(){
       ${next}
       ${t?`<div class="barwrap"><div class="barfill" style="background:${bc};width:${pct}%"></div></div>
       <div class="ccount"><span>${dn} / ${t} 組</span><span>${pct}%</span></div>
-      <div class="tdots">${dots}</div>`:`<div class="edithint">${MODE==='admin'?'未使用 ― タップして設定':'未使用'}</div>`}
+      <div class="tdots">${dots}</div>${MODE!=='spectator'&&cs.staff?`<div class="cstaff">担当 <b>${esc(cs.staff)}</b></div>`:''}`:`<div class="edithint">${MODE==='admin'?'未使用 ― タップして設定':'未使用'}</div>`}
     </div>`;}).join('');
 }
 
@@ -1884,10 +2002,12 @@ function deleteCurrentRound(){
   if(!confirm(`ラウンド「${r}」を削除しますか？\n\nこのラウンドのコート割（使用中 ${courts} コート）と進行の記録がすべて消えます。元に戻せません。`)) return;
   TD.rounds=TD.rounds.filter(x=>x!==r);
   delete TD.courts[r];
-  Object.keys(PROG_DATA.courts||{}).forEach(k=>{ if(k.startsWith(r+'_')) delete PROG_DATA.courts[k]; });
+  const patch={};
+  Object.keys(PROG_DATA.courts||{}).forEach(k=>{ if(k.startsWith(r+'_')){ delete PROG_DATA.courts[k]; patch['courts/'+k]=null; } });
   if(PROG_DATA.currentRound===r) PROG_DATA.currentRound=TD.rounds[0];
+  patch.currentRound=PROG_DATA.currentRound;
   viewRound=null;
-  saveMeta(); saveProg(); closeModal(); renderDash();
+  saveMeta(); PROG(CUR_ID).update(patch).catch(_saveErr); closeModal(); renderDash();
   showToast(`ラウンド「${r}」を削除しました`);
 }
 function doAddRound(){
@@ -1898,7 +2018,7 @@ function doAddRound(){
   TD.rounds.push(n);
   TD.courts[n]=Array.from({length:16},(_,i)=>({id:i+1,cat:'',teams:[]}));
   PROG_DATA.currentRound=n;
-  saveMeta(); saveProg(); closeModal(); renderDash();
+  saveMeta(); PROG(CUR_ID).child('currentRound').set(n).catch(_saveErr); closeModal(); renderDash();
 }
 
 // ─────────────────────────────────────────
@@ -1948,31 +2068,35 @@ function switchMTab(t){
 
 // 閲覧用：見るだけ（操作ボタンなし）
 function drawViewTab(c,cs){
-  const t=c.teams.length,dn=Math.min(cs.current,t),rem=t-dn;
+  const t=c.teams.length,dn=Math.min(cs.current,t); let rem=0; for(let i=dn;i<t;i++) if(!isAbs(cs,i)) rem++;
   if(!t) return `<div style="text-align:center;padding:2rem 1rem;color:#8A857C;font-size:13px">このコートは使用していません</div>`;
   const rows=c.teams.map((tm,i)=>{
-    const isDn=i<dn,isCur=!cs.stopped&&i===dn&&dn<t;
-    return `<div class="teamrow${isDn?' done':isCur?' cur':''}" style="cursor:default">
+    const ab=isAbs(cs,i), isDn=!ab&&i<dn,isCur=!ab&&!cs.stopped&&i===dn&&dn<t;
+    return `<div class="teamrow${ab?' absent':isDn?' done':isCur?' cur':''}" style="cursor:default">
       <span class="ti">${i+1}</span><span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>
-      ${isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?'演武中':'待機中'}</span>`:''}
+      ${ab?'<span class="achip">欠場</span>':isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?'演武中':'待機中'}</span>`:''}
     </div>`;}).join('');
+  const staffRow=MODE==='view'&&cs.staff?`<div class="mstaff">担当: <b>${esc(cs.staff)}</b></div>`:'';
   const sBanner=cs.stopped?`<div class="stopbanner"><div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div></div>`:'';
-  const done=dn>=t;
+  const done=dn>=t||rem===0;
   const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
-  return `${sBanner}
+  return `${staffRow}${sBanner}
     <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
     <div class="teamlist">${rows}</div>`;
 }
 
 function drawProgTab(c,cs){
-  const t=c.teams.length,dn=cs.current,rem=t-dn;
+  const t=c.teams.length,dn=cs.current; let rem=0; for(let i=dn;i<t;i++) if(!isAbs(cs,i)) rem++;
   if(!t) return `<div style="text-align:center;padding:2rem 1rem;color:#8A857C;font-size:13px">まだ出場組が登録されていません${MODE==='admin'?`<br><button class="mbtn p" style="margin-top:1rem" onclick="switchMTab('edit')">出場組を登録する</button>`:''}</div>`;
   const rows=c.teams.map((tm,i)=>{
-    const isDn=i<dn,isCur=!cs.stopped&&i===dn&&dn<t;
-    return `<div class="teamrow${isDn?' done':isCur?' cur':''}" onclick="toggleTeam(${i})">
+    const ab=isAbs(cs,i), isDn=!ab&&i<dn,isCur=!ab&&!cs.stopped&&i===dn&&dn<t;
+    return `<div class="teamrow${ab?' absent':isDn?' done':isCur?' cur':''}" onclick="toggleTeam(${i})">
       <span class="ti">${i+1}</span><span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>
-      ${isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?'演武中':'待機中'}</span>`:''}
+      ${ab?'<span class="achip">欠場</span>':isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?'演武中':'待機中'}</span>`:''}
+      <button class="abtn${ab?' on':''}" onclick="event.stopPropagation();toggleAbsent(${i})">${ab?'欠場を取消':'欠場'}</button>
     </div>`;}).join('');
+  const nAbs=absCount(cs,t);
+  const staffRow=`<div class="mstaff">担当: <b>${esc(cs.staff||'未設定')}</b>${nAbs?`<span>・欠場 ${nAbs} 組</span>`:''}${MODE==='operator'&&OP_NAME&&cs.staff!==OP_NAME?`<button class="abtn" onclick="takeCourt()">このコートの担当になる</button>`:''}</div>`;
   const sBanner=cs.stopped?`<div class="stopbanner">
     <div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div>
     <button class="mbtn s" style="flex-shrink:0" onclick="doResume()">再開する</button></div>`:'';
@@ -1983,9 +2107,9 @@ function drawProgTab(c,cs){
       <button class="mbtn d" style="flex:1;justify-content:center" onclick="doStop()">停止を確定</button>
       <button class="mbtn" style="flex:1;justify-content:center" onclick="stopFormOpen=false;drawModal()">キャンセル</button>
     </div></div>`:'';
-  const done=dn>=t;
+  const done=dn>=t||rem===0;
   const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
-  return `${sBanner}
+  return `${staffRow}${sBanner}
     <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
     <div class="macts">
       <button class="mbtn" onclick="prevTeam()" ${dn<=0&&!isStarted(cs)?'disabled':''}>戻す</button>
@@ -2017,7 +2141,7 @@ function commitEdit(){
 }
 function saveEdit(){
   if(!isAdmin()) return;
-  commitEdit(); saveMeta(); saveProg(); modalTab='prog'; drawModal(); renderDash();
+  commitEdit(); saveMeta(); { const cs=progCS(curRound(),modalCourtId); writeCourt(courtKey(curRound(),modalCourtId),{current:cs.current}); } modalTab='prog'; drawModal(); renderDash();
 }
 
 // ─────────────────────────────────────────
@@ -2048,38 +2172,62 @@ function collectERows(p){
 // ─────────────────────────────────────────
 // 進行操作
 // ─────────────────────────────────────────
+function _court(){ return (TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId); }
 function doStop(){
   if(!canOperate()) return;
-  const inp=$('stopinp');
-  const cs=progCS(curRound(),modalCourtId);
-  cs.stopped=true; cs.stopReason=(inp?inp.value.trim():'')||'競技停止中';
-  saveProg(); drawModal(); renderDash();
+  const inp=$('stopinp'); const reason=(inp?inp.value.trim():'')||'競技停止中';
+  const cs=progCS(curRound(),modalCourtId); cs.stopped=true; cs.stopReason=reason; stopFormOpen=false;
+  writeCourt(courtKey(curRound(),modalCourtId),{stopped:true,stopReason:reason}); drawModal(); renderDash();
 }
 function doResume(){
   if(!canOperate()) return;
-  const cs=progCS(curRound(),modalCourtId);
-  cs.stopped=false; cs.stopReason='';
-  saveProg(); drawModal(); renderDash();
+  const cs=progCS(curRound(),modalCourtId); cs.stopped=false; cs.stopReason='';
+  writeCourt(courtKey(curRound(),modalCourtId),{stopped:false,stopReason:''}); drawModal(); renderDash();
 }
+function _lockActs(on){ document.querySelectorAll('.macts .mbtn').forEach(b=>{ b.disabled=on||b.disabled; }); }
 function nextTeam(){
-  if(!canOperate()) return;
-  const cs=progCS(curRound(),modalCourtId);
-  const c=(TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId);
-  if(!c||!c.teams.length) return;
-  if(!isStarted(cs)){ cs.started=true; saveProg(); drawModal(); renderDash(); return; } // 最初の1回は「競技を開始する」
-  if(cs.current<c.teams.length){ cs.current++; saveProg(); drawModal(); renderDash(); }
+  if(!canOperate()||_busy) return;
+  const c=_court(); if(!c||!c.teams.length) return; const t=c.teams.length;
+  const local=progCS(curRound(),modalCourtId); const exp={st:isStarted(local),cur:local.current||0};
+  _busy=true; _lockActs(true);
+  txCourt(courtKey(curRound(),modalCourtId), cs=>{
+    if(cs.stopped) return;
+    if(isStarted(cs)!==exp.st || (cs.current||0)!==exp.cur) return; // 他の人が先に操作した
+    if(!isStarted(cs)){ cs.started=true; cs.current=skipAbs(cs,0,t); return cs; } // 最初の1回は「競技を開始する」
+    if(cs.current>=t) return;
+    cs.current=skipAbs(cs,cs.current+1,t); return cs;
+  }).then(ok=>{ if(!ok) alertToast('他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 function prevTeam(){
-  if(!canOperate()) return;
-  const cs=progCS(curRound(),modalCourtId);
-  if(cs.current>0){ cs.current--; cs.started=true; saveProg(); drawModal(); renderDash(); }
-  else if(isStarted(cs)){ cs.started=false; saveProg(); drawModal(); renderDash(); } // 開始前に戻す
+  if(!canOperate()||_busy) return;
+  const local=progCS(curRound(),modalCourtId); const exp={st:isStarted(local),cur:local.current||0};
+  _busy=true; _lockActs(true);
+  txCourt(courtKey(curRound(),modalCourtId), cs=>{
+    if(isStarted(cs)!==exp.st || (cs.current||0)!==exp.cur) return;
+    if(cs.current>0){ let j=cs.current-1; while(j>=0&&isAbs(cs,j)) j--; if(j>=0){ cs.current=j; cs.started=true; } else { cs.current=0; cs.started=false; } return cs; }
+    if(isStarted(cs)){ cs.started=false; cs.current=0; return cs; } // 開始前に戻す
+    return;
+  }).then(ok=>{ if(!ok) alertToast('他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 function toggleTeam(idx){
-  if(!canOperate()) return;
-  const cs=progCS(curRound(),modalCourtId);
-  cs.current=idx<cs.current?idx:idx+1; cs.started=true;
-  saveProg(); drawModal(); renderDash();
+  if(!canOperate()||_busy) return;
+  const c=_court(); if(!c) return; const t=c.teams.length;
+  _busy=true;
+  txCourt(courtKey(curRound(),modalCourtId), cs=>{ if(isAbs(cs,idx)) return; cs.current=idx<(cs.current||0)?idx:skipAbs(cs,idx+1,t); cs.started=true; return cs; })
+    .finally(()=>{ _busy=false; drawModal(); renderDash(); });
+}
+// 欠場の切替（進行セク・管理用）。演武中の組を欠場にしたら次の組へ進める
+function toggleAbsent(idx){
+  if(!canOperate()||_busy) return;
+  const c=_court(); if(!c) return; const t=c.teams.length;
+  _busy=true;
+  txCourt(courtKey(curRound(),modalCourtId), cs=>{
+    cs.absent=Object.assign({},cs.absent||{});
+    if(cs.absent['t'+idx]) delete cs.absent['t'+idx]; else cs.absent['t'+idx]=true;
+    if(isStarted(cs)&&(cs.current||0)<t) cs.current=skipAbs(cs,cs.current||0,t);
+    return cs;
+  }).then(ok=>{ if(ok){ const cs=progCS(curRound(),modalCourtId); showToast(isAbs(cs,idx)?`${idx+1}番を欠場にしました`:`${idx+1}番の欠場を取り消しました`); } })
+    .finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 
 // ─────────────────────────────────────────
