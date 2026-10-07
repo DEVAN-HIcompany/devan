@@ -756,7 +756,7 @@ function startProgListener(id){
       courts: val.courts || {},
       notice: val.notice || null
     };
-    if(prev && PROG_DATA.notice && PROG_DATA.notice.text && (!prevNotice || prevNotice.text!==PROG_DATA.notice.text || prevNotice.to!==PROG_DATA.notice.to) && noticeFor(PROG_DATA.notice)){ const n=PROG_DATA.notice; showNotice({num:n.to?`${n.to}コート`:'お知らせ',lab:(n.by?`${n.by} から`:'運営から')+(n.to?`（${n.to}コート担当へ）`:''),title:n.text,cls:'info',ms:30000}); if(n.to&&MODE==='operator'){ try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){} beep(1); } }
+    if(prev && PROG_DATA.notice && PROG_DATA.notice.text && (!prevNotice || prevNotice.text!==PROG_DATA.notice.text || prevNotice.to!==PROG_DATA.notice.to) && noticeFor(PROG_DATA.notice)){ const n=PROG_DATA.notice; showNotice({num:n.to?`${n.to}コート`:'お知らせ',lab:(n.by?`${n.by} から`:'お知らせ')+(n.to?`（${n.to}コート担当へ）`:''),title:n.text,cls:'info',ms:30000}); if(n.to&&MODE==='operator'){ try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){} beep(1); } }
     // teamsがないコートを補完
     if(TD) TD.rounds.forEach(r=>{ (TD.courts[r]||[]).forEach(c=>{ if(!c.teams) c.teams=[]; }); });
     if(prev) notifyChanges(prev, PROG_DATA.courts);
