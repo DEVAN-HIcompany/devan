@@ -214,6 +214,14 @@ body.beta .overlay{top:32px}
 .endcard .elab{font-size:11px;font-weight:600;letter-spacing:.3em;padding-left:.3em;color:var(--gold);margin-bottom:8px}
 .endcard .euni{font-family:var(--serif);font-size:28px;font-weight:700;letter-spacing:.08em;color:var(--ink);line-height:1.4}
 @media(max-width:480px){.endcard .emsg{font-size:20px}.endcard .euni{font-size:24px}}
+/* クラッカー（終了画面で総合優勝を出すとき、左右下から紙吹雪が舞い上がって落ちる。1回だけ） */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:900;overflow:hidden}
+.confetti i{position:absolute;left:var(--x);bottom:-10px;width:var(--w);height:var(--h);background:var(--c);border-radius:var(--rr);opacity:0;transform-origin:center;animation:cfPop var(--d) cubic-bezier(.15,.6,.3,1) var(--dl) forwards}
+.confetti i.rib{border-radius:2px}
+@keyframes cfPop{0%{transform:translate(0,0) rotate(0deg);opacity:0}6%{opacity:1}38%{transform:translate(var(--tx),var(--ty)) rotate(var(--r1))}100%{transform:translate(var(--tx2),35vh) rotate(var(--r2));opacity:0}}
+.endcard .echamp{animation:champIn .8s cubic-bezier(.2,.7,.2,1) .35s both}
+@keyframes champIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.confetti{display:none}.endcard .echamp{animation:none}}
 
 /* ── 作成画面 ── */
 .scard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1.4rem;margin-bottom:1rem;box-shadow:var(--sh)}
@@ -932,6 +940,23 @@ function renderEnded(){
         <div class="ebtn"><button class="backbtn" onclick="renderList()">大会一覧へ戻る</button></div>
       </div>
     </div>`);
+  if(TD.champion) setTimeout(popConfetti,250);
+}
+// クラッカー: 左右の下隅から金・桜色・紺・緑・生成りの紙片が舞い上がって落ちる（約3秒で消える）
+function popConfetti(){
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const old=document.querySelector('.confetti'); if(old) old.remove();
+  const box=document.createElement('div'); box.className='confetti';
+  const cols=['#A8894F','#C9B37E','#F3BDDB','#2E4A7A','#2E6B4E','#F6F4EF','#E9D8A6'];
+  const rnd=(a,b)=>a+Math.random()*(b-a); let h='';
+  for(let i=0;i<90;i++){
+    const left=i%2===0; const rib=Math.random()<.35;
+    const w=rib?rnd(6,10):rnd(9,15), hh=rib?rnd(16,28):rnd(9,15);
+    const dx=rnd(18,70)*(left?1:-1), up=-rnd(45,88);
+    h+=`<i${rib?' class="rib"':''} style="--x:${left?rnd(-2,10):rnd(90,102)}vw;--w:${w.toFixed(0)}px;--h:${hh.toFixed(0)}px;--c:${cols[i%cols.length]};--rr:${rib?'2px':(Math.random()<.5?'50%':'1px')};--tx:${dx.toFixed(0)}vw;--ty:${up.toFixed(0)}vh;--tx2:${(dx+rnd(-12,12)).toFixed(0)}vw;--r1:${rnd(180,720).toFixed(0)}deg;--r2:${rnd(720,1440).toFixed(0)}deg;--d:${rnd(2.4,3.4).toFixed(2)}s;--dl:${rnd(0,.45).toFixed(2)}s"></i>`;
+  }
+  box.innerHTML=h; document.body.appendChild(box);
+  setTimeout(()=>{ if(box.parentNode) box.remove(); },4200);
 }
 // 管理用: 大会を終了（アーカイブ）／取り消し。終了すると観客・閲覧・進行用は「終了しました」の画面になる
 function toggleEnded(){
