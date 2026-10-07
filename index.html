@@ -351,6 +351,10 @@ body.big .notice{width:min(560px,calc(100vw - 26px))}body.big .notice .ntitle{fo
 body.big .noticebar{font-size:18px}
 .bigclock{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.06em;color:var(--ink);flex-shrink:0;display:none}
 body.big .bigclock{display:block}
+.etaline{margin:.2rem 0 .9rem;font-size:12px}
+body.big.beta .app{padding-top:1rem}body.big.beta .dtop{top:0}body.big.beta .notices{top:13px}body.big.beta .overlay{top:0}
+body.big .dtop{margin:-1rem -1.4rem 1rem;padding:.9rem 1.4rem .8rem}
+body.big .etaline{font-size:16px}
 .barwrap{background:var(--bg2);border-radius:2px;height:4px;margin-bottom:6px;overflow:hidden;margin-top:auto}
 .ccard.done .barwrap,.ccard.stopped .barwrap,.ccard.last1 .barwrap,.ccard.last3 .barwrap{background:rgba(0,0,0,.06)}
 .barfill{height:4px;border-radius:2px;transition:width .4s}
@@ -777,7 +781,7 @@ function showNotice(o){ // o={cid,cat,reason,ok,round}
   const num=o.num!==undefined?`<div class="nnum txt">${esc(String(o.num))}</div>`:`<div class="nnum">${o.cid}<small>コート</small></div>`;
   const lab=o.lab!==undefined?o.lab:(o.ok?'再開':'競技停止');
   const title=o.title!==undefined?o.title:(`${o.cat||''}${o.ok?' 再開しました':' 停止しました'}`);
-  const reason=o.reason!==undefined?o.reason:(o.ok?'':'停止中');
+  const reason=o.reason!==undefined?o.reason:((o.title===undefined&&!o.ok)?'停止中':''); // 既定の「停止中」は競技停止のパネルだけ
   el.innerHTML=`${num}<div><div class="nlab">${esc(lab)}</div><div class="ntitle">${esc(title)}</div>${reason?`<div class="nreason">${esc(reason)}</div>`:''}</div><button class="nx" aria-label="この通知を消す" title="消す">×</button>`;
   const refresh=()=>{ clr.hidden=box.querySelectorAll('.notice:not(.out)').length<2; };
   const close=()=>{ el.classList.add('out'); setTimeout(()=>{ el.remove(); refresh(); },300); refresh(); };
@@ -2136,7 +2140,7 @@ function renderDash(){
       </div>
       <div class="rtabs">${rHTML}</div>
     </div>
-    ${statsLineHTML()}${noticeBarHTML()}${(()=>{ const e=roundEta(); return e?`<div class="cmeta" style="margin:-.4rem 0 .8rem;font-size:12px">このラウンドの終了見込み <b>${fmtClock(e)}</b><span>（残り組数×目安分。停止中のコートは含まず）</span></div>`:''; })()}
+    ${statsLineHTML()}${noticeBarHTML()}${(()=>{ const e=roundEta(); return e?`<div class="cmeta etaline">このラウンドの終了見込み <b>${fmtClock(e)}</b><span>（残り組数×目安分。停止中のコートは含まず）</span></div>`:''; })()}
     <div class="sumbar">${buildSummary()}</div>
     <div class="legend">
       <div class="legitem"><div class="legdot" style="background:${PAL.done}"></div>完了</div>
