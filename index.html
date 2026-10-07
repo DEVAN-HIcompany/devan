@@ -1123,6 +1123,28 @@ function popConfetti(){
   setTimeout(()=>{ if(cv.parentNode) cv.remove(); },5200);
 }
 
+// 管理用: 大会を終了（アーカイブ）／取り消し。終了すると観客・閲覧・進行用は「終了しました」の画面になる
+function toggleEnded(){
+  if(!isAdmin()||!TD) return;
+  if(TD.ended){
+    if(!confirm(`「${TD.name}」の終了を取り消して、開催中に戻しますか？`)) return;
+    delete TD.ended; delete TD.endedAt; saveMeta(); renderDash(); showToast('開催中に戻しました');
+  } else {
+    if(!confirm(`「${TD.name}」を終了しますか？\n\n観客・閲覧・進行用の画面では「この大会は終了しました。ありがとうございました。」と表示され、出番の検索や進行はできなくなります。\n（管理用からはいつでも取り消せます）`)) return;
+    const c=prompt('総合優勝の大学名を入力してください（終了画面に表示します。あとから変更できます。空欄で省略）', TD.champion||'');
+    if(c!==null){ const v=c.trim(); if(v) TD.champion=v; else delete TD.champion; }
+    TD.ended=true; TD.endedAt=new Date().toISOString(); saveMeta(); renderDash(); showToast('大会を終了しました');
+  }
+}
+// 管理用: 総合優勝の大学名を入力・変更（終了画面に表示）
+function setChampion(){
+  if(!isAdmin()||!TD) return;
+  const c=prompt('総合優勝の大学名（空欄にすると表示を消します）', TD.champion||'');
+  if(c===null) return;
+  const v=c.trim(); if(v) TD.champion=v; else delete TD.champion;
+  saveMeta(); renderDash(); showToast(v?`総合優勝: ${v}`:'総合優勝の表示を消しました');
+}
+
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
 const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?'<span class="modetag">進行セク用</span>':MODE==='spectator'?'<span class="modetag">観客用</span>':'';
 function deleteTournament(id){
