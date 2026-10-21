@@ -2429,7 +2429,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>${MODE!=='admin'&&TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteTARound()">このラウンドを削除</button>`:''}`:'') + (MODE!=='admin'&&canAddTA()?`<button class="rtabadd" onclick="openAddTARound()">＋ 立合ラウンド</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  ).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>${MODE!=='admin'&&TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteTARound()">このラウンドを削除</button>`:''}`:'') + (MODE!=='admin'&&canAddTA()?`<button class="rtabadd" onclick="openAddTARound()">＋ 立合ラウンド</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openRenameTournament()">大会名を変更</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -2575,6 +2575,27 @@ function openAddRoundModal(){
       <button class="mbtn p" onclick="doAddRound()">追加</button>
     </div>`;
   $('ov').classList.add('open');
+}
+// 管理者: 大会名の変更（一覧・各画面の見出しに反映。開いている他の端末は開き直すと反映）
+function openRenameTournament(){
+  if(!isAdmin()||!TD) return;
+  $('mod').innerHTML=`
+    <div class="mhead"><div class="mtitle">大会名を変更</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <label class="flabel" style="margin-top:.5rem">大会名</label>
+    <input class="inp" id="tname" value="${esc(TD.name)}" placeholder="例：第63回 少林寺拳法関東学生大会" style="margin-bottom:1rem" onkeydown="if(event.key==='Enter')doRenameTournament()">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="mbtn" onclick="closeModal()">キャンセル</button>
+      <button class="mbtn p" onclick="doRenameTournament()">変更</button>
+    </div>`;
+  $('ov').classList.add('open'); setTimeout(()=>{ const el=$('tname'); if(el){ el.focus(); el.select(); } },50);
+}
+function doRenameTournament(){
+  if(!isAdmin()||!TD) return;
+  const n=($('tname').value||'').trim();
+  if(!n){ alert('大会名を入力してください'); return; }
+  if(n===TD.name){ closeModal(); return; }
+  META(CUR_ID).child('name').set(n).then(()=>{ TD.name=n; closeModal(); renderDash(); showToast('大会名を変更しました'); })
+    .catch(e=>{ console.error('rename',e); showToast('変更できませんでした（管理者としてログインしているか確認してください）'); });
 }
 // 立合セク管理者: 立合ラウンドの追加。DBルールは「rounds の末尾に、名前に『立合』が入ったものを足す」だけ許可
 function openAddTARound(){
