@@ -2397,9 +2397,14 @@ function renderSpectatorResultsHTML(results,favEntries,row,q){
   if(!searching) resHTML=specGuideHTML(true);
   else if(!results.length) resHTML=`<div class="shint">見つかりませんでした。<br>大学名の一部（例：明治）や、姓だけ（例：山田）でお試しください。</div>`;
   else {
-    const univs=[...new Set(results.map(e=>e.a).filter(Boolean))]; let uf='';
-    if(univs.length===1&&results.length>1){ const u=univs[0]; const favs=getFavs(); const all=results.every(e=>favs.includes(entryId(e)));
-      uf=`<div class="ufav"><span><b>${esc(u)}</b> の ${results.length} 組</span><button class="sfav${all?' on':''}" onclick="favUniv('${esc(u)}',${all?'false':'true'})">${ICO.star(all)}<span>${all?'全員をお気に入りから外す':'全員をお気に入りに入れる'}</span></button></div>`; }
+    // まとめてお気に入り: 大学を選んだときはその大学、文字で探したときは名前が一致した大学ごとに出す
+    // （立合評価法は相手の大学も結果に混ざるので、結果の大学が1つかどうかでは判断しない）
+    const sideU=e=>[e.a,e.a2].filter(Boolean);
+    const targets=specUniv?[specUniv]:[...new Set(results.flatMap(sideU))].filter(u=>q&&normq(u).includes(q)).sort(univSort).slice(0,5);
+    const favs=getFavs(); let uf='';
+    targets.forEach(u=>{ const mine=allEntries().filter(e=>e.a===u||e.a2===u); if(mine.length<2) return;
+      const all=mine.every(e=>favs.includes(entryId(e)));
+      uf+=`<div class="ufav"><span><b>${esc(u)}</b> の ${mine.length} ${mine.every(e=>e.ta)?'試合':'組'}</span><button class="sfav${all?' on':''}" data-u="${esc(u)}" onclick="favUniv(this.dataset.u,${all?'false':'true'})">${ICO.star(all)}<span>${all?'全員をお気に入りから外す':'全員をお気に入りに入れる'}</span></button></div>`; });
     resHTML=`<div class="shead">見つかった出番 <small>${results.length}件</small><span class="stap">${ICO.tap} 行を押すとコートの全体が見られます</span></div>${uf}<div class="slist">${results.map(row).join('')}</div>`;
   }
   return favHTML+resHTML;
