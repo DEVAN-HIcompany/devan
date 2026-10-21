@@ -1313,6 +1313,8 @@ function openTournament(id){
     if(td.ended && MODE!=='admin'){ stopProgListener(); CUR_ID=id; TD=clone(td); renderEnded(); return; }
     CUR_ID = id;
     TD = clone(td);
+    // 立合セク管理者が削除した立合ラウンド（courts/{ラウンド} が {_deleted:true}）は無いものとして扱う。管理者が次に保存すると実際に消える
+    { const dr=(TD.rounds||[]).filter(r=>TD.courts&&TD.courts[r]&&TD.courts[r]._deleted); if(dr.length){ TD.rounds=TD.rounds.filter(r=>!dr.includes(r)); dr.forEach(r=>{ delete TD.courts[r]; }); } }
     if(MODE==='operator'&&OP_SEC==='ta'&&!viewRound){ const tr=(td.rounds||[]).find(r=>(td.courts[r]||[]).some(isTA)); if(tr) viewRound=tr; }
     // Firebaseは空配列を保存しないので、teamsがない場合は空配列に補完
     TD.rounds.forEach(r=>{
@@ -2363,7 +2365,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  ).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>${MODE!=='admin'&&TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteTARound()">このラウンドを削除</button>`:''}`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -2528,6 +2530,24 @@ function _deleteRound(r){
   viewRound=null;
   saveMeta(); PROG(CUR_ID).update(patch).catch(_saveErr); closeModal(); renderDash();
   showToast(`ラウンド「${r}」を削除しました`);
+}
+// 立合セク管理者: 表示中の立合ラウンドだけ削除できる（DBルール上 courts/{立合ラウンド} しか書けないので、削除の印を書く）
+function deleteTARound(){
+  if(!canEditTA()) return;
+  const r=curRound(); if(!r||!isTARound(r)) return;
+  if(TD.rounds.length<=1){ alert('ラウンドは最低1つ必要です'); return; }
+  const courts=(TD.courts[r]||[]).filter(c=>c.teams&&c.teams.length).length;
+  askConfirm({title:`ラウンド「${r}」を削除`, desc:`この立合ラウンドの対戦表（使用中 ${courts} コート）と進行の記録がすべて消えます。元に戻せません。`, okLabel:'削除する', danger:true, onOk:()=>{
+    META(CUR_ID).child('courts').child(r).set({_deleted:true}).then(()=>{
+      TD.rounds=TD.rounds.filter(x=>x!==r); delete TD.courts[r];
+      const patch={};
+      Object.keys(PROG_DATA.courts||{}).forEach(k=>{ if(k.startsWith(r+'_')){ delete PROG_DATA.courts[k]; patch['courts/'+k]=null; } });
+      if(PROG_DATA.currentRound===r){ PROG_DATA.currentRound=TD.rounds[0]; patch.currentRound=PROG_DATA.currentRound; }
+      viewRound=TD.rounds.find(isTARound)||null;
+      if(Object.keys(patch).length) PROG(CUR_ID).update(patch).catch(_saveErr);
+      closeModal(); renderDash(); showToast(`ラウンド「${r}」を削除しました`);
+    }).catch(e=>{ console.error('ta delete',e); showToast('削除できませんでした（立合セク管理者のアカウントで入っているか確認してください）'); });
+  }});
 }
 function doAddRound(){
   if(!isAdmin()) return;
