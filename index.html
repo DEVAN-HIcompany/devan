@@ -1870,14 +1870,14 @@ function parseRosterHead(items, H){
   return {round, no:parseInt(m[3],10), cat:m[4].replace(/\s+/g,'').replace(/の部$/,'')};
 }
 // 同じ行（yがほぼ同じ）で隣り合う文字列をひとつにつなぐ（Qt製PDFは「選手」「の」「所属」のように分かれることがある）
-function mergeRuns(items){
+function mergeRuns(items, keyOf){ // keyOf があれば、別の列どうしはつながない（長い大学名と氏名がくっつく事故を防ぐ）
   // 行ごとにまとめる（yが2.5pt以内）→ 行内をxで並べ、隙間が小さい隣同士をつなぐ
   const rows=[]; [...items].sort((p,q)=>q.y-p.y).forEach(it=>{ const r=rows[rows.length-1]; if(r&&Math.abs(r.y-it.y)<2.5) r.items.push(it); else rows.push({y:it.y,items:[it]}); });
   const out=[];
   rows.forEach(r=>{ r.items.sort((p,q)=>p.x-q.x); let l=null;
     r.items.forEach(it=>{ const gap=l?it.x-(l.x+l.w):Infinity;
-      if(l && gap>-1 && gap<6 && Math.abs(l.h-it.h)<1.5){ l.s=l.s+(gap>1?' ':'')+it.s; l.w=(it.x+it.w)-l.x; }
-      else { l=Object.assign({},it); out.push(l); } }); });
+      if(l && gap>-1 && gap<6 && Math.abs(l.h-it.h)<1.5 && (!keyOf||l._k===keyOf(it))){ l.s=l.s+(gap>1?' ':'')+it.s; l.w=(it.x+it.w)-l.x; }
+      else { l=Object.assign({},it); if(keyOf) l._k=keyOf(it); out.push(l); } }); });
   return out;
 }
 async function parseRosterPdf(buf){
@@ -1887,7 +1887,8 @@ async function parseRosterPdf(buf){
   for(let p=1;p<=doc.numPages;p++){
     const pg=await doc.getPage(p); const H=pg.getViewport({scale:1}).height;
     const tc=await pg.getTextContent();
-    const items=mergeRuns(tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({x:i.transform[4], y:i.transform[5], h:Math.hypot(i.transform[1],i.transform[3]), w:i.width||0, s:i.str, bold:/f1$|Bold/i.test(i.fontName||'')})));
+    const raw=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({x:i.transform[4], y:i.transform[5], h:Math.hypot(i.transform[1],i.transform[3]), w:i.width||0, s:i.str, bold:/f1$|Bold/i.test(i.fontName||'')}));
+    const items=mergeRuns(raw);
     const head=parseRosterHead(items,H); if(!head) continue;
     // 列見出し行（出番・所属・氏名）で列の境目を決める
     const hdr=items.filter(it=>it.h>=10&&it.h<15&&it.y<H*0.95&&/出番|基本情報|所属|氏名|性別|資格|備考|選手一覧/.test(fixRad(it.s)));
@@ -1896,11 +1897,12 @@ async function parseRosterPdf(buf){
     if(hdr.some(it=>/選手一覧/.test(fixRad(it.s)))){
       const hY=Math.min(...hdr.map(it=>it.y));
       const nh=hdr.find(it=>/出番/.test(fixRad(it.s))), noR=nh?nh.x+nh.w+4:40;
-      const rows=items.filter(it=>it.y<hY-2);
-      const nums=rows.filter(it=>it.x<noR&&it.h>=9&&/^\d{1,3}$/.test(fixRad(it.s))).map(it=>({o:parseInt(fixRad(it.s),10),y:it.y})).sort((a,b)=>b.y-a.y);
+      const rows0=items.filter(it=>it.y<hY-2);
+      const nums=rows0.filter(it=>it.x<noR&&it.h>=9&&/^\d{1,3}$/.test(fixRad(it.s))).map(it=>({o:parseInt(fixRad(it.s),10),y:it.y})).sort((a,b)=>b.y-a.y);
       if(!nums.length) continue;
-      const cnt=rows.filter(it=>/^\[\d+人\]/.test(fixRad(it.s)));
+      const cnt=rows0.filter(it=>/^\[\d+人\]/.test(fixRad(it.s)));
       const memX=(cnt.length?Math.min(...cnt.map(it=>it.x)):Math.min(...hdr.filter(it=>/選手一覧/.test(fixRad(it.s))).map(it=>it.x)))-4;
+      const rows=mergeRuns(raw.filter(it=>it.y<hY-2), it=>it.x<noR?'no':it.x>=memX?'m':'u');
       const nearest=y=>{ let b=nums[0],d=Infinity; for(const n of nums){ const dd=Math.abs(n.y-y); if(dd<d){d=dd;b=n;} } return b; };
       const T={}; nums.forEach(n=>{ T[n.o]={u:[],m:[]}; });
       rows.forEach(it=>{ if(it.x<noR) return; const t=T[nearest(it.y).o]; const s=fixRad(it.s); if(!s) return;
@@ -1920,7 +1922,7 @@ async function parseRosterPdf(buf){
     const cols=hdr.map(it=>{ const t=fixRad(it.s); return {key:/出番/.test(t)?'no':/基本情報/.test(t)?'team':/所属/.test(t)?'univ':/氏名/.test(t)?'name':'other', c:it.x+it.w/2}; }).sort((a,b)=>a.c-b.c);
     const colOf=it=>{ const c=it.x+it.w/2; let k=cols[0].key; for(let i=0;i<cols.length;i++){ const lim=i<cols.length-1?(cols[i].c+cols[i+1].c)/2:Infinity; if(c<lim){ k=cols[i].key; break; } } return k; };
     const hdrY=Math.min(...hdr.map(it=>it.y));
-    const body=items.filter(it=>it.y<hdrY-2 && it.h>=7.5);  // ふりがな（小さい字）と「最高武階」は除外
+    const body=mergeRuns(raw.filter(it=>it.y<hdrY-2 && it.h>=7.5), colOf);  // ふりがな（小さい字）と「最高武階」は除外
     const nums=body.filter(it=>colOf(it)==='no'&&/^\d{1,3}$/.test(fixRad(it.s))).map(it=>({o:parseInt(fixRad(it.s),10),y:it.y})).sort((a,b)=>b.y-a.y);
     if(!nums.length) continue;
     const nearest=y=>{ let b=nums[0],d=Infinity; for(const n of nums){ const dd=Math.abs(n.y-y); if(dd<d){d=dd;b=n;} } return b; };
@@ -2027,7 +2029,28 @@ function parseKantogsHtml(html){
 function _impTD(){ return importTarget==='live' ? TD : draftTD; }
 function _impCurRound(){ return importTarget==='live' ? curRound() : draftTD.rounds[createRI]; }
 
+// 取り込み結果の点検: 「大学名 姓 名」が大学名の欄に入って名前が空、のような行を直す（どの読み込み方でも最後に通す）
+const UNIV_TAIL=/^(.+?(?:大学校|大学院|大学|大學|短期大学|高等専門学校|高専|学部|学院|大白山|塾|校|キャンパス))[\s　]+(\S.*)$/;
+function fixImportedTeam(t){
+  const fixed=[];
+  [['a','n'],['a2','n2']].forEach(([ka,kn])=>{
+    const a=String(t[ka]||'').trim(), n=String(t[kn]||'').trim(); if(!a) return;
+    const m=a.match(UNIV_TAIL);
+    if(m&&!n){ t[ka]=m[1]; t[kn]=m[2].split(/[\s　]+/)[0]; fixed.push(a); } // 名前の欄が空のときだけ分ける（姓だけにそろえる）
+  });
+  return fixed;
+}
+function checkImport(res){
+  const fixed=[], odd=[];
+  const scan=(where,teams)=>(teams||[]).forEach((t,i)=>{ fixImportedTeam(t).forEach(a=>fixed.push(`${where} ${i+1}番: 「${a}」→「${t.a} ${t.n}」`));
+    ['a','a2'].forEach(k=>{ const v=String(t[k]||''); if(/[\s　]/.test(v)||v.length>20) odd.push(`${where} ${i+1}番: 「${v}」`); }); });
+  Object.entries(res.rounds||{}).forEach(([rk,cs])=>Object.entries(cs).forEach(([no,ct])=>scan(`${rk?rk+' ':''}${no}コート`,ct.teams)));
+  (res.ta||[]).forEach(g=>scan(`${g.cls}${g.sen?' '+g.sen:''}`,g.bouts));
+  if(fixed.length) res.warnings.push('大学名と氏名がつながっていた行を分けました: '+fixed.slice(0,5).join('、')+(fixed.length>5?` ほか${fixed.length-5}件`:''));
+  if(odd.length) res.warnings.push('大学名の欄が長い・空白を含む行があります（読み込み後に確認してください）: '+odd.slice(0,5).join('、')+(odd.length>5?` ほか${odd.length-5}件`:''));
+}
 function openImportPreview(fname){
+  if(importResult&&!importResult._checked){ importResult.warnings=importResult.warnings||[]; checkImport(importResult); importResult._checked=true; }
   const live=importTarget==='live';
   const td=_impTD(), cur=_impCurRound();
   const taOnly=live&&!isAdmin()&&canEditTA();
