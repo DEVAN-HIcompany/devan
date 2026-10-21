@@ -1890,8 +1890,33 @@ async function parseRosterPdf(buf){
     const items=mergeRuns(tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({x:i.transform[4], y:i.transform[5], h:Math.hypot(i.transform[1],i.transform[3]), w:i.width||0, s:i.str, bold:/f1$|Bold/i.test(i.fontName||'')})));
     const head=parseRosterHead(items,H); if(!head) continue;
     // 列見出し行（出番・所属・氏名）で列の境目を決める
-    const hdr=items.filter(it=>it.h>=10&&it.h<15&&it.y<H*0.95&&/出番|基本情報|所属|氏名|性別|資格|備考/.test(fixRad(it.s)));
+    const hdr=items.filter(it=>it.h>=10&&it.h<15&&it.y<H*0.95&&/出番|基本情報|所属|氏名|性別|資格|備考|選手一覧/.test(fixRad(it.s)));
     if(!hdr.length) continue;
+    // 団体の部: 「出番｜組の基本情報（大学名）｜選手一覧（[8人] ●姓 名/かな/性別/段位▶… が何行にも流れる）」
+    if(hdr.some(it=>/選手一覧/.test(fixRad(it.s)))){
+      const hY=Math.min(...hdr.map(it=>it.y));
+      const nh=hdr.find(it=>/出番/.test(fixRad(it.s))), noR=nh?nh.x+nh.w+4:40;
+      const rows=items.filter(it=>it.y<hY-2);
+      const nums=rows.filter(it=>it.x<noR&&it.h>=9&&/^\d{1,3}$/.test(fixRad(it.s))).map(it=>({o:parseInt(fixRad(it.s),10),y:it.y})).sort((a,b)=>b.y-a.y);
+      if(!nums.length) continue;
+      const cnt=rows.filter(it=>/^\[\d+人\]/.test(fixRad(it.s)));
+      const memX=(cnt.length?Math.min(...cnt.map(it=>it.x)):Math.min(...hdr.filter(it=>/選手一覧/.test(fixRad(it.s))).map(it=>it.x)))-4;
+      const nearest=y=>{ let b=nums[0],d=Infinity; for(const n of nums){ const dd=Math.abs(n.y-y); if(dd<d){d=dd;b=n;} } return b; };
+      const T={}; nums.forEach(n=>{ T[n.o]={u:[],m:[]}; });
+      rows.forEach(it=>{ if(it.x<noR) return; const t=T[nearest(it.y).o]; const s=fixRad(it.s); if(!s) return;
+        if(it.x>=memX) t.m.push({s,x:it.x,y:it.y});
+        else if(it.h>=9&&!/最高武階/.test(s)) t.u.push({s,y:it.y}); }); // ふりがな（小さい字）と最高武階は除く
+      const rk=head.round; out[rk]=out[rk]||{};
+      const ct=out[rk][head.no]=out[rk][head.no]||{cat:'',teams:[]};
+      if(head.cat&&!ct.cat) ct.cat=head.cat;
+      Object.keys(T).map(Number).sort((a,b)=>a-b).forEach(o=>{ const t=T[o];
+        const a=(t.u.sort((p,q)=>q.y-p.y)[0]||{}).s||'';
+        const txt=t.m.sort((p,q)=>(q.y-p.y)||(p.x-q.x)).map(x=>x.s).join(' ');
+        const n=[...txt.matchAll(/●\s*([^\s\/●]+)/g)].map(m=>m[1]).join('・'); // 姓だけ（連盟サイト取り込みと同じ）
+        if(a||n) ct.teams.push({a,n});
+      });
+      pagesOk++; continue;
+    }
     const cols=hdr.map(it=>{ const t=fixRad(it.s); return {key:/出番/.test(t)?'no':/基本情報/.test(t)?'team':/所属/.test(t)?'univ':/氏名/.test(t)?'name':'other', c:it.x+it.w/2}; }).sort((a,b)=>a.c-b.c);
     const colOf=it=>{ const c=it.x+it.w/2; let k=cols[0].key; for(let i=0;i<cols.length;i++){ const lim=i<cols.length-1?(cols[i].c+cols[i+1].c)/2:Infinity; if(c<lim){ k=cols[i].key; break; } } return k; };
     const hdrY=Math.min(...hdr.map(it=>it.y));
