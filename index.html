@@ -487,6 +487,26 @@ body.beta .notices{top:47px}
 .sno small{font-family:var(--sans);font-size:10px;color:var(--muted);margin-left:1px}
 .suniv{font-size:11.5px;color:var(--muted);letter-spacing:.02em}
 .sname{font-size:15px;font-weight:600;color:var(--ink);letter-spacing:.02em}
+/* 立合評価法（白・赤の2人で1試合） */
+.tapair{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.tside{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap}
+.tside .ta{min-width:0;max-width:46%}.tside .tn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcol{flex-shrink:0;font-style:normal;font-size:10px;font-weight:700;width:18px;height:18px;line-height:16px;text-align:center;border-radius:4px;letter-spacing:0}
+.tcol.w{background:#fff;color:var(--ink2);border:1px solid var(--line2)}
+.tcol.r{background:#B23A3A;color:#fff;border:1px solid #B23A3A}
+.tgrp{font-size:10px;color:var(--gold);letter-spacing:.08em;font-weight:600}
+.spair{display:flex;flex-direction:column;gap:6px;min-width:0}
+.sside{display:flex;align-items:center;gap:8px;min-width:0}
+.sside .sname{font-size:14px}
+.cnext .vs{display:inline-block;width:10px}.cnext .tcol{display:inline-block;width:16px;height:16px;line-height:14px;font-size:9.5px;margin-right:4px;vertical-align:1px}
+.erow.ta2{align-items:flex-start}.erow.ta2 .ei{margin-top:10px}
+.epair{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.eside{display:flex;align-items:center;gap:6px;min-width:0}
+.ekind{display:flex;gap:6px;margin-bottom:12px}
+.ekind button{flex:1;padding:9px 8px;border:1px solid var(--line2);border-radius:8px;background:#fff;font-size:12.5px;color:var(--ink2);letter-spacing:.04em}
+.ekind button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.pvsel{font:inherit;font-weight:600;border:1px solid var(--line2);border-radius:6px;padding:3px 4px;background:#fff;color:var(--ink)}
+.pvta{display:flex;align-items:center;gap:10px;margin:6px 0 8px;font-size:12px}
 .sright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
 .schip{font-size:11px;font-weight:600;letter-spacing:.06em;padding:4px 10px;border-radius:4px;white-space:nowrap}
 .schip.absent{background:var(--wait-bg);color:var(--stop);border:1px solid #E7CACA}.srow.absent{border-left-color:#E7CACA;opacity:.6}
@@ -839,9 +859,9 @@ function notifyChanges(prev,now){
   if(MODE==='spectator'&&favs.length){ // お気に入りの出番: あと3組以内・演武中・終了 を知らせる
     allEntries().filter(e=>favs.includes(entryId(e))).forEach(e=>{
       const k=courtKey(e.r,e.c); const a=statusFromCS(prev[k],e), b=statusFromCS(now[k],e); if(a.k===b.k&&a.ahead===b.ahead) return;
-      const who=`${e.a} ${e.n}`.trim(), where=`${e.c}コート ${e.i+1}番`;
-      if(b.k==='now'&&a.k!=='now'){ showNotice({key:'f_'+entryId(e),num:'演武中',lab:'出番です',title:who,reason:where,cls:'soon',ms:15000,round:e.r,cid:e.c}); try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]); }catch(x){} sysNotify('演武中です',`${who}（${where}）`); }
-      else if(b.k==='wait'&&b.ahead<=3&&(a.k!=='wait'||a.ahead>3)){ showNotice({key:'f_'+entryId(e),num:`あと${b.ahead}組`,lab:'まもなく出番',title:who,reason:`${where}・目安 約${Math.round(b.ahead*(e.min||MIN_PER_TEAM))}分後`,cls:'soon',ms:20000,round:e.r,cid:e.c}); try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(x){} sysNotify(`まもなく出番（あと${b.ahead}組）`,`${who}（${where}）`); }
+      const who=entryWho(e), where=`${e.c}コート ${e.ta&&e.b?e.b+'試合目':(e.i+1)+'番'}`, nowl=e.ta?'試合中':'演武中';
+      if(b.k==='now'&&a.k!=='now'){ showNotice({key:'f_'+entryId(e),num:nowl,lab:'出番です',title:who,reason:where,cls:'soon',ms:15000,round:e.r,cid:e.c}); try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]); }catch(x){} sysNotify(nowl+'です',`${who}（${where}）`); }
+      else if(b.k==='wait'&&b.ahead<=3&&(a.k!=='wait'||a.ahead>3)){ showNotice({key:'f_'+entryId(e),num:`あと${b.ahead}${e.ta?'試合':'組'}`,lab:'まもなく出番',title:who,reason:`${where}・目安 約${Math.round(b.ahead*(e.min||MIN_PER_TEAM))}分後`,cls:'soon',ms:20000,round:e.r,cid:e.c}); try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(x){} sysNotify(`まもなく出番（あと${b.ahead}${e.ta?'試合':'組'}）`,`${who}（${where}）`); }
       else if(b.k==='done'&&a.k!=='done'){ showToast(`${who} の演武が終わりました`); }
     });
   }
@@ -1380,7 +1400,7 @@ function _renderCreateCourts(){
       <div class="cccard${c.cat||c.teams.length?' set':''}" onclick="openCCModal(${createRI},${c.id})">
         <div class="ccn">${c.id}</div>
         <div class="ccc">${esc(c.cat)||'未設定'}</div>
-        <div class="cct">${c.teams.length}組</div>
+        <div class="cct">${c.teams.length}${UNIT(c)}</div>
       </div>`).join('')}
     </div>`;
 }
@@ -1389,16 +1409,18 @@ function openCCModal(ri, cid){
   window._ccri = ri; window._ccid = cid;
   const r = draftTD.rounds[ri];
   const c = draftTD.courts[r].find(x=>x.id===cid);
+  const ta=isTA(c);
   const rows = Array.from({length:Math.max(c.teams.length,2)},(_,i)=>
-    buildERow('cc',i,c.teams[i]?.a||'',c.teams[i]?.n||'')).join('');
+    buildERow('cc',i,c.teams[i]||{},ta)).join('');
   $('mod').innerHTML=`
     <div class="mhead"><div class="mtitle">${c.id}コート — 設定</div><button class="xbtn" onclick="closeModal()">×</button></div>
     <div style="font-size:11px;color:#999;margin-bottom:10px">${esc(r)}</div>
-    <label class="flabel">種目名</label>
-    <input class="inp" id="cccat" value="${esc(c.cat)}" placeholder="例：男子初段" style="margin-bottom:12px">
-    <span class="eplabel">出場チーム <span style="font-size:10px;color:#bbb;font-weight:400">（空欄行は無視）</span></span>
+    ${kindPickHTML('cc',c)}
+    <label class="flabel">${ta?'階級':'種目名'}</label>
+    <input class="inp" id="cccat" value="${esc(c.cat)}" placeholder="${ta?'例：女子軽量級':'例：男子初段'}" style="margin-bottom:12px">
+    <span class="eplabel">${ta?'対戦（上が白・下が赤）':'出場チーム'} <span style="font-size:10px;color:#bbb;font-weight:400">（空欄行は無視）</span></span>
     <div id="ccrows">${rows}</div>
-    <button class="addbtn" style="margin:.5rem 0" onclick="addERow('cc','ccrows')">＋ 行を追加</button>
+    <button class="addbtn" style="margin:.5rem 0" onclick="addERow('cc','ccrows',${ta})">＋ 行を追加</button>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem">
       <button class="mbtn" onclick="closeModal()">キャンセル</button>
       <button class="mbtn p" onclick="saveCCModal()">保存</button>
@@ -1411,6 +1433,7 @@ function saveCCModal(){
   const c = draftTD.courts[r].find(x=>x.id===window._ccid);
   c.cat = $('cccat').value.trim();
   c.teams = collectERows('cc');
+  const k=$('cckind')?.value; if(k) c.kind=k; else delete c.kind;
   closeModal(); _renderCreateCourts();
 }
 
@@ -1433,7 +1456,7 @@ function saveDraftAndOpen(){
   const el=$('dname'); if(el) draftTD.name=el.value.trim();
   if(!draftTD.name){ alert('大会名を入力してください'); $('dname')?.focus(); return; }
   draftTD.rounds.forEach(r=>{
-    (draftTD.courts[r]||[]).forEach(c=>{ c.teams=c.teams.filter(t=>t.a||t.n); });
+    (draftTD.courts[r]||[]).forEach(c=>{ c.teams=c.teams.filter(t=>t.a||t.n||t.a2||t.n2); });
   });
   // Firebaseに保存
   show(loadingHTML('保存しています'));
@@ -1593,18 +1616,46 @@ function parseBlockSheet(rows, sheetName){
   return {data:out, skipped, mode:'block', usedRoundCol:false};
 }
 
+// ── D) 立合評価法の対戦表（「白」「赤」の見出しの下に 番号｜大学｜氏名｜大学｜氏名。1シート＝1階級） ──
+function parseTachiaiSheet(rows, sheetName){
+  let hr=-1, wc=-1, rc=-1;
+  for(let i=0;i<Math.min(rows.length,15);i++){ const r=(rows[i]||[]).map(cellStr); const w=r.indexOf('白'), k=r.indexOf('赤'); if(w>=0&&k>w){ hr=i; wc=w; rc=k; break; } }
+  if(hr<0) return null;
+  let wa=wc, wn=wc+1, ra=rc, rn=rc+1, start=hr+1;
+  const sub=(rows[hr+1]||[]).map(cellStr);
+  if(sub.some(c=>H.univ.test(c))&&sub.some(c=>H.name.test(c))){ // 「大学｜氏名｜大学｜氏名」の小見出し
+    const pick=(from,to,re)=>{ for(let j=from;j<to;j++) if(re.test(sub[j]||'')) return j; return -1; };
+    const v=[pick(wc,rc,H.univ),pick(wc,rc,H.name),pick(rc,rc+4,H.univ),pick(rc,rc+4,H.name)];
+    if(v[0]>=0) wa=v[0]; if(v[1]>=0) wn=v[1]; if(v[2]>=0) ra=v[2]; if(v[3]>=0) rn=v[3]; start=hr+2;
+  }
+  // 階級名: 見出しより上の最初の文字（例「女子 軽量級」）。無ければシート名
+  let cls=''; for(let i=0;i<hr&&!cls;i++) cls=(rows[i]||[]).map(cellStr).find(Boolean)||'';
+  cls=(cls||sheetName||'').replace(/[\s　]+/g,'');
+  const bouts=[];
+  for(let i=start;i<rows.length;i++){ const r=rows[i]||[];
+    const a=cellStr(r[wa]), n=cellStr(r[wn]), a2=cellStr(r[ra]), n2=cellStr(r[rn]);
+    if(!(a||n)&&!(a2||n2)) continue;
+    if(H.skip.test(a)&&a.length<=6&&H.skip.test(n)) continue;
+    const nc=wa>0?zen2han(cellStr(r[wa-1])):''; const b=/^[0-9]{1,3}$/.test(nc)?+nc:bouts.length+1;
+    bouts.push({a,n,a2,n2,b,g:cls});
+  }
+  return bouts.length?{cls,bouts,sheet:sheetName}:null;
+}
+const defaultTaRound=td=>(td.rounds||[]).find(r=>/立合/.test(r))||'立合評価法';
+
 function parseWorkbook(wb){
-  const perSheet=[]; const warnings=[];
+  const perSheet=[]; const warnings=[]; const ta=[];
   wb.SheetNames.forEach(name=>{
     const ws=wb.Sheets[name]; if(!ws||!ws['!ref']) return;
     const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
     if(!rows.length) return;
+    const tr=parseTachiaiSheet(rows,name); if(tr){ ta.push(tr); return; }
     let res=parseTableSheet(rows,name);
     if(!res||!Object.keys(res.data).length) res=parseBlockSheet(rows,name);
     if(!res||!Object.keys(res.data).length) return;
     perSheet.push({name,res});
   });
-  if(!perSheet.length) return null;
+  if(!perSheet.length&&!ta.length) return null;
   // ラウンド決定：ラウンド列があればその値、無ければ「シートが複数→シート名」「1枚→現在のラウンド（空キー）」
   const multi=perSheet.length>1;
   const merged={}; let skipped=0;
@@ -1628,7 +1679,7 @@ function parseWorkbook(wb){
   if(skipped) warnings.push(`コート番号が読み取れなかった行を ${skipped} 行スキップしました`);
   const noCat=[]; Object.entries(merged).forEach(([rk,courts])=>Object.entries(courts).forEach(([no,ct])=>{ if(!ct.cat) noCat.push((rk?rk+' ':'')+no+'コート'); }));
   if(noCat.length) warnings.push('種目名が見つからないコート: '+noCat.slice(0,8).join('、')+(noCat.length>8?' ほか':''));
-  return {rounds:merged, warnings, modes:[...new Set(perSheet.map(p=>p.res.mode))]};
+  return {rounds:merged, warnings, modes:[...new Set(perSheet.map(p=>p.res.mode).concat(ta.length?['ta']:[]))], ta};
 }
 
 // ── C) 名簿PDF（連盟の「本選全RC 名簿」） ──
@@ -1804,6 +1855,19 @@ function openImportPreview(fname){
     Object.entries(R).forEach(([rk,courts])=>{ const rname=rk||cur;
       Object.keys(courts).forEach(no=>{ const cs=(PROG_DATA.courts||{})[rname+'_'+no]; if(cs&&(cs.current>0||cs.stopped)) inProg++; }); });
   }
+  const ta=importResult.ta||[];
+  let taHTML='';
+  if(ta.length){
+    const tr=defaultTaRound(td), arr=td.courts[tr]||[], used=new Set(); let nx=1;
+    const free=()=>{ while(used.has(nx)||((arr.find(c=>c.id===nx)||{}).teams||[]).length) nx++; used.add(nx); return nx; };
+    ta.forEach(g=>{ if(g.court) return; const hit=arr.find(c=>isTA(c)&&(c.cat||'').split('・').includes(g.cls)); if(hit){ g.court=hit.id; used.add(hit.id); } });
+    ta.forEach(g=>{ if(!g.court) g.court=free(); });
+    const N=Math.max(16,arr.length,...ta.map(g=>g.court));
+    taHTML=`<div class="pvround">立合評価法の対戦表 <span style="font-size:10px;color:#A8894F;margin-left:6px">白・赤</span></div>
+      <div class="pvta"><span>読み込むラウンド</span><input class="inp" id="taround" value="${esc(tr)}" style="max-width:200px;padding:6px 10px;font-size:13px">${td.rounds.includes(tr)?'':'<span style="font-size:10px;color:#A8894F">新規追加</span>'}</div>
+      <div class="pvlist">${ta.map((g,k)=>`<div class="pvrow" style="align-items:center"><span class="pvno" style="width:88px"><select class="pvsel" id="tac${k}">${Array.from({length:N},(_,j)=>`<option value="${j+1}"${j+1===g.court?' selected':''}>${j+1}コート</option>`).join('')}</select></span><span class="pvcat">${esc(g.cls)}</span><span class="pvcnt">${g.bouts.length}試合</span><span class="pvteams">${esc(g.bouts.slice(0,2).map(t=>`${t.n} 対 ${t.n2}`).join('／'))}${g.bouts.length>2?' …':''}</span></div>`).join('')}</div>
+      <div style="font-size:11px;color:#888;margin-top:6px">階級ごとにコートを選べます。同じコートを選んだ階級は、上から順に続けて進行します。</div>`;
+  }
   const body=Object.entries(R).map(([rk,courts])=>{
     const exists=td.rounds.includes(rk);
     const tag=t=>`<span style="font-size:10px;color:#A8894F;margin-left:6px">${t}</span>`;
@@ -1817,9 +1881,9 @@ function openImportPreview(fname){
   $('mod').innerHTML=`
     <div class="mhead"><div class="mtitle">読み込み内容の確認</div><button class="xbtn" onclick="closeModal()">×</button></div>
     <div style="font-size:12px;color:#8A857C;margin-bottom:4px">${esc(fname)}</div>
-    <div style="font-size:12px;color:#3D3A36">${totalCourts}コート・${totalTeams}組 を読み取りました${importResult.modes.includes('pdf')?'（名簿PDF）':importResult.modes.includes('web')?'（連盟サイトのコート割）':importResult.modes.includes('block')?'（番組形式）':'（表形式）'}</div>
+    <div style="font-size:12px;color:#3D3A36">${[totalCourts?`${totalCourts}コート・${totalTeams}組`+(importResult.modes.includes('pdf')?'（名簿PDF）':importResult.modes.includes('web')?'（連盟サイトのコート割）':importResult.modes.includes('block')?'（番組形式）':'（表形式）'):'', ta.length?`立合評価法 ${ta.length}階級・${ta.reduce((s,g)=>s+g.bouts.length,0)}試合`:''].filter(Boolean).join('、')} を読み取りました</div>
     ${live?`<div style="font-size:12px;color:#3D3A36;margin-top:2px">大会「${esc(TD.name)}」に追加・更新します。ラウンドが無ければタブとして追加されます。</div>`:''}
-    ${body}
+    ${body}${taHTML}
     ${importResult.warnings.length?`<div class="pvwarn">${importResult.warnings.map(esc).join('<br>')}</div>`:''}
     ${live&&inProg?`<div class="pvwarn">進行中の記録がある ${inProg} コートが含まれています。記録（何組目まで完了か）はそのまま残し、組数が減った場合は末尾に合わせます。</div>`:''}
     <div class="pvopt">
@@ -1839,6 +1903,13 @@ function applyImport(){
   const live=importTarget==='live';
   const td=_impTD(), cur=_impCurRound();
   const clear=$('impclear')?.checked;
+  const ta=importResult.ta||[];
+  if(ta.length){ // 立合: 選んだコートごとに階級をまとめる（同じコートは上から順に続ける）
+    const tr=($('taround')?.value||'').trim()||defaultTaRound(td);
+    const byCourt={}; ta.forEach((g,k)=>{ const no=+($('tac'+k)?.value)||g.court||k+1; (byCourt[no]=byCourt[no]||[]).push(g); });
+    const RR=importResult.rounds; RR[tr]=RR[tr]||{};
+    Object.entries(byCourt).forEach(([no,gs])=>{ RR[tr][no]={cat:gs.map(g=>g.cls).join('・'),kind:'ta',teams:gs.flatMap(g=>g.bouts.map(t=>({...t})))}; });
+  }
   let firstRound=null; const added=[];
   const keys=Object.keys(importResult.rounds);
   if(!live){
@@ -1854,13 +1925,14 @@ function applyImport(){
     if(!td.rounds.includes(rname)){ td.rounds.push(rname); added.push(rname); }
     if(!td.courts[rname]) td.courts[rname]=Array.from({length:16},(_,i)=>({id:i+1,cat:'',teams:[]}));
     const arr=td.courts[rname];
-    if(clear) arr.forEach(c=>{c.cat='';c.teams=[];});
+    if(clear) arr.forEach(c=>{c.cat='';c.teams=[];delete c.kind;});
     Object.keys(courts).map(Number).sort((a,b)=>a-b).forEach(no=>{
       while(arr.length<no) arr.push({id:arr.length+1,cat:'',teams:[]});
       const c=arr.find(x=>x.id===no);
       const src=courts[no];
       if(src.cat) c.cat=src.cat;
-      c.teams=src.teams.filter(t=>t.a||t.n);
+      if(src.kind) c.kind=src.kind; else delete c.kind;
+      c.teams=src.teams.filter(t=>t.a||t.n||t.a2||t.n2);
       if(live){ const cs=(PROG_DATA.courts||{})[rname+'_'+no]; if(cs&&cs.current>c.teams.length){ cs.current=c.teams.length; progPatch['courts/'+rname+'_'+no+'/current']=cs.current; } }
     });
     if(firstRound===null) firstRound=rname;
@@ -1896,6 +1968,7 @@ function importHelpHTML(){
   return `<dl>
     <dt>名簿PDF</dt><dd>連盟の「本選全RC 名簿」のように、各ページに「本選A 1コート ○○の部」の見出しと、出番・所属・選手氏名の表があるPDF。コート割ページを印刷したPDFは文字が取り出せないため読めません。</dd>
     <dt>連盟サイトのコート割ページ</dt><dd>kantogs.org のコート割ページをブラウザで開き「ファイル → 別名で保存」したファイル（Safariは .webarchive、Chromeは .html）。</dd>
+    <dt>立合評価法の対戦表（エクセル）</dt><dd>1シート＝1階級で、「白」「赤」の見出しの下に 番号｜大学｜氏名｜大学｜氏名 が並ぶ表。読み込むときに階級ごとのコートとラウンド（既定は「立合評価法」）を選べます。</dd>
     <dt>エクセル（.xlsx / .csv）</dt><dd><code>コート</code> <code>種目</code> <code>大学名</code> <code>名前</code>（任意で <code>ラウンド</code>）の列がある表、または「1コート 男子初段」の見出しの下に大学名・名前が並ぶ表。シートが複数あればシート名がラウンド名になります。<button class="implink" onclick="downloadImportTemplate()">テンプレートをダウンロード</button></dd>
   </dl>`;
 }
@@ -1959,7 +2032,7 @@ function openSpecGuide(){
   $('mod').innerHTML=`
     <div class="mhead"><div class="mtitle">使い方</div><button class="xbtn" onclick="closeModal()">×</button></div>
     ${specGuideHTML(false)}
-    <div class="glegend"><span class="schip standby">待機中</span><span>コートがまだ始まっていない（1組目）</span><span class="schip now">演武中</span><span>いま演武している</span><span class="schip wait">あと3組</span><span>3組あとに出番</span><span class="schip done">終了</span><span>演武が終わった</span><span class="schip stopped">停止中</span><span>コートが一時中断</span></div>
+    <div class="glegend"><span class="schip standby">待機中</span><span>コートがまだ始まっていない（1組目）</span><span class="schip now">演武中</span><span>いま演武している（立合評価法は「試合中」）</span><span class="schip wait">あと3組</span><span>3組あとに出番（立合評価法は「あと3試合」）</span><span class="schip done">終了</span><span>演武が終わった</span><span class="schip stopped">停止中</span><span>コートが一時中断</span></div>
     <div class="gnote">出番の行を押すと、そのコートの全出場組と進み具合が見られます。<br>お気に入りはこのスマホにだけ記憶されます。</div>
     <div class="gnote" style="margin-top:.6rem;font-size:11px">このアプリ「DEVAN」は H.I. Company が開発・提供しています。</div>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="mbtn p" onclick="closeModal()">わかりました</button></div>`;
@@ -1974,23 +2047,37 @@ function setFavs(a){ try{ localStorage.setItem(favKey(), JSON.stringify(a)); }ca
 const entryId = e => e.r+'|'+e.c+'|'+e.i;
 function isFav(e){ return getFavs().includes(entryId(e)); }
 function toggleFav(id){ let f=getFavs(); const add=!f.includes(id); f = add ? [...f,id] : f.filter(x=>x!==id); setFavs(f); if(add) stat('favs'); renderSpectator(); }
-function favUniv(u,add){ const ids=allEntries().filter(e=>e.a===u).map(entryId); let f=getFavs(); if(add){ ids.forEach(id=>{ if(!f.includes(id)) f.push(id); }); stat('favs'); } else f=f.filter(x=>!ids.includes(x)); setFavs(f); renderSpectator(); showToast(add?`${u}の${ids.length}組をお気に入りに入れました`:`${u}をお気に入りから外しました`); }
+function favUniv(u,add){ const ids=allEntries().filter(e=>e.a===u||e.a2===u).map(entryId); let f=getFavs(); if(add){ ids.forEach(id=>{ if(!f.includes(id)) f.push(id); }); stat('favs'); } else f=f.filter(x=>!ids.includes(x)); setFavs(f); renderSpectator(); showToast(add?`${u}の${ids.length}組をお気に入りに入れました`:`${u}をお気に入りから外しました`); }
 // 出番の共有: 開くとその大会の観客用が開き、共有された出番がお気に入りに入る
 function shareEntries(ids){
   if(!ids||!ids.length||!CUR_ID) return;
   const ents=allEntries().filter(e=>ids.includes(entryId(e)));
   const url=location.origin+location.pathname+'?m=spec&t='+encodeURIComponent(CUR_ID)+'&e='+encodeURIComponent(ids.join(','));
-  const text=ents.length===1?`${ents[0].a} ${ents[0].n} の出番（${ents[0].r} ${ents[0].c}コート ${ents[0].i+1}番）— DEVAN で今の状況が見られます`:`${TD.name} の出番 ${ents.length}件 — DEVAN で今の状況が見られます`;
+  const text=ents.length===1?`${entryWho(ents[0])} の出番（${ents[0].r} ${ents[0].c}コート ${ents[0].ta&&ents[0].b?ents[0].b+'試合目':(ents[0].i+1)+'番'}）— DEVAN で今の状況が見られます`:`${TD.name} の出番 ${ents.length}件 — DEVAN で今の状況が見られます`;
   if(navigator.share){ navigator.share({title:'DEVAN 出番の共有',text,url}).catch(()=>{}); return; }
   const done=()=>showToast('リンクをコピーしました。LINEなどに貼って送れます');
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(()=>{ prompt('このリンクを送ってください',url); });
   else { try{ const ta=document.createElement('textarea'); ta.value=url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done(); }catch(e){} }
 }
 
+// ── 立合評価法: コートに kind:'ta'。1試合＝白（a,n）と赤（a2,n2）の2人。g=階級、b=対戦表の試合番号 ──
+const isTA=c=>!!(c&&c.kind==='ta');
+const UNIT=c=>isTA(c)?'試合':'組';
+const NOWL=c=>isTA(c)?'試合中':'演武中';
+const NEXTL=c=>isTA(c)?'次の試合へ':'次の組へ';
+const sideHTML=(col,a,n)=>`<span class="tside"><i class="tcol ${col==='白'?'w':'r'}">${col}</i><span class="ta">${esc(a)}</span><span class="tn">${esc(n)}</span></span>`;
+function multiGrp(c){ return isTA(c)&&new Set((c.teams||[]).map(t=>t.g||'')).size>1; }
+function teamCellsHTML(c,tm){ // 出場組の行の中身（大学・名前）
+  if(!isTA(c)) return `<span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>`;
+  return `<span class="tapair">${multiGrp(c)&&tm.g?`<span class="tgrp">${esc(tm.g)}</span>`:''}${sideHTML('白',tm.a,tm.n)}${sideHTML('赤',tm.a2,tm.n2)}</span>`;
+}
+const teamNo=(c,tm,i)=>isTA(c)&&+tm.b>0?+tm.b:i+1;
+const entryWho=e=>e.ta?`${(e.a+' '+e.n).trim()} 対 ${(e.a2+' '+e.n2).trim()}`:`${e.a} ${e.n}`.trim();
+
 // 全出番を一覧化
 function allEntries(){
   const out=[];
-  TD.rounds.forEach((r,ri)=>{ (TD.courts[r]||[]).forEach(c=>{ (c.teams||[]).forEach((t,i)=>{ out.push({r,ri,c:c.id,cat:c.cat||'',i,a:t.a||'',n:t.n||'',total:c.teams.length,min:(+c.min>0?+c.min:MIN_PER_TEAM)}); }); }); });
+  TD.rounds.forEach((r,ri)=>{ (TD.courts[r]||[]).forEach(c=>{ const ta=isTA(c); (c.teams||[]).forEach((t,i)=>{ out.push({r,ri,c:c.id,cat:c.cat||'',i,a:t.a||'',n:t.n||'',ta,a2:t.a2||'',n2:t.n2||'',g:t.g||'',b:+t.b||0,total:c.teams.length,min:(+c.min>0?+c.min:MIN_PER_TEAM)}); }); }); });
   return out;
 }
 // 出番の状態
@@ -2001,25 +2088,26 @@ function statusFromCS(cs,e){
   if(e.i<dn) return {k:'done',label:'終了',ahead:-1};
   const from=isStarted(cs)?dn:0; let ahead=0; for(let i=from;i<e.i;i++) if(!isAbs(cs,i)) ahead++; // 自分より前の、まだ演武していない組（欠場は数えない）
   if(cs.stopped) return {k:'stopped',label:'停止中',ahead};
+  const u=e.ta?'試合':'組';
   if(!isStarted(cs)){ // まだ始まっていないコート：最初の組は待機中、以降は「あと○組」
     if(ahead===0) return {k:'standby',label:'待機中',ahead:0};
-    return {k:'wait',label:'あと'+ahead+'組',ahead};
+    return {k:'wait',label:'あと'+ahead+u,ahead};
   }
-  if(ahead===0) return {k:'now',label:'演武中',ahead:0};
-  return {k:'wait',label:'あと'+ahead+'組',ahead};
+  if(ahead===0) return {k:'now',label:e.ta?'試合中':'演武中',ahead:0};
+  return {k:'wait',label:'あと'+ahead+u,ahead};
 }
 function specSortKey(e){ const s=entryStatus(e); return s.k==='now'?-1:(s.k==='done'||s.k==='absent')?1e6+e.ri*1000+e.i:s.ahead+e.ri*1000+(s.k==='standby'?0.5:0); }
 
 function renderSpectator(){
   if(!TD||!PROG_DATA) return;
   const entries=allEntries();
-  const univs=[...new Set(entries.map(e=>e.a).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const univs=[...new Set(entries.flatMap(e=>[e.a,e.a2]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
   const favs=getFavs();
   const favEntries=entries.filter(e=>favs.includes(entryId(e))).sort((a,b)=>specSortKey(a)-specSortKey(b));
   const q=normq(specQ);
   let results=[];
   if(q||specUniv){
-    results=entries.filter(e=>(!specUniv||e.a===specUniv)&&(!q||normq(e.a).includes(q)||normq(e.n).includes(q)));
+    results=entries.filter(e=>(!specUniv||e.a===specUniv||e.a2===specUniv)&&(!q||normq(e.a).includes(q)||normq(e.n).includes(q)||normq(e.a2).includes(q)||normq(e.n2).includes(q)));
     results.sort((a,b)=>specSortKey(a)-specSortKey(b));
   }
   const row=e=>specRowHTML(e,favs);
@@ -2051,8 +2139,8 @@ function specRowHTML(e,favs){
   const st=entryStatus(e); const fav=favs.includes(entryId(e)); const cur=e.r===PROG_DATA.currentRound;
   const mins=st.k==='wait'&&st.ahead>0?`<span class="smin">目安 約${Math.round(st.ahead*(e.min||MIN_PER_TEAM))}分後</span>`:'';
   return `<div class="srow ${st.k}" onclick="viewRound='${esc(e.r)}';openCourtModal(${e.c})">
-    <div class="sleft"><div class="swhere">${esc(e.r)}${cur?'<span class="scur">進行中のラウンド</span>':''}</div><div class="scourt">${e.c}<small>コート</small><span class="scat">${esc(e.cat)}</span></div></div>
-    <div class="smid"><div class="sno">${e.i+1}<small>番</small></div><div><div class="suniv">${esc(e.a)}</div><div class="sname">${esc(e.n)}</div></div></div>
+    <div class="sleft"><div class="swhere">${esc(e.r)}${cur?'<span class="scur">進行中のラウンド</span>':''}</div><div class="scourt">${e.c}<small>コート</small><span class="scat">${esc(e.g||e.cat)}</span></div></div>
+    <div class="smid"><div class="sno">${e.ta&&e.b?e.b:e.i+1}<small>${e.ta?'試合目':'番'}</small></div>${e.ta?`<div class="spair"><div class="sside"><i class="tcol w">白</i><div><div class="suniv">${esc(e.a)}</div><div class="sname">${esc(e.n)}</div></div></div><div class="sside"><i class="tcol r">赤</i><div><div class="suniv">${esc(e.a2)}</div><div class="sname">${esc(e.n2)}</div></div></div></div>`:`<div><div class="suniv">${esc(e.a)}</div><div class="sname">${esc(e.n)}</div></div>`}</div>
     <div class="sright"><span class="schip ${st.k}">${st.label}</span>${mins}
       <span style="display:flex;gap:5px"><button class="sfav${fav?' on':''}" onclick="event.stopPropagation();toggleFav('${esc(entryId(e))}')" aria-label="お気に入り">${ICO.star(fav)}<span>${fav?'お気に入り':'お気に入りに入れる'}</span></button><button class="sshare" onclick="event.stopPropagation();shareEntries(['${esc(entryId(e))}'])" aria-label="共有">共有</button></span></div>
   </div>`;
@@ -2081,7 +2169,7 @@ function renderSpectatorResults(){
   const entries=allEntries(); const favs=getFavs();
   const favEntries=entries.filter(e=>favs.includes(entryId(e))).sort((a,b)=>specSortKey(a)-specSortKey(b));
   const q=normq(specQ); let results=[];
-  if(q||specUniv){ results=entries.filter(e=>(!specUniv||e.a===specUniv)&&(!q||normq(e.a).includes(q)||normq(e.n).includes(q))); results.sort((a,b)=>specSortKey(a)-specSortKey(b)); }
+  if(q||specUniv){ results=entries.filter(e=>(!specUniv||e.a===specUniv||e.a2===specUniv)&&(!q||normq(e.a).includes(q)||normq(e.n).includes(q)||normq(e.a2).includes(q)||normq(e.n2).includes(q))); results.sort((a,b)=>specSortKey(a)-specSortKey(b)); }
   const row=e=>specRowHTML(e,favs);
   const el=$('specres'); if(el) el.innerHTML=renderSpectatorResultsHTML(results,favEntries,row,q);
 }
@@ -2175,7 +2263,7 @@ let _lateNotified={};
 function checkLate(){ // 進行セク: 自分が担当するコートの押し忘れを知らせる（コート×組ごとに1回）
   if(MODE!=='operator'||!TD||!PROG_DATA) return;
   (TD.courts[curRound()]||[]).forEach(c=>{ const cs=progCS(curRound(),c.id); if(cs.staff&&OP_NAME&&cs.staff!==OP_NAME) return; const tm=courtTiming(c,cs); if(!tm.late) return; const key=courtKey(curRound(),c.id)+'_'+cs.current; if(_lateNotified[key]) return; _lateNotified[key]=1;
-    showNotice({key:'late_'+c.id,cid:c.id,lab:'押し忘れていませんか',title:`${c.cat||''} 演武 ${fmtMin(tm.elapsed)}経過`,reason:`この組が始まって${LATE_MIN}分を超えています。終わっていたら「次の組へ」を押してください`,cls:'late',ms:30000,round:curRound()}); try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){} });
+    showNotice({key:'late_'+c.id,cid:c.id,lab:'押し忘れていませんか',title:`${c.cat||''} ${isTA(c)?'試合':'演武'} ${fmtMin(tm.elapsed)}経過`,reason:`この${UNIT(c)}が始まって${LATE_MIN}分を超えています。終わっていたら「${NEXTL(c)}」を押してください`,cls:'late',ms:30000,round:curRound()}); try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){} });
 }
 setInterval(()=>{ if(TD&&PROG_DATA&&MODE!=='spectator'&&!document.hidden&&$('app').querySelector('.cgrid')){ renderDash(); checkLate(); } }, 30000);
 function buildAlerts(){
@@ -2183,7 +2271,7 @@ function buildAlerts(){
   (TD.courts[curRound()]||[]).forEach(c=>{ if(!c.teams.length) return; const cs=progCS(curRound(),c.id); const tm=courtTiming(c,cs);
     if(cs.stopped) out.push(`<div class="alertrow" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">停止</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート（${esc(c.cat)}）</strong> ${esc(cs.stopReason||'停止中')}${tm.stoppedFor?` <b>${fmtMin(tm.stoppedFor)}</b>`:''}</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
     if(fed&&cs.call&&cs.call.kind) out.push(`<div class="alertrow call" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">連絡</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート</strong> ${esc(cs.call.kind)}${cs.call.by?`（担当 ${esc(cs.call.by)}）`:''}${cs.call.at?` ${fmtClock(cs.call.at)}`:''}</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
-    if(fed&&tm.late) out.push(`<div class="alertrow late" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">長引き</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート</strong> 演武 ${fmtMin(tm.elapsed)}経過（${LATE_MIN}分超）押し忘れの可能性</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
+    if(fed&&tm.late) out.push(`<div class="alertrow late" onclick="openCourtModal(${c.id})"><span style="flex-shrink:0;font-size:10px;letter-spacing:.14em;font-weight:600">長引き</span><span style="flex:1;min-width:0;color:#3D3A36"><strong style="color:#1C1B1A">${c.id}コート</strong> ${isTA(c)?'試合':'演武'} ${fmtMin(tm.elapsed)}経過（${LATE_MIN}分超）押し忘れの可能性</span><span style="flex-shrink:0;font-size:11px;white-space:nowrap;letter-spacing:.06em">開く ›</span></div>`);
   });
   return out.join('');
 }
@@ -2200,8 +2288,8 @@ function buildGrid(){
     if(st==='stopped')badge=`<span class="badge bstop">停止${tm.stoppedFor?' '+fmtMin(tm.stoppedFor):''}</span>`;
     else if(fed&&tm.late)badge=`<span class="badge blate">長引き ${fmtMin(tm.elapsed)}</span>`;
     else if(st==='done')badge='<span class="badge bdone">完了</span>';
-    else if(st==='last1')badge='<span class="badge bl1">残り1組</span>';
-    else if(st==='last3')badge=`<span class="badge bl3">残り${rem}組</span>`;
+    else if(st==='last1')badge=`<span class="badge bl1">残り1${UNIT(c)}</span>`;
+    else if(st==='last3')badge=`<span class="badge bl3">残り${rem}${UNIT(c)}</span>`;
     else if(st==='running')badge='<span class="badge brun">進行中</span>';
     else if(st==='waiting')badge='<span class="badge bwait">待機</span>';
     else badge='<span class="badge bedit">未使用</span>';
@@ -2213,16 +2301,16 @@ function buildGrid(){
     // 次に演武する組（進行中・待機・残りわずか。欠場は飛ばす）
     let next='';
     const ni=skipAbs(cs,dn,t);
-    if(t&&st!=='done'&&st!=='stopped'&&ni<t){ const nt=c.teams[ni]; next=`<div class="cnext${isStarted(cs)?' now':''}"><span class="lab">${isStarted(cs)?'演武中':'次'}</span><b>${esc(nt.a)}</b> ${esc(nt.n)}</div>`; }
+    if(t&&st!=='done'&&st!=='stopped'&&ni<t){ const nt=c.teams[ni]; next=`<div class="cnext${isStarted(cs)?' now':''}"><span class="lab">${isStarted(cs)?NOWL(c):'次'}</span>${isTA(c)?`<i class="tcol w">白</i><b>${esc(nt.n)}</b><span class="vs"></span><i class="tcol r">赤</i><b>${esc(nt.n2)}</b>`:`<b>${esc(nt.a)}</b> ${esc(nt.n)}`}</div>`; }
     else if(st==='stopped'){ next=`<div class="cnext stop">${esc(cs.stopReason||'停止中')}</div>`; }
-    else if(st==='done'){ next=`<div class="cnext fin">全 ${t} 組 終了</div>`; }
-    const meta=fed&&t?[cs.call&&cs.call.kind?`<span class="badge bcall">連絡: ${esc(cs.call.kind)}</span>`:'', tm.elapsed?`<span class="${tm.late?'late':''}">演武 ${fmtMin(tm.elapsed)}</span>`:'', tm.eta?`<span>終了見込み <b>${fmtClock(tm.eta)}</b></span>`:''].filter(Boolean).join(''):'';
+    else if(st==='done'){ next=`<div class="cnext fin">全 ${t} ${UNIT(c)} 終了</div>`; }
+    const meta=fed&&t?[cs.call&&cs.call.kind?`<span class="badge bcall">連絡: ${esc(cs.call.kind)}</span>`:'', tm.elapsed?`<span class="${tm.late?'late':''}">${isTA(c)?'試合':'演武'} ${fmtMin(tm.elapsed)}</span>`:'', tm.eta?`<span>終了見込み <b>${fmtClock(tm.eta)}</b></span>`:''].filter(Boolean).join(''):'';
     return `<div class="ccard ${st}${fed&&tm.late?' late':''}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
       <div class="ctop"><div class="cnum">${c.id}<small>コート</small></div>${badge}</div>
       <div class="ccat">${esc(c.cat)||'（種目未設定）'}</div>
       ${next}
       ${t?`<div class="barwrap"><div class="barfill" style="background:${bc};width:${pct}%"></div></div>
-      <div class="ccount"><span>${dn} / ${t} 組</span><span>${pct}%</span></div>
+      <div class="ccount"><span>${dn} / ${t} ${UNIT(c)}</span><span>${pct}%</span></div>
       <div class="tdots">${dots}</div>${meta?`<div class="cmeta">${meta}</div>`:''}${MODE!=='spectator'&&cs.staff?`<div class="cstaff">担当 <b>${esc(cs.staff)}</b></div>`:''}`:`<div class="edithint">${MODE==='admin'?'未使用 ― タップして設定':'未使用'}</div>`}
     </div>`;}).join('');
 }
@@ -2337,15 +2425,15 @@ function drawViewTab(c,cs){
   const rows=c.teams.map((tm,i)=>{
     const ab=isAbs(cs,i), isDn=!ab&&i<dn,isCur=!ab&&!cs.stopped&&i===dn&&dn<t;
     return `<div class="teamrow${ab?' absent':isDn?' done':isCur?' cur':''}" style="cursor:default">
-      <span class="ti">${i+1}</span><span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>
-      ${ab?'<span class="achip">欠場</span>':isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?'演武中':'待機中'}</span>`:''}
+      <span class="ti">${teamNo(c,tm,i)}</span>${teamCellsHTML(c,tm)}
+      ${ab?'<span class="achip">欠場</span>':isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?NOWL(c):'待機中'}</span>`:''}
     </div>`;}).join('');
   const staffRow=MODE==='view'&&cs.staff?`<div class="mstaff">担当: <b>${esc(cs.staff)}</b></div>`:'';
   const sBanner=cs.stopped?`<div class="stopbanner"><div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div></div>`:'';
   const done=dn>=t||rem===0;
-  const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
+  const u=UNIT(c), remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全${u}終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}${u}</span>`:`<span>残り${rem}${u}</span>`;
   return `${staffRow}${sBanner}
-    <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
+    <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} ${u} 完了 ${remTxt}</span></div>
     <div class="teamlist">${rows}</div>`;
 }
 
@@ -2355,13 +2443,13 @@ function drawProgTab(c,cs){
   const rows=c.teams.map((tm,i)=>{
     const ab=isAbs(cs,i), isDn=!ab&&i<dn,isCur=!ab&&!cs.stopped&&i===dn&&dn<t;
     return `<div class="teamrow${ab?' absent':isDn?' done':isCur?' cur':''}" onclick="toggleTeam(${i})">
-      <span class="ti">${i+1}</span><span class="ta">${esc(tm.a)}</span><span class="tn">${esc(tm.n)}</span>
-      ${ab?'<span class="achip">欠場</span>':isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?'演武中':'待機中'}</span>`:''}
+      <span class="ti">${teamNo(c,tm,i)}</span>${teamCellsHTML(c,tm)}
+      ${ab?'<span class="achip">欠場</span>':isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?NOWL(c):'待機中'}</span>`:''}
       <button class="abtn${ab?' on':''}" onclick="event.stopPropagation();toggleAbsent(${i})">${ab?'欠場を取消':'欠場'}</button>
     </div>`;}).join('');
   const nAbs=absCount(cs,t);
   const callBox=`<div class="callbox"><div class="cl">本部への連絡</div>${cs.call&&cs.call.kind?`<div class="callnow">連絡中: ${esc(cs.call.kind)}${cs.call.at?`（${fmtClock(cs.call.at)}）`:''}<button class="mbtn s" onclick="clearCall()">解決した</button></div>`:''}<div class="callbtns">${CALL_KINDS.map(k=>`<button class="mbtn${cs.call&&cs.call.kind===k?' on':''}" onclick="sendCall('${esc(k)}')">${esc(k)}</button>`).join('')}</div></div>`;
-  const staffRow=`<div class="mstaff">担当: <b>${esc(cs.staff||'未設定')}</b>${nAbs?`<span>・欠場 ${nAbs} 組</span>`:''}${MODE==='operator'&&OP_NAME&&cs.staff!==OP_NAME?`<button class="abtn" onclick="takeCourt()">このコートの担当になる</button>`:''}</div>`;
+  const staffRow=`<div class="mstaff">担当: <b>${esc(cs.staff||'未設定')}</b>${nAbs?`<span>・欠場 ${nAbs} ${UNIT(c)}</span>`:''}${MODE==='operator'&&OP_NAME&&cs.staff!==OP_NAME?`<button class="abtn" onclick="takeCourt()">このコートの担当になる</button>`:''}</div>`;
   const sBanner=cs.stopped?`<div class="stopbanner">
     <div style="flex:1;min-width:0"><div class="stopbanner-l">競技停止中</div><div>${esc(cs.stopReason||'—')}</div></div>
     <button class="mbtn s" style="flex-shrink:0" onclick="doResume()">再開する</button></div>`:'';
@@ -2373,27 +2461,36 @@ function drawProgTab(c,cs){
       <button class="mbtn" style="flex:1;justify-content:center" onclick="stopFormOpen=false;drawModal()">キャンセル</button>
     </div></div>`:'';
   const done=dn>=t||rem===0;
-  const remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全組終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}組</span>`:`<span>残り${rem}組</span>`;
+  const u=UNIT(c), remTxt=cs.stopped?'':done?`<span style="color:${PAL.done};font-weight:600">全${u}終了</span>`:!isStarted(cs)?`<span style="color:#8A857C">開始前</span>`:rem<=3?`<span style="color:${rem===1?PAL.l1:PAL.l3};font-weight:600">残り${rem}${u}</span>`:`<span>残り${rem}${u}</span>`;
   return `${staffRow}${sBanner}${callBox}
-    <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} 組 完了 ${remTxt}</span></div>
+    <div class="mstat"><span>${esc(curRound())}</span><span><span class="big">${dn}</span> / ${t} ${u} 完了 ${remTxt}</span></div>
     <div class="macts">
       <button class="mbtn" onclick="prevTeam()" ${dn<=0&&!isStarted(cs)?'disabled':''}>戻す</button>
-      <button class="mbtn p" onclick="nextTeam()" ${done||cs.stopped?'disabled':''}>${done?'終了':!isStarted(cs)?'競技を開始する':'次の組へ'}</button>
+      <button class="mbtn p" onclick="nextTeam()" ${done||cs.stopped?'disabled':''}>${done?'終了':!isStarted(cs)?'競技を開始する':NEXTL(c)}</button>
       ${!cs.stopped&&!stopFormOpen&&!done?`<button class="mbtn d" onclick="stopFormOpen=true;drawModal()">競技を停止する</button>`:''}
     </div>${sSec}<div class="teamlist">${rows}</div>`;
 }
 
+function kindPickHTML(p,c){ // 競技の種類（演武／立合評価法）
+  return `<label class="flabel">競技</label><div class="ekind"><button class="${isTA(c)?'':'on'}" onclick="setEditKind('${p}','')">演武（大学・名前）</button><button class="${isTA(c)?'on':''}" onclick="setEditKind('${p}','ta')">立合評価法（白・赤）</button></div><input type="hidden" id="${p}kind" value="${isTA(c)?'ta':''}">`;
+}
+function setEditKind(p,k){
+  if(p==='et'){ const c=_court(); if(!c) return; commitEdit(); if(k) c.kind=k; else delete c.kind; drawModal(); return; }
+  const r=draftTD.rounds[window._ccri]; const c=draftTD.courts[r].find(x=>x.id===window._ccid);
+  c.cat=$('cccat').value.trim(); c.teams=collectERows('cc'); if(k) c.kind=k; else delete c.kind; openCCModal(window._ccri,window._ccid);
+}
 function drawEditTab(c){
-  const n=Math.max(c.teams.length,2);
-  const rows=Array.from({length:n},(_,i)=>buildERow('et',i,c.teams[i]?.a||'',c.teams[i]?.n||'')).join('');
+  const n=Math.max(c.teams.length,2), ta=isTA(c);
+  const rows=Array.from({length:n},(_,i)=>buildERow('et',i,c.teams[i]||{},ta)).join('');
   return `<div>
-    <label class="flabel">種目名</label>
-    <input class="inp" id="etcat" value="${esc(c.cat)}" placeholder="例：男子初段" style="margin-bottom:12px">
-    <label class="flabel">1組あたりの目安（分）<span style="font-size:10px;color:#bbb;font-weight:400;margin-left:6px">観客の「約○分後」に使います。空欄は ${MIN_PER_TEAM} 分</span></label>
+    ${kindPickHTML('et',c)}
+    <label class="flabel">${ta?'階級':'種目名'}</label>
+    <input class="inp" id="etcat" value="${esc(c.cat)}" placeholder="${ta?'例：女子軽量級':'例：男子初段'}" style="margin-bottom:12px">
+    <label class="flabel">1${UNIT(c)}あたりの目安（分）<span style="font-size:10px;color:#bbb;font-weight:400;margin-left:6px">観客の「約○分後」に使います。空欄は ${MIN_PER_TEAM} 分</span></label>
     <input class="inp" id="etmin" type="number" inputmode="decimal" min="0.5" step="0.5" value="${+c.min>0?c.min:''}" placeholder="${MIN_PER_TEAM}" style="margin-bottom:12px;max-width:160px">
-    <span class="eplabel">出場チーム <span style="font-size:10px;color:#bbb;font-weight:400">（空欄行は無視）</span></span>
+    <span class="eplabel">${ta?'対戦（上が白・下が赤）':'出場チーム'} <span style="font-size:10px;color:#bbb;font-weight:400">（空欄行は無視）</span></span>
     <div id="etrows">${rows}</div>
-    <button class="addbtn" style="margin:.5rem 0" onclick="addERow('et','etrows')">＋ 行を追加</button>
+    <button class="addbtn" style="margin:.5rem 0" onclick="addERow('et','etrows',${ta})">＋ 行を追加</button>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem">
       <button class="mbtn" onclick="closeModal()">キャンセル</button>
       <button class="mbtn p" onclick="saveEdit()">保存する</button>
@@ -2404,6 +2501,7 @@ function commitEdit(){
   const c=(TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId); if(!c)return;
   const el=$('etcat'); if(el) c.cat=el.value.trim();
   const em=$('etmin'); if(em){ const v=parseFloat(em.value); if(v>0) c.min=v; else delete c.min; }
+  const ek=$('etkind'); if(ek){ if(ek.value) c.kind=ek.value; else delete c.kind; }
   const teams=collectERows('et'); c.teams=teams;
   const cs=progCS(curRound(),modalCourtId); if(cs.current>teams.length) cs.current=teams.length;
 }
@@ -2415,23 +2513,30 @@ function saveEdit(){
 // ─────────────────────────────────────────
 // 行の追加・収集
 // ─────────────────────────────────────────
-function buildERow(p,i,a,n){
+function buildERow(p,i,t,ta){
+  t=t||{};
+  if(ta) return `<div class="erow ta2" id="${p}row${i}" data-g="${esc(t.g||'')}" data-b="${+t.b>0?+t.b:''}"><span class="ei">${+t.b>0?+t.b:i+1}</span><div class="epair">
+    <div class="eside"><i class="tcol w">白</i><input class="inp ea" placeholder="大学名" value="${esc(t.a)}" id="${p}a${i}"><input class="inp en" placeholder="名前" value="${esc(t.n)}" id="${p}n${i}"></div>
+    <div class="eside"><i class="tcol r">赤</i><input class="inp ea" placeholder="大学名" value="${esc(t.a2)}" id="${p}ra${i}"><input class="inp en" placeholder="名前" value="${esc(t.n2)}" id="${p}rn${i}"></div>
+  </div></div>`;
   return `<div class="erow" id="${p}row${i}"><span class="ei">${i+1}</span>
-    <input class="inp ea" placeholder="大学名" value="${esc(a)}" id="${p}a${i}">
-    <input class="inp en" placeholder="名前" value="${esc(n)}" id="${p}n${i}">
+    <input class="inp ea" placeholder="大学名" value="${esc(t.a)}" id="${p}a${i}">
+    <input class="inp en" placeholder="名前" value="${esc(t.n)}" id="${p}n${i}">
   </div>`;
 }
-function addERow(p,cid){
+function addERow(p,cid,ta){
   const el=$(cid); if(!el)return;
   let i=0; while($(p+'a'+i))i++;
-  el.insertAdjacentHTML('beforeend',buildERow(p,i,'',''));
+  el.insertAdjacentHTML('beforeend',buildERow(p,i,{},ta));
   $(p+'row'+i)?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function collectERows(p){
   const out=[]; let i=0;
   while(true){
     const a=$(p+'a'+i), n=$(p+'n'+i); if(!a)break;
-    if(a.value.trim()||n.value.trim()) out.push({a:a.value.trim(),n:n.value.trim()});
+    const t={a:a.value.trim(),n:n.value.trim()}; const ra=$(p+'ra'+i), rn=$(p+'rn'+i);
+    if(ra){ t.a2=ra.value.trim(); t.n2=rn.value.trim(); const row=$(p+'row'+i); if(row&&row.dataset.g) t.g=row.dataset.g; if(row&&+row.dataset.b>0) t.b=+row.dataset.b; }
+    if(t.a||t.n||t.a2||t.n2) out.push(t);
     i++;
   }
   return out;
