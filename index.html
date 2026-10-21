@@ -31,11 +31,15 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 /* アプリとして使うため: ダブルタップ・ピンチで拡大しない、横に余白へずれない、端で画面全体が引っぱられない */
-html,body{overscroll-behavior:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+/* スクロール: 下に内容があるときだけ縦に動く。内容が画面に収まるときは余白へ動かない（端の引っぱりも止める）。
+   横はみ出しは clip で切る（hidden だと body が別のスクロール枠になり、iPhone で縦スクロールが効きにくくなる） */
+html{overscroll-behavior:none}
+html,body{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @supports(overflow:clip){html,body{overflow-x:clip}}
+@supports not (overflow:clip){html{overflow-x:hidden}}
 *{touch-action:manipulation}
 @media(max-width:768px){input,select,textarea{font-size:16px!important}}
-body{overflow-x:hidden;font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.55;font-weight:400;letter-spacing:.01em}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.55;font-weight:400;letter-spacing:.01em}
 button,input,textarea{font-family:inherit}
 button{cursor:pointer;transition:background .15s,border-color .15s,color .15s,box-shadow .15s,opacity .15s,transform .1s}
 button:active{transform:scale(.985)}
@@ -44,7 +48,8 @@ button:active{transform:scale(.985)}
 .serif{font-family:var(--serif)}
 
 /* ── ホーム ── */
-.home{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding:max(34px,calc(38.2vh - 190px)) 21px 34px}
+.home{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;min-height:100svh;padding:max(34px,calc(38.2vh - 190px)) 21px 34px}
+body.beta:not(.soonmode) .home{min-height:calc(100vh - 32px);min-height:calc(100svh - 32px)} /* 上の BETA 帯の分だけ低く（余白スクロールを出さない） */
 .home-box{width:min(466px,100%);text-align:center}
 .hero{width:55px;height:1px;background:var(--gold);margin:0 auto 21px}
 .org{font-size:11px;font-weight:500;letter-spacing:.28em;color:var(--muted);margin-bottom:13px}
