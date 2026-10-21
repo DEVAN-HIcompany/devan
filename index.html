@@ -1273,7 +1273,7 @@ function renderList(){
                   <div class="ticon">${String(i+1).padStart(2,'0')}</div>
                   <div class="tinfo">
                     <div class="tname">${esc(td.name)}</div>
-                    <div class="tmeta">${td.ended?(td.champion?`総合優勝 ${esc(td.champion)}`:'終了した大会'):`${(td.rounds||[]).length}ラウンド ・ ${esc((td.rounds||[]).join(' / '))}`}</div>
+                    ${MODE==='spectator'?'':`<div class="tmeta">${td.ended?(td.champion?`総合優勝 ${esc(td.champion)}`:'終了した大会'):`${(td.rounds||[]).length}ラウンド ・ ${esc((td.rounds||[]).join(' / '))}`}</div>`}
                   </div>
                   ${td.ended?'<span class="endtag">終了</span>':''}
                   ${MODE==='admin'?`<button class="tdel" onclick="event.stopPropagation();openRenameTournament('${esc(td.id)}')">名前を編集</button><button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>`:''}
