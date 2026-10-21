@@ -531,6 +531,13 @@ body.beta .notices{top:47px}
 .ekind button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
 .pvsel{font:inherit;font-weight:600;border:1px solid var(--line2);border-radius:6px;padding:3px 4px;background:#fff;color:var(--ink)}
 .ccard.othersec{opacity:.5}
+/* 観客: お気に入りの出番があるコート（星）／いま演武中（金の枠と帯） */
+.cfav{display:inline-flex;color:var(--gold);margin-left:6px;vertical-align:2px}.cfav svg{width:15px;height:15px}
+.ccard.favnow{border-color:var(--gold);background:#FFFBF2;box-shadow:0 0 0 3px rgba(168,137,79,.38),var(--sh)}
+.cfavnow{display:flex;align-items:center;gap:5px;background:var(--gold);color:#fff;font-size:11px;font-weight:700;letter-spacing:.06em;border-radius:6px;padding:4px 8px;margin:4px 0 6px}
+.cfavnow svg{width:13px;height:13px;flex-shrink:0}
+.tfav{display:inline-flex;color:var(--gold);flex-shrink:0;margin-right:-4px}.tfav svg{width:14px;height:14px}
+.teamrow.favcur{background:#FFF7E6;border-color:var(--gold);box-shadow:0 0 0 2px rgba(168,137,79,.3)}
 .secnote{font-size:12px;color:var(--ink2);background:var(--gold-bg);border:1px solid var(--line2);border-radius:8px;padding:9px 12px;margin-bottom:12px;line-height:1.6}.secnote b{color:var(--ink)}
 .pvta{display:flex;align-items:center;gap:10px;margin:6px 0 8px;font-size:12px}
 .sright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
@@ -2166,6 +2173,8 @@ function teamCellsHTML(c,tm){ // 出場組の行の中身（大学・名前）
 const teamNo=(c,tm,i)=>isTA(c)&&+tm.b>0?+tm.b:i+1;
 const entryWho=e=>e.ta?`${(e.a+' '+e.n).trim()} 対 ${(e.a2+' '+e.n2).trim()}`:`${e.a} ${e.n}`.trim();
 
+// 観客: そのコートでお気に入りに入れた出番の番号（0始まり）
+function favIdxIn(r,cid){ if(MODE!=='spectator'||!CUR_ID) return []; const pre=r+'|'+cid+'|'; return getFavs().filter(f=>f.startsWith(pre)).map(f=>+f.slice(pre.length)); }
 // 全出番を一覧化
 function allEntries(){
   const out=[];
@@ -2374,6 +2383,7 @@ function buildGrid(){
     const cs=progCS(curRound(),c.id);
     const t=c.teams.length,dn=Math.min(cs.current,t),pct=t?Math.round(dn/t*100):0,rem=t-dn;
     const st=courtStatus(c,cs);
+    const fi=favIdxIn(curRound(),c.id), favNow=fi.length>0&&isStarted(cs)&&!cs.stopped&&dn<t&&!isAbs(cs,dn)&&fi.includes(dn);
     const bc={stopped:PAL.stop,done:PAL.done,last1:PAL.l1,last3:PAL.l3,running:PAL.run}[st]||PAL.run;
     let badge='';
     const tm=courtTiming(c,cs); const fed=MODE!=='spectator';
@@ -2397,8 +2407,9 @@ function buildGrid(){
     else if(st==='stopped'){ next=`<div class="cnext stop">${esc(cs.stopReason||'停止中')}</div>`; }
     else if(st==='done'){ next=`<div class="cnext fin">全 ${t} ${UNIT(c)} 終了</div>`; }
     const meta=fed&&t?[cs.call&&cs.call.kind?`<span class="badge bcall">連絡: ${esc(cs.call.kind)}</span>`:'', tm.elapsed?`<span class="${tm.late?'late':''}">${isTA(c)?'試合':'演武'} ${fmtMin(tm.elapsed)}</span>`:'', tm.eta?`<span>終了見込み <b>${fmtClock(tm.eta)}</b></span>`:''].filter(Boolean).join(''):'';
-    return `<div class="ccard ${st}${fed&&tm.late?' late':''}${MODE==='operator'&&t&&!secOK(c)?' othersec':''}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
-      <div class="ctop"><div class="cnum">${c.id}<small>コート</small></div>${badge}</div>
+    return `<div class="ccard ${st}${fed&&tm.late?' late':''}${favNow?' favnow':''}${MODE==='operator'&&t&&!secOK(c)?' othersec':''}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
+      <div class="ctop"><div class="cnum">${c.id}<small>コート</small>${fi.length?`<span class="cfav" title="お気に入りがあります">${ICO.star(true)}</span>`:''}</div>${badge}</div>
+      ${favNow?`<div class="cfavnow">${ICO.star(true)}お気に入りが${NOWL(c)}</div>`:''}
       <div class="ccat">${esc(c.cat)||'（種目未設定）'}</div>
       ${next}
       ${t?`<div class="barwrap"><div class="barfill" style="background:${bc};width:${pct}%"></div></div>
@@ -2521,10 +2532,11 @@ function switchMTab(t){
 function drawViewTab(c,cs){
   const t=c.teams.length,dn=Math.min(cs.current,t); let rem=0; for(let i=dn;i<t;i++) if(!isAbs(cs,i)) rem++;
   if(!t) return `<div style="text-align:center;padding:2rem 1rem;color:#8A857C;font-size:13px">このコートは使用していません</div>`;
+  const fi=favIdxIn(curRound(),c.id);
   const rows=c.teams.map((tm,i)=>{
-    const ab=isAbs(cs,i), isDn=!ab&&i<dn,isCur=!ab&&!cs.stopped&&i===dn&&dn<t;
-    return `<div class="teamrow${ab?' absent':isDn?' done':isCur?' cur':''}" style="cursor:default">
-      <span class="ti">${teamNo(c,tm,i)}</span>${teamCellsHTML(c,tm)}
+    const ab=isAbs(cs,i), isDn=!ab&&i<dn,isCur=!ab&&!cs.stopped&&i===dn&&dn<t, fav=fi.includes(i);
+    return `<div class="teamrow${ab?' absent':isDn?' done':isCur?' cur':''}${fav&&isCur&&isStarted(cs)?' favcur':''}" style="cursor:default">
+      ${fav?`<span class="tfav">${ICO.star(true)}</span>`:''}<span class="ti">${teamNo(c,tm,i)}</span>${teamCellsHTML(c,tm)}
       ${ab?'<span class="achip">欠場</span>':isCur?`<span style="font-size:10px;font-weight:600;letter-spacing:.14em;color:${isStarted(cs)?PAL.run:'#8A857C'};flex-shrink:0">${isStarted(cs)?NOWL(c):'待機中'}</span>`:''}
     </div>`;}).join('');
   const staffRow=MODE==='view'&&cs.staff?`<div class="mstaff">担当: <b>${esc(cs.staff)}</b></div>`:'';
