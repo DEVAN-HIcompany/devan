@@ -2021,7 +2021,7 @@ function openImportPreview(fname){
   if(ta.length){
     const split=ta.some(g=>g.sen), phases=split?[...new Set(ta.map(taPhase))].sort():[1];
     const taRs=td.rounds.filter(isTARound);
-    const trOf=ph=>taOnly?(split?(taRs.includes(taRoundDef(td,ph,true))?taRoundDef(td,ph,true):cur):cur):taRoundDef(td,ph,split);
+    const trOf=ph=>taOnly&&!split?cur:taRoundDef(td,ph,split);
     const tr=trOf(phases[0]), arr=td.courts[tr]||[], used=new Set(); let nx=1;
     const free=()=>{ while(used.has(nx)||((arr.find(c=>c.id===nx)||{}).teams||[]).length) nx++; used.add(nx); return nx; };
     const byCls={}; // 同じ階級（第1戦・第2戦…）は同じコートに
@@ -2029,9 +2029,8 @@ function openImportPreview(fname){
     ta.forEach(g=>{ if(!g.court) g.court=byCls[g.cls]||(byCls[g.cls]=free()); });
     const N=Math.max(16,arr.length,...ta.map(g=>g.court));
     const rIn=ph=>{ const id=ph===1?'taround':'taround2', v=trOf(ph);
-      const ctl=taOnly&&split&&taRs.length?`<select class="pvsel" id="${id}" style="padding:6px 8px;font-size:13px">${taRs.map(r=>`<option${r===v?' selected':''}>${esc(r)}</option>`).join('')}</select>`
-        :`<input class="inp" id="${id}" value="${esc(v)}" ${taOnly?'readonly':''} style="max-width:220px;padding:6px 10px;font-size:13px">`;
-      return `<div class="pvta"><span>${split?(ph===1?'第1・2戦を入れるラウンド':'第3戦を入れるラウンド'):'読み込むラウンド'}</span>${ctl}${td.rounds.includes(v)||taOnly?'':'<span style="font-size:10px;color:#A8894F">新規追加</span>'}</div>`; };
+      const ctl=`<input class="inp" id="${id}" value="${esc(v)}" ${taOnly&&!split?'readonly':''} style="max-width:220px;padding:6px 10px;font-size:13px">`;
+      return `<div class="pvta"><span>${split?(ph===1?'第1・2戦を入れるラウンド':'第3戦を入れるラウンド'):'読み込むラウンド'}</span>${ctl}${td.rounds.includes(v)?'':'<span style="font-size:10px;color:#A8894F">新規追加</span>'}</div>`; };
     const rowHTML=(g,k)=>`<div class="pvrow" style="align-items:center"><span class="pvno" style="width:88px"><select class="pvsel" id="tac${k}" data-cls="${esc(g.cls)}" onchange="${g.sen?"document.querySelectorAll('.pvsel[data-cls]').forEach(e=>{ if(e.dataset.cls===this.dataset.cls) e.value=this.value; })":''}">${Array.from({length:N},(_,j)=>`<option value="${j+1}"${j+1===g.court?' selected':''}>${j+1}コート</option>`).join('')}</select></span>${g.sen?`<label class="pvchk"><input type="checkbox" id="tai${k}" ${g.skip?'':'checked'}></label>`:''}<span class="pvcat">${esc(g.cls)}${g.sen?` <span style="color:#A8894F">${esc(g.sen)}</span>`:''}</span><span class="pvcnt">${g.bouts.length}試合</span><span class="pvteams">${esc(g.bouts.slice(0,2).map(t=>`${t.n} 対 ${t.n2}`).join('／'))}${g.bouts.length>2?' …':''}</span></div>`;
     taHTML=`<div class="pvround">立合評価法の対戦表 <span style="font-size:10px;color:#A8894F;margin-left:6px">白・赤</span></div>
       ${phases.map(ph=>`${rIn(ph)}<div class="pvlist">${ta.map((g,k)=>taPhase(g)===ph?rowHTML(g,k):'').join('')}</div>`).join('')}
@@ -2078,7 +2077,7 @@ function applyImport(){
   const taSaved=new Set();
   if(ta.length){ // 立合: 選んだコートごとに階級をまとめる（同じコートは上から順に続ける）
     const split=ta.some(g=>g.sen);
-    const trOf=ph=>{ const v=(($(ph===1?'taround':'taround2')||{}).value||'').trim(); return taOnly&&!(split&&v&&td.rounds.includes(v)&&isTARound(v))?taCur:(v||taRoundDef(td,ph,split)); };
+    const trOf=ph=>{ const v=(($(ph===1?'taround':'taround2')||{}).value||'').trim(); if(taOnly&&!split) return taCur; const d=taRoundDef(td,ph,split); return !v||(taOnly&&!isTARound(v))||/[.#$\[\]\/]/.test(v)?d:v; };
     const byRC={}; ta.forEach((g,k)=>{ if(g.sen&&$('tai'+k)&&!$('tai'+k).checked) return; const tr=trOf(taPhase(g)); const no=+($('tac'+k)?.value)||g.court||k+1; ((byRC[tr]=byRC[tr]||{})[no]=byRC[tr][no]||[]).push(g); });
     const RR=importResult.rounds;
     Object.entries(byRC).forEach(([tr,byCourt])=>{ RR[tr]=RR[tr]||{}; taSaved.add(tr);
@@ -2123,7 +2122,7 @@ function applyImport(){
   });
   importResult=null;
   if(live){
-    if(taOnly) (taSaved.size?[...taSaved]:[taCur]).forEach(saveTARound); else saveMeta(); if(Object.keys(progPatch).length) PROG(CUR_ID).update(progPatch).catch(_saveErr); closeModal(); renderDash();
+    if(taOnly) (taSaved.size?[...taSaved]:[taCur]).forEach(r=>{ (added.includes(r)?addTARoundDB(r):Promise.resolve()).then(()=>saveTARound(r)).catch(e=>{ console.error('ta add',e); showToast('ラウンドを追加できませんでした（立合セク管理者のアカウントで入っているか確認してください）'); }); }); else saveMeta(); if(Object.keys(progPatch).length) PROG(CUR_ID).update(progPatch).catch(_saveErr); closeModal(); renderDash();
     showToast(added.length?`読み込みました。ラウンド「${added.join('」「')}」を追加しました（上のタブから開けます）`:'コート割を更新しました');
   }else{
     if(firstRound!==null) createRI=Math.max(0,td.rounds.indexOf(firstRound));
@@ -2534,6 +2533,16 @@ function openAddTARound(){
     </div>`;
   $('ov').classList.add('open');
 }
+// rounds の末尾に立合ラウンド名を足す（削除済みの印だけ残っている同名ラウンドは足さない＝courts を書けば復活）
+function addTARoundDB(n){
+  const ref=META(CUR_ID).child('rounds');
+  return ref.once('value').then(sn=>{
+    const raw=sn.val()||[]; const list=Array.isArray(raw)?raw:Object.values(raw);
+    if(list.includes(n)) return;
+    const idx=Array.isArray(raw)?raw.length:Math.max(-1,...Object.keys(raw).map(Number))+1;
+    return ref.child(String(idx)).set(n);
+  });
+}
 function doAddTARound(){
   if(!canAddTA()) return;
   const n=($('newround').value||'').trim();
@@ -2542,14 +2551,7 @@ function doAddTARound(){
   if(/[.#$\[\]\/]/.test(n)){ alert('ラウンド名に . # $ [ ] / は使えません'); return; }
   if(TD.rounds.includes(n)){ alert('同じ名前が既にあります'); return; }
   const courts=Array.from({length:16},(_,i)=>({id:i+1,cat:'',teams:[]}));
-  const ref=META(CUR_ID);
-  // 削除済み（印だけ残っている）同名ラウンドがあれば印を上書きして復活、無ければ rounds の末尾に足す
-  ref.child('rounds').once('value').then(sn=>{
-    const raw=sn.val()||[]; const list=Array.isArray(raw)?raw:Object.values(raw);
-    const idx=Array.isArray(raw)?raw.length:Math.max(-1,...Object.keys(raw).map(Number))+1;
-    const step=list.includes(n)?Promise.resolve():ref.child('rounds').child(String(idx)).set(n);
-    return step.then(()=>ref.child('courts').child(n).set(courts));
-  }).then(()=>{
+  addTARoundDB(n).then(()=>META(CUR_ID).child('courts').child(n).set(courts)).then(()=>{
     TD.rounds.push(n); TD.courts[n]=courts; viewRound=n;
     closeModal(); renderDash(); showToast(`ラウンド「${n}」を追加しました`);
   }).catch(e=>{ console.error('ta add',e); showToast('追加できませんでした（立合セク管理者のアカウントで入っているか確認してください）'); });
