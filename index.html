@@ -104,6 +104,7 @@ body.beta .overlay{top:32px}
 .hact.quiet{background:transparent;box-shadow:none}
 .soon{font-family:"Cormorant Garamond",serif;font-size:30px;font-weight:500;letter-spacing:.14em;color:var(--ink2);margin:0 0 13px}
 .soonnote{font-size:13px;color:var(--muted);line-height:1.9;letter-spacing:.06em;margin-bottom:55px}
+.soonlogins{display:flex;justify-content:center;flex-wrap:wrap;gap:0 5px}
 .soonlogin{background:none;border:none;color:var(--muted);font-size:11px;letter-spacing:.08em;cursor:pointer;padding:8px 13px;opacity:.7;text-decoration:underline;text-underline-offset:3px}
 .credit{margin-top:34px;padding-top:13px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);letter-spacing:.06em;display:flex;flex-direction:column;gap:2px;align-items:center}
 .credit a{color:var(--muted);text-decoration:none}
@@ -632,9 +633,9 @@ const auth = firebase.auth();
 // モード: 'admin'（管理用・ログイン必須・すべて操作可） / 'view'（閲覧用・見るだけ）
 // ─────────────────────────────────────────
 let MODE = null;      // 'admin' | 'operator' | 'view'
-// 公開停止中（2026-10-21 社長指示）: true の間は管理者アカウントでログインした人だけが使える。他の人には Coming soon 画面だけを出す。公開するときは false にする
+// 公開停止中（2026-10-21 社長指示）: true の間は管理者・進行セク・立合セクのアカウントでログインした人だけが使える（受付・物販のアカウントは不可）。他の人には Coming soon 画面だけを出す。公開するときは false にする
 const LOCKDOWN = true;
-const locked = () => LOCKDOWN && !(auth.currentUser && ROLE==='admin');
+const locked = () => LOCKDOWN && !(auth.currentUser && (ROLE==='admin'||ROLE==='operator'||ROLE==='ta'));
 let ROLE = null;      // ログイン後の権限: 'admin' | 'operator' | 'ta'（立合セク） | 'gate' | 'shop'
 let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='ta'; }catch(e){} // 進行用の担当: shinko=進行セク（演武のコート）/ ta=立合セク（立合評価法のコート）
 const SEC_NAME=()=>OP_SEC==='ta'?'立合セク用':'進行セク用';
@@ -931,7 +932,7 @@ function renderComingSoon(msg){
       <div class="soon">Coming soon...</div>
       <div class="soonnote">ただいま公開の準備をしています。<br>もうしばらくお待ちください。</div>
       ${msg?`<div class="pvwarn" style="margin-bottom:21px">${esc(msg)}</div>`:''}
-      ${u?`<button class="soonlogin" onclick="doLogout()">ログアウト（${esc(u.email||'')}）</button>`:`<button class="soonlogin" onclick="enterAdmin()">管理者ログイン</button>`}
+      <div class="soonlogins">${u?`<button class="soonlogin" onclick="doLogout()">ログアウト（${esc(u.email||'')}）</button>`:`<button class="soonlogin" onclick="enterAdmin()">管理者</button><button class="soonlogin" onclick="enterOperator('shinko')">進行セク</button><button class="soonlogin" onclick="enterOperator('ta')">立合セク</button>`}</div>
       <div class="credit"><span>Produced by <b>H.I. Company</b></span></div>
     </div></div>`);
   document.body.classList.add('soonmode');
@@ -1049,8 +1050,8 @@ async function enterAdmin(){
   if(!auth.currentUser){ pendingMode='admin'; renderLogin(); return; }
   show(loadingHTML('確認しています'));
   await loadRole();
-  if(ROLE==='gate'||ROLE==='shop'){ if(LOCKDOWN){ renderComingSoon('このアカウントには管理者の権限がありません。'); return; } renderGateOnly('管理用'); return; }
-  if(ROLE!=='admin'){ if(LOCKDOWN){ renderComingSoon('このアカウントには管理者の権限がありません。'); return; } renderNoAdmin(); return; }
+  if(ROLE==='gate'||ROLE==='shop'){ if(LOCKDOWN){ renderComingSoon('このアカウントでは使えません。'); return; } renderGateOnly('管理用'); return; }
+  if(ROLE!=='admin'){ renderNoAdmin(); return; }
   MODE='admin'; renderAdminHome();
 }
 async function enterOperator(sec){
@@ -1058,7 +1059,7 @@ async function enterOperator(sec){
   if(!auth.currentUser){ pendingMode='operator'; renderLogin(); return; }
   show(loadingHTML('確認しています'));
   await loadRole();
-  if(locked()){ renderComingSoon(); return; }
+  if(locked()){ renderComingSoon('このアカウントでは使えません。'); return; }
   if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('進行用'); return; }
   if(ROLE==='ta'){ OP_SEC='ta'; try{ sessionStorage.setItem('sj_opsec','ta'); }catch(e){} } // 立合セクのアカウントは常に立合セク
   else if(OP_SEC==='ta'&&ROLE!=='admin'){ // 立合セクは「立合セク」として許可したアカウントだけ
@@ -2748,7 +2749,7 @@ const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', srcPortrait:'splash-zennih
   (posterOn?poster():Promise.resolve()).then(()=>fontReady).then(start);
 })();
 
-async function bootEntry(){ if(LOCKDOWN){ if(auth.currentUser) await loadRole(); if(locked()){ if(ENTRY==='admin') enterAdmin(); else renderComingSoon(); return; } } if(ENTRY==='fed') renderFedHome(); else if(ENTRY==='op') enterOperator(); else if(ENTRY==='view') enterView(); else if(ENTRY==='admin') enterAdmin(); else if(ENTRY==='spec'){ enterSpectator(); if(SHARE.t) openTournament(SHARE.t); } else renderHome(); }
+async function bootEntry(){ if(LOCKDOWN){ if(auth.currentUser) await loadRole(); if(locked()){ if(ENTRY==='admin') enterAdmin(); else if(ENTRY==='op') enterOperator(); else renderComingSoon(); return; } } if(ENTRY==='fed') renderFedHome(); else if(ENTRY==='op') enterOperator(); else if(ENTRY==='view') enterView(); else if(ENTRY==='admin') enterAdmin(); else if(ENTRY==='spec'){ enterSpectator(); if(SHARE.t) openTournament(SHARE.t); } else renderHome(); }
 auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; bootEntry(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
 </script>
 </body>
