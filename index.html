@@ -1767,7 +1767,12 @@ function parseTachiaiShukei(rows, sheetName){
       if(r[c]!=='所属'||r[c+1]!=='名前') continue;
       let sen=''; for(let u=hr-1;u>=Math.max(0,hr-3)&&!sen;u--){ const v=cellStr((rows[u]||[])[c]); if(TA_SEN.test(v)) sen=v.replace(/\s/g,''); }
       if(!sen) continue; // 「集計」「抽選」の列は読まない
-      const sc=c+2; const ents=[];
+      // 紅白の列: 見出し「紅白」を探す（第3戦は 名前 と 紅白 の間に1列あることがある）。無ければ 白/赤 が入っている列
+      let sc=-1;
+      for(let u=Math.max(0,hr-3);u<=hr&&sc<0;u++){ const hrow=(rows[u]||[]).map(cellStr); for(let j=c+2;j<=c+5;j++) if(hrow[j]==='紅白'){ sc=j; break; } }
+      if(sc<0) for(let j=c+2;j<=c+5&&sc<0;j++) if(rows.slice(hr+1,hr+9).some(x=>['白','赤'].includes(cellStr((x||[])[j])))) sc=j;
+      if(sc<0) continue;
+      const ents=[];
       for(let i=hr+1;i<rows.length;i++){ const x=rows[i]||[];
         const side=cellStr(x[sc]); if(side!=='白'&&side!=='赤') continue;
         ents.push({side,a:cellStr(x[c]),n:cellStr(x[c+1]),no:c>0?zen2han(cellStr(x[c-1])):''});
