@@ -506,6 +506,8 @@ body.beta .notices{top:47px}
 .ekind button{flex:1;padding:9px 8px;border:1px solid var(--line2);border-radius:8px;background:#fff;font-size:12.5px;color:var(--ink2);letter-spacing:.04em}
 .ekind button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
 .pvsel{font:inherit;font-weight:600;border:1px solid var(--line2);border-radius:6px;padding:3px 4px;background:#fff;color:var(--ink)}
+.ccard.othersec{opacity:.5}
+.secnote{font-size:12px;color:var(--ink2);background:var(--gold-bg);border:1px solid var(--line2);border-radius:8px;padding:9px 12px;margin-bottom:12px;line-height:1.6}.secnote b{color:var(--ink)}
 .pvta{display:flex;align-items:center;gap:10px;margin:6px 0 8px;font-size:12px}
 .sright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
 .schip{font-size:11px;font-weight:600;letter-spacing:.06em;padding:4px 10px;border-radius:4px;white-space:nowrap}
@@ -625,6 +627,9 @@ const auth = firebase.auth();
 // ─────────────────────────────────────────
 let MODE = null;      // 'admin' | 'operator' | 'view'
 let ROLE = null;      // ログイン後の権限: 'admin' | 'operator'
+let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='ta'; }catch(e){} // 進行用の担当: shinko=進行セク（演武のコート）/ ta=立合セク（立合評価法のコート）
+const SEC_NAME=()=>OP_SEC==='ta'?'立合セク用':'進行セク用';
+function secOK(c){ if(MODE!=='operator') return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる
 let OP_NAME=''; try{ OP_NAME=(localStorage.getItem('sj_opname')||'').trim(); }catch(e){} // 進行セクの担当者名（端末に記憶。学連の画面にだけ表示）
 let viewRound = null; // 進行用・閲覧用で見ているラウンド（端末内だけ。共有の currentRound は管理用だけが変える）
 let isAdmin = () => MODE==='admin' && ROLE==='admin' && !!auth.currentUser;
@@ -977,8 +982,11 @@ function renderFedHome(){
         <div class="hbtn-r">›</div>
       </button>
       <div class="hsmall">
-        <button class="hbtn mini" onclick="enterOperator()">
-          <div><div class="hbtn-l">進行セク用</div><div class="hbtn-d">コートの進行操作</div></div>
+        <button class="hbtn mini" onclick="enterOperator('shinko')">
+          <div><div class="hbtn-l">進行セク用</div><div class="hbtn-d">演武のコートの進行操作</div></div>
+        </button>
+        <button class="hbtn mini" onclick="enterOperator('ta')">
+          <div><div class="hbtn-l">立合セク用</div><div class="hbtn-d">立合評価法のコートの進行操作</div></div>
         </button>
         <button class="hbtn mini" onclick="enterAdmin()">
           <div><div class="hbtn-l">管理用</div><div class="hbtn-d">コート割・運営</div></div>
@@ -1012,7 +1020,8 @@ async function enterAdmin(){
   if(ROLE!=='admin'){ renderNoAdmin(); return; }
   MODE='admin'; renderAdminHome();
 }
-async function enterOperator(){
+async function enterOperator(sec){
+  if(sec){ OP_SEC=sec==='ta'?'ta':'shinko'; try{ sessionStorage.setItem('sj_opsec',OP_SEC); }catch(e){} }
   if(!auth.currentUser){ pendingMode='operator'; renderLogin(); return; }
   show(loadingHTML('確認しています'));
   await loadRole();
@@ -1026,7 +1035,7 @@ function renderOpName(){
   show(`
     <div class="home"><div class="home-box opname">
       <div class="hero"></div>
-      <div class="org">進行セク用</div>
+      <div class="org">${SEC_NAME()}</div>
       <div class="wordmark">DEVAN</div>
       <div class="hsub">お名前を入力してください<br><span class="hsub2">操作したコートに「担当」として表示されます（学連の画面のみ）</span></div>
       <input class="inp" id="opname" placeholder="例：山田" value="${esc(OP_NAME)}" autocomplete="off" onkeydown="if(event.key==='Enter') saveOpName()">
@@ -1048,7 +1057,7 @@ function changeOpName(){
   }});
 }
 function takeCourt(){ // このコートの担当になる（進行は変えない）
-  if(MODE!=='operator'||!OP_NAME) return;
+  if(MODE!=='operator'||!OP_NAME||!secOK(_court())) return;
   writeCourt(courtKey(curRound(),modalCourtId),{}).then(ok=>{ if(ok) showToast(`${modalCourtId}コートの担当になりました`); });
 }
 function renderGateOnly(what){
@@ -1104,7 +1113,7 @@ function renderLogin(msg){
   show(`
     <div class="home"><div class="home-box">
       <div class="hero"></div>
-      <div class="org">${pendingMode==='operator'?'進行用':'管理用'}</div>
+      <div class="org">${pendingMode==='operator'?SEC_NAME():'管理用'}</div>
       <div class="htitle">ログイン</div>
       <div class="hsub">${pendingMode==='operator'?'進行用':'管理者'}のメールアドレスとパスワードを入力してください</div>
       <div class="scard" style="text-align:left">
@@ -1205,6 +1214,7 @@ function openTournament(id){
     if(td.ended && MODE!=='admin'){ stopProgListener(); CUR_ID=id; TD=clone(td); renderEnded(); return; }
     CUR_ID = id;
     TD = clone(td);
+    if(MODE==='operator'&&OP_SEC==='ta'&&!viewRound){ const tr=(td.rounds||[]).find(r=>(td.courts[r]||[]).some(isTA)); if(tr) viewRound=tr; }
     // Firebaseは空配列を保存しないので、teamsがない場合は空配列に補完
     TD.rounds.forEach(r=>{
       if(!TD.courts[r]) TD.courts[r]=[];
@@ -1315,7 +1325,7 @@ function setChampion(){
 }
 
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
-const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?'<span class="modetag">進行セク用</span>':MODE==='spectator'?'<span class="modetag">観客用</span>':'';
+const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?`<span class="modetag">${SEC_NAME()}</span>`:MODE==='spectator'?'<span class="modetag">観客用</span>':'';
 function deleteTournament(id){
   if(!isAdmin()) return;
   askConfirm({title:'大会を削除', desc:'この大会のコート割と進行の記録をすべて消します。元に戻せません。', okLabel:'削除する', danger:true, onOk:()=>{
@@ -2262,7 +2272,7 @@ function roundEta(){ let m=null; (TD.courts[curRound()]||[]).forEach(c=>{ if(!(c
 let _lateNotified={};
 function checkLate(){ // 進行セク: 自分が担当するコートの押し忘れを知らせる（コート×組ごとに1回）
   if(MODE!=='operator'||!TD||!PROG_DATA) return;
-  (TD.courts[curRound()]||[]).forEach(c=>{ const cs=progCS(curRound(),c.id); if(cs.staff&&OP_NAME&&cs.staff!==OP_NAME) return; const tm=courtTiming(c,cs); if(!tm.late) return; const key=courtKey(curRound(),c.id)+'_'+cs.current; if(_lateNotified[key]) return; _lateNotified[key]=1;
+  (TD.courts[curRound()]||[]).forEach(c=>{ if(!secOK(c)) return; const cs=progCS(curRound(),c.id); if(cs.staff&&OP_NAME&&cs.staff!==OP_NAME) return; const tm=courtTiming(c,cs); if(!tm.late) return; const key=courtKey(curRound(),c.id)+'_'+cs.current; if(_lateNotified[key]) return; _lateNotified[key]=1;
     showNotice({key:'late_'+c.id,cid:c.id,lab:'押し忘れていませんか',title:`${c.cat||''} ${isTA(c)?'試合':'演武'} ${fmtMin(tm.elapsed)}経過`,reason:`この${UNIT(c)}が始まって${LATE_MIN}分を超えています。終わっていたら「${NEXTL(c)}」を押してください`,cls:'late',ms:30000,round:curRound()}); try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){} });
 }
 setInterval(()=>{ if(TD&&PROG_DATA&&MODE!=='spectator'&&!document.hidden&&$('app').querySelector('.cgrid')){ renderDash(); checkLate(); } }, 30000);
@@ -2305,7 +2315,7 @@ function buildGrid(){
     else if(st==='stopped'){ next=`<div class="cnext stop">${esc(cs.stopReason||'停止中')}</div>`; }
     else if(st==='done'){ next=`<div class="cnext fin">全 ${t} ${UNIT(c)} 終了</div>`; }
     const meta=fed&&t?[cs.call&&cs.call.kind?`<span class="badge bcall">連絡: ${esc(cs.call.kind)}</span>`:'', tm.elapsed?`<span class="${tm.late?'late':''}">${isTA(c)?'試合':'演武'} ${fmtMin(tm.elapsed)}</span>`:'', tm.eta?`<span>終了見込み <b>${fmtClock(tm.eta)}</b></span>`:''].filter(Boolean).join(''):'';
-    return `<div class="ccard ${st}${fed&&tm.late?' late':''}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
+    return `<div class="ccard ${st}${fed&&tm.late?' late':''}${MODE==='operator'&&t&&!secOK(c)?' othersec':''}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
       <div class="ctop"><div class="cnum">${c.id}<small>コート</small></div>${badge}</div>
       <div class="ccat">${esc(c.cat)||'（種目未設定）'}</div>
       ${next}
@@ -2394,6 +2404,13 @@ function drawModal(){
   if(MODE==='view'||MODE==='spectator'){
     $('mod').innerHTML=`
       <div class="mhead"><div class="mtitle">${c.id}コート<span>${esc(c.cat)||'種目未設定'}</span></div><button class="xbtn" onclick="closeModal()">×</button></div>
+      ${drawViewTab(c,cs)}`;
+    return;
+  }
+  if(MODE==='operator'&&!secOK(c)){ // 担当外のセクのコートは見るだけ
+    $('mod').innerHTML=`
+      <div class="mhead"><div class="mtitle">${c.id}コート<span>${esc(c.cat)||'種目未設定'}</span></div><button class="xbtn" onclick="closeModal()">×</button></div>
+      <div class="secnote">このコートは<b>${isTA(c)?'立合セク':'進行セク'}</b>が操作します。ここでは見るだけです。</div>
       ${drawViewTab(c,cs)}`;
     return;
   }
@@ -2547,28 +2564,28 @@ function collectERows(p){
 // ─────────────────────────────────────────
 function _court(){ return (TD.courts[curRound()]||[]).find(x=>x.id===modalCourtId); }
 function doStop(){
-  if(!canOperate()) return;
+  if(!canOperate()||!secOK(_court())) return;
   const inp=$('stopinp'); const reason=(inp?inp.value.trim():'')||'競技停止中';
   const cs=progCS(curRound(),modalCourtId); cs.stopped=true; cs.stopReason=reason; stopFormOpen=false;
   writeCourt(courtKey(curRound(),modalCourtId),{stopped:true,stopReason:reason,stoppedAt:Date.now()}); drawModal(); renderDash();
 }
 function doResume(){
-  if(!canOperate()) return;
+  if(!canOperate()||!secOK(_court())) return;
   const cs=progCS(curRound(),modalCourtId); cs.stopped=false; cs.stopReason='';
   writeCourt(courtKey(curRound(),modalCourtId),{stopped:false,stopReason:'',stoppedAt:null,at:Date.now()}); drawModal(); renderDash();
 }
 function sendCall(kind){
-  if(!canOperate()) return; const k=courtKey(curRound(),modalCourtId); const cs=progCS(curRound(),modalCourtId);
+  if(!canOperate()||!secOK(_court())) return; const k=courtKey(curRound(),modalCourtId); const cs=progCS(curRound(),modalCourtId);
   if(cs.call&&cs.call.kind===kind){ clearCall(); return; }
   cs.call={kind,at:Date.now(),by:OP_NAME||''}; writeCourt(k,{call:cs.call}); drawModal(); renderDash(); showToast(`本部に「${kind}」を送りました`);
 }
 function clearCall(){
-  if(!canOperate()) return; const k=courtKey(curRound(),modalCourtId); const cs=progCS(curRound(),modalCourtId);
+  if(!canOperate()||!secOK(_court())) return; const k=courtKey(curRound(),modalCourtId); const cs=progCS(curRound(),modalCourtId);
   delete cs.call; writeCourt(k,{call:null}); drawModal(); renderDash();
 }
 function _lockActs(on){ document.querySelectorAll('.macts .mbtn').forEach(b=>{ b.disabled=on||b.disabled; }); }
 function nextTeam(){
-  if(!canOperate()||_busy) return;
+  if(!canOperate()||!secOK(_court())||_busy) return;
   const c=_court(); if(!c||!c.teams.length) return; const t=c.teams.length;
   const local=progCS(curRound(),modalCourtId); const exp={st:isStarted(local),cur:local.current||0};
   _busy=true; _lockActs(true);
@@ -2581,7 +2598,7 @@ function nextTeam(){
   }).then(ok=>{ if(!ok) alertToast('他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 function prevTeam(){
-  if(!canOperate()||_busy) return;
+  if(!canOperate()||!secOK(_court())||_busy) return;
   const local=progCS(curRound(),modalCourtId); const exp={st:isStarted(local),cur:local.current||0};
   _busy=true; _lockActs(true);
   txCourt(courtKey(curRound(),modalCourtId), cs=>{
@@ -2592,7 +2609,7 @@ function prevTeam(){
   }).then(ok=>{ if(!ok) alertToast('他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 function toggleTeam(idx){
-  if(!canOperate()||_busy) return;
+  if(!canOperate()||!secOK(_court())||_busy) return;
   const c=_court(); if(!c) return; const t=c.teams.length;
   _busy=true;
   txCourt(courtKey(curRound(),modalCourtId), cs=>{ if(isAbs(cs,idx)) return; cs.current=idx<(cs.current||0)?idx:skipAbs(cs,idx+1,t); cs.started=true; cs.at=Date.now(); return cs; })
@@ -2600,7 +2617,7 @@ function toggleTeam(idx){
 }
 // 欠場の切替（進行セク・管理用）。演武中の組を欠場にしたら次の組へ進める
 function toggleAbsent(idx){
-  if(!canOperate()||_busy) return;
+  if(!canOperate()||!secOK(_court())||_busy) return;
   const c=_court(); if(!c) return; const t=c.teams.length;
   _busy=true;
   txCourt(courtKey(curRound(),modalCourtId), cs=>{
