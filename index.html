@@ -228,6 +228,7 @@ body.beta .overlay{top:32px}
 .titem.ended{background:rgba(255,255,255,.55);box-shadow:none}
 .titem.ended .tname{color:var(--ink2)}
 .titem.ended .ticon{color:var(--muted)}
+.titem.trashed{cursor:default}.titem.trashed:hover{border-color:var(--line);box-shadow:none}
 .endtag{font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:3px 7px;white-space:nowrap;flex-shrink:0}
 .modetag.end{color:var(--muted);border-color:var(--line2)}
 .rtabadd.end{color:var(--gold);border-color:var(--gold2)}.rtabadd.end:hover{background:#fff;border-color:var(--gold);color:var(--gold)}
@@ -1266,8 +1267,19 @@ function renderList(){
   show(loadingHTML());
   METAS.once('value').then(snap=>{
     const val = snap.val();
-    const list = val ? Object.values(val) : [];
-    LIST_NAMES={}; list.forEach(td=>{ LIST_NAMES[td.id]=td.name; });
+    const all = val ? Object.values(val).filter(Boolean) : [];
+    LIST_NAMES={}; all.forEach(td=>{ LIST_NAMES[td.id]=td.name; });
+    const list = all.filter(td=>!td.deletedAt);
+    const trash = MODE==='admin' ? all.filter(td=>td.deletedAt).sort((a,b)=>b.deletedAt-a.deletedAt) : [];
+    if(MODE==='admin'&&isAdmin()) trash.filter(td=>Date.now()-td.deletedAt>TRASH_DAYS*864e5).forEach(td=>{ META(td.id).remove().catch(()=>{}); PROG(td.id).remove().catch(()=>{}); }); // 30日を過ぎたものは本当に消す
+    const trashItem=td=>{ const left=Math.max(0,Math.ceil(TRASH_DAYS-(Date.now()-td.deletedAt)/864e5)); return `
+                <div class="titem ended trashed">
+                  <div class="tinfo">
+                    <div class="tname">${esc(td.name)}</div>
+                    <div class="tmeta">あと${left}日で完全に消えます</div>
+                  </div>
+                  <button class="tdel" onclick="restoreTournament('${esc(td.id)}')">元に戻す</button><button class="tdel" onclick="purgeTournament('${esc(td.id)}')">完全に削除</button>
+                </div>`; };
     const active=list.filter(td=>!td.ended), ended=list.filter(td=>td.ended).sort((a,b)=>String(b.endedAt||'').localeCompare(String(a.endedAt||'')));
     const item=(td,i)=>`
                 <div class="titem${td.ended?' ended':''}" onclick="openTournament('${esc(td.id)}')">
@@ -1294,6 +1306,7 @@ function renderList(){
             : active.length===0 ? '<div class="empty">開催中・開催予定の大会はありません</div>' : active.map(item).join('')}
         </div>
         ${ended.length?`<div class="tsec">終了した大会</div><div class="tlist">${ended.map(item).join('')}</div>`:''}
+        ${(()=>{ const t=trash.filter(td=>Date.now()-td.deletedAt<=TRASH_DAYS*864e5); return t.length?`<div class="tsec">削除した大会（${TRASH_DAYS}日間は元に戻せます）</div><div class="tlist">${t.map(trashItem).join('')}</div>`:''; })()}
       </div>`);
   }).catch(e=>{
     console.error('renderList error:', e);
@@ -1317,7 +1330,7 @@ function openTournament(id){
   show(loadingHTML());
   META(id).once('value').then(snap=>{
     const td = snap.val();
-    if(!td){ show(loadingHTML('大会データが見つかりません。大会一覧に戻ります。',true)); setTimeout(renderList,1500); return; }
+    if(!td||td.deletedAt){ show(loadingHTML('大会データが見つかりません。大会一覧に戻ります。',true)); setTimeout(renderList,1500); return; }
     if(td.ended && MODE!=='admin'){ stopProgListener(); CUR_ID=id; TD=clone(td); renderEnded(); return; }
     CUR_ID = id;
     TD = clone(td);
@@ -1436,10 +1449,22 @@ function setChampion(){
 
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
 const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?`<span class="modetag">${SEC_NAME()}</span>`:MODE==='spectator'?'<span class="modetag">観客用</span>':'';
+// 大会の削除は「削除済み」の印（sj/meta/{id}/deletedAt）を付けるだけ。コート割も進行の記録も残るので、30日間は一覧の「削除した大会」から元に戻せる
+const TRASH_DAYS=30;
 function deleteTournament(id){
   if(!isAdmin()) return;
-  askConfirm({title:'大会を削除', desc:'この大会のコート割と進行の記録をすべて消します。元に戻せません。', okLabel:'削除する', danger:true, onOk:()=>{
-    META(id).remove(); PROG(id).remove(); renderList();
+  askConfirm({title:'大会を削除', desc:`「${LIST_NAMES[id]||''}」を一覧から外します。${TRASH_DAYS}日間は、一覧のいちばん下の「削除した大会」から元に戻せます。`, okLabel:'削除する', danger:true, onOk:()=>{
+    META(id).child('deletedAt').set(Date.now()).then(()=>{ renderList(); showToast('大会を削除しました（元に戻せます）'); }).catch(_saveErr);
+  }});
+}
+function restoreTournament(id){
+  if(!isAdmin()) return;
+  META(id).child('deletedAt').remove().then(()=>{ renderList(); showToast(`「${LIST_NAMES[id]||'大会'}」を元に戻しました`); }).catch(_saveErr);
+}
+function purgeTournament(id){
+  if(!isAdmin()) return;
+  askConfirm({title:'大会を完全に削除', desc:`「${LIST_NAMES[id]||''}」のコート割と進行の記録をすべて消します。これは元に戻せません。`, okLabel:'完全に削除', danger:true, onOk:()=>{
+    Promise.all([META(id).remove(),PROG(id).remove()]).then(()=>{ renderList(); showToast('完全に削除しました'); }).catch(_saveErr);
   }});
 }
 
