@@ -534,6 +534,7 @@ body.beta .notices{top:47px}
 .ekind{display:flex;gap:6px;margin-bottom:12px}
 .ekind button{flex:1;padding:9px 8px;border:1px solid var(--line2);border-radius:8px;background:#fff;font-size:12.5px;color:var(--ink2);letter-spacing:.04em}
 .ekind button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.pvchk{display:flex;align-items:center;margin-right:6px}.pvchk input{width:16px;height:16px;accent-color:#A8894F}
 .pvsel{font:inherit;font-weight:600;border:1px solid var(--line2);border-radius:6px;padding:3px 4px;background:#fff;color:var(--ink)}
 .ccard.othersec{opacity:.5}
 /* 観客: お気に入りの出番があるコート（星）／いま演武中（金の枠と帯） */
@@ -1749,10 +1750,48 @@ function parseTachiaiSheet(rows, sheetName){
   }
   return bouts.length?{cls,bouts,sheet:sheetName}:null;
 }
+// ── D2) 立合評価法の集計シート（全日本 関東予選の形。1シート＝1階級、「第1戦」「第2戦」「第3戦」が横に並ぶ。
+//        各戦は 順番｜所属｜名前｜紅白 の列で、「白」の行と次の「赤」の行で1試合。「A／AA」のような英字だけの人は人数合わせ） ──
+const TA_SEN=/^第\s*([0-9０-９一二三四五]+)\s*戦$/;
+const senNo=s=>{ const m=String(s||'').match(/第\s*([0-9０-９一二三四五]+)\s*戦/); if(!m) return 0; const v=zen2han(m[1]); return /^\d+$/.test(v)?+v:('一二三四五'.indexOf(v)+1); };
+const taDummy=(a,n)=>!!(a||n)&&/^[A-Za-z]*$/.test(a)&&/^[A-Za-z]*$/.test(n);
+function parseTachiaiShukei(rows, sheetName){
+  const cls=(sheetName||'').replace(/[\s　]+/g,'');
+  const out=[];
+  for(let hr=1;hr<Math.min(rows.length,12);hr++){ const r=(rows[hr]||[]).map(cellStr);
+    for(let c=0;c<r.length;c++){
+      if(r[c]!=='所属'||r[c+1]!=='名前') continue;
+      let sen=''; for(let u=hr-1;u>=Math.max(0,hr-3)&&!sen;u--){ const v=cellStr((rows[u]||[])[c]); if(TA_SEN.test(v)) sen=v.replace(/\s/g,''); }
+      if(!sen) continue; // 「集計」「抽選」の列は読まない
+      const sc=c+2; const ents=[];
+      for(let i=hr+1;i<rows.length;i++){ const x=rows[i]||[];
+        const side=cellStr(x[sc]); if(side!=='白'&&side!=='赤') continue;
+        ents.push({side,a:cellStr(x[c]),n:cellStr(x[c+1]),no:c>0?zen2han(cellStr(x[c-1])):''});
+      }
+      const bouts=[];
+      for(let i=0;i<ents.length;i++){ const w=ents[i]; if(w.side!=='白') continue;
+        const k=ents[i+1]&&ents[i+1].side==='赤'?ents[++i]:{a:'',n:''};
+        if(!(w.a||w.n||k.a||k.n)) continue;
+        if((taDummy(w.a,w.n)||!(w.a||w.n))&&(taDummy(k.a,k.n)||!(k.a||k.n))) continue; // 両方とも人数合わせ
+        const fix=e=>taDummy(e.a,e.n)?{a:'',n:'（相手なし）'}:{a:e.a,n:e.n};
+        const W=fix(w), K=fix(k);
+        const b=/^\d{1,3}(\.0+)?$/.test(w.no)?parseInt(w.no,10):bouts.length+1;
+        bouts.push({a:W.a,n:W.n,a2:K.a,n2:K.n,b,g:cls+' '+sen});
+      }
+      if(bouts.length) out.push({cls,sen,bouts,sheet:sheetName});
+    }
+  }
+  return out.sort((x,y)=>senNo(x.sen)-senNo(y.sen));
+}
 const defaultTaRound=td=>(td.rounds||[]).find(r=>/立合/.test(r))||'立合評価法';
 
 function parseWorkbook(wb){
   const perSheet=[]; const warnings=[]; const ta=[];
+  // 立合評価法の集計シート（第1戦・第2戦…が横に並ぶ形）が1枚でもあれば、その形のシートだけを読む（非表示のシートは読まない）
+  const hidden=new Set(((wb.Workbook||{}).Sheets||[]).map((s,i)=>s&&s.Hidden?wb.SheetNames[i]:null).filter(Boolean));
+  wb.SheetNames.forEach(name=>{ if(hidden.has(name)) return; const ws=wb.Sheets[name]; if(!ws||!ws['!ref']) return;
+    ta.push(...parseTachiaiShukei(XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''}),name)); });
+  if(ta.length) return {rounds:{}, warnings, modes:['ta'], ta};
   wb.SheetNames.forEach(name=>{
     const ws=wb.Sheets[name]; if(!ws||!ws['!ref']) return;
     const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
@@ -1970,13 +2009,14 @@ function openImportPreview(fname){
   if(ta.length){
     const tr=taOnly?cur:defaultTaRound(td), arr=td.courts[tr]||[], used=new Set(); let nx=1;
     const free=()=>{ while(used.has(nx)||((arr.find(c=>c.id===nx)||{}).teams||[]).length) nx++; used.add(nx); return nx; };
-    ta.forEach(g=>{ if(g.court) return; const hit=arr.find(c=>isTA(c)&&(c.cat||'').split('・').includes(g.cls)); if(hit){ g.court=hit.id; used.add(hit.id); } });
-    ta.forEach(g=>{ if(!g.court) g.court=free(); });
+    const byCls={}; // 同じ階級（第1戦・第2戦…）は同じコートに
+    ta.forEach(g=>{ if(g.court){ byCls[g.cls]=byCls[g.cls]||g.court; return; } const hit=arr.find(c=>isTA(c)&&((c.cat||'').split('・').includes(g.cls)||(c.teams||[]).some(t=>(t.g||'').split(' ')[0]===g.cls))); if(hit){ g.court=hit.id; used.add(hit.id); byCls[g.cls]=byCls[g.cls]||hit.id; } });
+    ta.forEach(g=>{ if(!g.court) g.court=byCls[g.cls]||(byCls[g.cls]=free()); });
     const N=Math.max(16,arr.length,...ta.map(g=>g.court));
     taHTML=`<div class="pvround">立合評価法の対戦表 <span style="font-size:10px;color:#A8894F;margin-left:6px">白・赤</span></div>
       <div class="pvta"><span>読み込むラウンド</span><input class="inp" id="taround" value="${esc(tr)}" ${taOnly?'readonly':''} style="max-width:200px;padding:6px 10px;font-size:13px">${td.rounds.includes(tr)?'':'<span style="font-size:10px;color:#A8894F">新規追加</span>'}</div>
-      <div class="pvlist">${ta.map((g,k)=>`<div class="pvrow" style="align-items:center"><span class="pvno" style="width:88px"><select class="pvsel" id="tac${k}">${Array.from({length:N},(_,j)=>`<option value="${j+1}"${j+1===g.court?' selected':''}>${j+1}コート</option>`).join('')}</select></span><span class="pvcat">${esc(g.cls)}</span><span class="pvcnt">${g.bouts.length}試合</span><span class="pvteams">${esc(g.bouts.slice(0,2).map(t=>`${t.n} 対 ${t.n2}`).join('／'))}${g.bouts.length>2?' …':''}</span></div>`).join('')}</div>
-      <div style="font-size:11px;color:#888;margin-top:6px">階級ごとにコートを選べます。同じコートを選んだ階級は、上から順に続けて進行します。</div>`;
+      <div class="pvlist">${ta.map((g,k)=>`<div class="pvrow" style="align-items:center"><span class="pvno" style="width:88px"><select class="pvsel" id="tac${k}" data-cls="${esc(g.cls)}" onchange="${g.sen?"document.querySelectorAll('.pvsel[data-cls]').forEach(e=>{ if(e.dataset.cls===this.dataset.cls) e.value=this.value; })":''}">${Array.from({length:N},(_,j)=>`<option value="${j+1}"${j+1===g.court?' selected':''}>${j+1}コート</option>`).join('')}</select></span>${g.sen?`<label class="pvchk"><input type="checkbox" id="tai${k}" ${g.skip?'':'checked'}></label>`:''}<span class="pvcat">${esc(g.cls)}${g.sen?` <span style="color:#A8894F">${esc(g.sen)}</span>`:''}</span><span class="pvcnt">${g.bouts.length}試合</span><span class="pvteams">${esc(g.bouts.slice(0,2).map(t=>`${t.n} 対 ${t.n2}`).join('／'))}${g.bouts.length>2?' …':''}</span></div>`).join('')}</div>
+      <div style="font-size:11px;color:#888;margin-top:6px">階級ごとにコートを選べます。同じコートを選んだ階級は、上から順に続けて進行します。${ta.some(g=>g.sen)?'<br>第1戦・第2戦・第3戦は、チェックを付けた戦だけを読み込みます。あとから第3戦だけを読み込むと、そのコートの第1戦・第2戦は残したまま第3戦だけを入れ替えます。':''}</div>`;
   }
   const body=Object.entries(R).map(([rk,courts])=>{
     const exists=td.rounds.includes(rk);
@@ -1991,7 +2031,7 @@ function openImportPreview(fname){
   $('mod').innerHTML=`
     <div class="mhead"><div class="mtitle">読み込み内容の確認</div><button class="xbtn" onclick="closeModal()">×</button></div>
     <div style="font-size:12px;color:#8A857C;margin-bottom:4px">${esc(fname)}</div>
-    <div style="font-size:12px;color:#3D3A36">${[totalCourts?`${totalCourts}コート・${totalTeams}組`+(importResult.modes.includes('pdf')?'（名簿PDF）':importResult.modes.includes('web')?'（連盟サイトのコート割）':importResult.modes.includes('block')?'（番組形式）':'（表形式）'):'', ta.length?`立合評価法 ${ta.length}階級・${ta.reduce((s,g)=>s+g.bouts.length,0)}試合`:''].filter(Boolean).join('、')} を読み取りました</div>
+    <div style="font-size:12px;color:#3D3A36">${[totalCourts?`${totalCourts}コート・${totalTeams}組`+(importResult.modes.includes('pdf')?'（名簿PDF）':importResult.modes.includes('web')?'（連盟サイトのコート割）':importResult.modes.includes('block')?'（番組形式）':'（表形式）'):'', ta.length?`立合評価法 ${new Set(ta.map(g=>g.cls)).size}階級${ta.some(g=>g.sen)?`（${ta.length}戦）`:''}・${ta.reduce((s,g)=>s+g.bouts.length,0)}試合`:''].filter(Boolean).join('、')} を読み取りました</div>
     ${live?`<div style="font-size:12px;color:#3D3A36;margin-top:2px">大会「${esc(TD.name)}」に追加・更新します。ラウンドが無ければタブとして追加されます。</div>`:''}
     ${body}${taHTML}
     ${importResult.warnings.length?`<div class="pvwarn">${importResult.warnings.map(esc).join('<br>')}</div>`:''}
@@ -2018,9 +2058,18 @@ function applyImport(){
   if(taOnly) importResult.rounds={};
   if(ta.length){ // 立合: 選んだコートごとに階級をまとめる（同じコートは上から順に続ける）
     const tr=taOnly?taCur:(($('taround')?.value||'').trim()||defaultTaRound(td));
-    const byCourt={}; ta.forEach((g,k)=>{ const no=+($('tac'+k)?.value)||g.court||k+1; (byCourt[no]=byCourt[no]||[]).push(g); });
+    const byCourt={}; ta.forEach((g,k)=>{ if(g.sen&&$('tai'+k)&&!$('tai'+k).checked) return; const no=+($('tac'+k)?.value)||g.court||k+1; (byCourt[no]=byCourt[no]||[]).push(g); });
     const RR=importResult.rounds; RR[tr]=RR[tr]||{};
-    Object.entries(byCourt).forEach(([no,gs])=>{ RR[tr][no]={cat:gs.map(g=>g.cls).join('・'),kind:'ta',teams:gs.flatMap(g=>g.bouts.map(t=>({...t})))}; });
+    const arr0=td.courts[tr]||[];
+    Object.entries(byCourt).forEach(([no,gs])=>{
+      const clsL=[...new Set(gs.map(g=>g.cls))], newG=new Set(gs.map(g=>g.bouts[0].g));
+      // 集計シートの形: そのコートにある同じ階級の別の戦（例: 第3戦だけ読み込んだときの第1戦・第2戦）は残す
+      const old=clear?[]:(((arr0.find(c=>c.id===+no)||{}).teams)||[]).filter(t=>senNo(t.g)&&clsL.includes((t.g||'').split(' ')[0])&&!newG.has(t.g));
+      const teams=old.map(t=>({...t})).concat(gs.flatMap(g=>g.bouts.map(t=>({...t}))));
+      const ord=t=>clsL.indexOf((t.g||'').split(' ')[0])*100+senNo(t.g);
+      teams.forEach((t,i)=>t._i=i); teams.sort((x,y)=>ord(x)-ord(y)||x._i-y._i); teams.forEach(t=>delete t._i);
+      RR[tr][no]={cat:clsL.join('・'),kind:'ta',teams};
+    });
   }
   let firstRound=null; const added=[];
   const keys=Object.keys(importResult.rounds);
@@ -2080,6 +2129,7 @@ function importHelpHTML(){
   return `<dl>
     <dt>名簿PDF</dt><dd>連盟の「本選全RC 名簿」のように、各ページに「本選A 1コート ○○の部」の見出しと、出番・所属・選手氏名の表があるPDF。コート割ページを印刷したPDFは文字が取り出せないため読めません。</dd>
     <dt>連盟サイトのコート割ページ</dt><dd>kantogs.org のコート割ページをブラウザで開き「ファイル → 別名で保存」したファイル（Safariは .webarchive、Chromeは .html）。</dd>
+    <dt>立合評価法の集計シート（エクセル）</dt><dd>全日本 関東予選の集計シートの形。1シート＝1階級（シート名が階級名）で、「第1戦」「第2戦」「第3戦」の下に 順番｜所属｜名前｜紅白 が並び、「白」の行と次の「赤」の行で1試合。集計・抽選の列と非表示のシートは読みません。英字だけの人（A／AA など）は「相手なし」になります。</dd>
     <dt>立合評価法の対戦表（エクセル）</dt><dd>1シート＝1階級で、「白」「赤」の見出しの下に 番号｜大学｜氏名｜大学｜氏名 が並ぶ表。読み込むときに階級ごとのコートとラウンド（既定は「立合評価法」）を選べます。</dd>
     <dt>エクセル（.xlsx / .csv）</dt><dd><code>コート</code> <code>種目</code> <code>大学名</code> <code>名前</code>（任意で <code>ラウンド</code>）の列がある表、または「1コート 男子初段」の見出しの下に大学名・名前が並ぶ表。シートが複数あればシート名がラウンド名になります。<button class="implink" onclick="downloadImportTemplate()">テンプレートをダウンロード</button></dd>
   </dl>`;
