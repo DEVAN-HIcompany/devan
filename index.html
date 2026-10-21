@@ -626,7 +626,7 @@ const auth = firebase.auth();
 // モード: 'admin'（管理用・ログイン必須・すべて操作可） / 'view'（閲覧用・見るだけ）
 // ─────────────────────────────────────────
 let MODE = null;      // 'admin' | 'operator' | 'view'
-let ROLE = null;      // ログイン後の権限: 'admin' | 'operator'
+let ROLE = null;      // ログイン後の権限: 'admin' | 'operator' | 'ta'（立合セク） | 'gate' | 'shop'
 let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='ta'; }catch(e){} // 進行用の担当: shinko=進行セク（演武のコート）/ ta=立合セク（立合評価法のコート）
 const SEC_NAME=()=>OP_SEC==='ta'?'立合セク用':'進行セク用';
 function secOK(c){ if(MODE!=='operator') return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる
@@ -669,7 +669,7 @@ async function loadRole(){
   const u=auth.currentUser; if(!u){ ROLE=null; return null; }
   try{
     const snap=await ROLES.once('value'); const roles=snap.val();
-    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : ((roles[u.uid]==='gate'||roles[u.uid]==='shop') ? roles[u.uid] : 'operator'));
+    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : ((roles[u.uid]==='gate'||roles[u.uid]==='shop'||roles[u.uid]==='ta') ? roles[u.uid] : 'operator'));
   }catch(e){ console.error('roles',e); ROLE='operator'; }
   return ROLE;
 }
@@ -1026,6 +1026,11 @@ async function enterOperator(sec){
   show(loadingHTML('確認しています'));
   await loadRole();
   if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('進行用'); return; }
+  if(ROLE==='ta'){ OP_SEC='ta'; try{ sessionStorage.setItem('sj_opsec','ta'); }catch(e){} } // 立合セクのアカウントは常に立合セク
+  else if(OP_SEC==='ta'&&ROLE!=='admin'){ // 立合セクは「立合セク」として許可したアカウントだけ
+    const u=auth.currentUser; try{ await db.ref('tk/pending/'+u.uid).set({email:u.email||'',at:Date.now(),want:'ta'}); }catch(e){}
+    renderTaNotAllowed(); return;
+  }
   MODE='operator'; viewRound=null;
   if(!OP_NAME){ renderOpName(); return; }
   renderList();
@@ -1059,6 +1064,19 @@ function changeOpName(){
 function takeCourt(){ // このコートの担当になる（進行は変えない）
   if(MODE!=='operator'||!OP_NAME||!secOK(_court())) return;
   writeCourt(courtKey(curRound(),modalCourtId),{}).then(ok=>{ if(ok) showToast(`${modalCourtId}コートの担当になりました`); });
+}
+function renderTaNotAllowed(){
+  const u=auth.currentUser;
+  show(`
+    <div class="home"><div class="home-box">
+      <div class="hero"></div>
+      <div class="org">立合セク用</div>
+      <div class="wordmark">DEVAN</div>
+      <div class="hsub">このアカウント（${esc(u?u.email||'':'')}）は<br>立合セクとして許可されていません。</div>
+      <div class="hnote" style="text-align:left;line-height:1.8">立合セクは、専用のアカウントで入ります。<br>管理者が「チケット管理 → 受付アカウント」の<b>許可待ち</b>で「立合セクとして許可」を押すと、このアカウントで入れるようになります。<br>演武のコートを操作する場合は、戻って「進行セク用」を選んでください。</div>
+      <div class="hwho">ログイン中: <b>${esc(u?u.email||'':'')}</b></div>
+      <div class="hactions"><button class="hact" onclick="renderFedHome()">‹ 戻る</button><button class="hact quiet" onclick="doLogout()">ログアウトして別のアカウントで入る</button></div>
+    </div></div>`);
 }
 function renderGateOnly(what){
   const u=auth.currentUser;
