@@ -183,9 +183,9 @@ body.beta .overlay{top:32px}
 /* ホーム側: 見出しは着地の瞬間まで隠し（二重表示を防ぐ）、ボタン類は着地中に順に浮かぶ */
 .home.enter .hero,.home.enter .org,.home.enter .wordmark,.home.enter .hsub{opacity:0}
 .home.enter.landed .hero,.home.enter.landed .org,.home.enter.landed .wordmark,.home.enter.landed .hsub{opacity:1}
-.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .hwho,.home.enter .hactions,.home.enter .credit,.home.enter .installbar{opacity:0;transform:translateY(14px)}
-.home.enter.go .hbtn,.home.enter.go .hsmall,.home.enter.go .hsec,.home.enter.go .hnote,.home.enter.go .hwho,.home.enter.go .hactions,.home.enter.go .credit,.home.enter.go .installbar{opacity:1;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
-@media(prefers-reduced-motion:reduce){#splash{display:none}.home.enter .hero,.home.enter .org,.home.enter .wordmark,.home.enter .hsub{opacity:1}.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .credit,.home.enter .installbar{opacity:1;transform:none}}
+.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .hwho,.home.enter .hactions,.home.enter .credit,.home.enter .installbar,.home.enter .soon,.home.enter .soonnote,.home.enter .soonlogin,.home.enter .pvwarn{opacity:0;transform:translateY(14px)}
+.home.enter.go .hbtn,.home.enter.go .hsmall,.home.enter.go .hsec,.home.enter.go .hnote,.home.enter.go .hwho,.home.enter.go .hactions,.home.enter.go .credit,.home.enter.go .installbar,.home.enter.go .soon,.home.enter.go .soonnote,.home.enter.go .soonlogin,.home.enter.go .pvwarn{opacity:1;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+@media(prefers-reduced-motion:reduce){#splash{display:none}.home.enter .hero,.home.enter .org,.home.enter .wordmark,.home.enter .hsub{opacity:1}.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .credit,.home.enter .installbar,.home.enter .soon,.home.enter .soonnote,.home.enter .soonlogin,.home.enter .pvwarn{opacity:1;transform:none}}
 
 .empty{text-align:center;padding:3rem;color:var(--muted);font-size:13px}
 
@@ -2720,7 +2720,7 @@ const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', srcPortrait:'splash-zennih
     if(to){ const a=from.getBoundingClientRect(), b=to.getBoundingClientRect(); const dx=(b.left+b.width/2)-(a.left+a.width/2), dy=b.top-a.top;
       inner.style.transition='transform .8s cubic-bezier(.2,.7,.2,1)'; inner.style.transform=`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px)`; }
     sp.classList.add('dock');
-    const home=document.querySelector('#app .home'); if(home){ home.classList.add('enter'); const els=home.querySelectorAll('.hbtn,.hsmall,.hsec,.hnote,.hwho,.hactions,.credit,.installbar'); els.forEach((el,i)=>{ el.style.transitionDelay=(0.35+i*0.07)+'s'; }); requestAnimationFrame(()=>requestAnimationFrame(()=>home.classList.add('go'))); }
+    const home=document.querySelector('#app .home'); if(home){ home.classList.add('enter'); const els=home.querySelectorAll('.hbtn,.hsmall,.hsec,.hnote,.hwho,.hactions,.soon,.soonnote,.pvwarn,.soonlogin,.credit,.installbar'); els.forEach((el,i)=>{ el.style.transitionDelay=(0.35+i*0.07)+'s'; }); requestAnimationFrame(()=>requestAnimationFrame(()=>home.classList.add('go'))); }
     setTimeout(()=>{ const h=document.querySelector('#app .home'); if(h) h.classList.add('landed'); sp.remove(); }, 830);
   };
   const start=()=>{ sp.classList.add('go'); setTimeout(()=>{ Promise.race([splashHomeReady, new Promise(r=>setTimeout(r,2500))]).then(()=>setTimeout(dock,50)); }, 1650); };
