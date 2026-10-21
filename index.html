@@ -1315,11 +1315,12 @@ function openTournament(id){
     CUR_ID = id;
     TD = clone(td);
     // 立合セク管理者が削除した立合ラウンド（courts/{ラウンド} が {_deleted:true}）は無いものとして扱う。管理者が次に保存すると実際に消える
+    TD.courts=TD.courts||{}; TD.rounds=TD.rounds||[];
     { const dr=(TD.rounds||[]).filter(r=>TD.courts&&TD.courts[r]&&TD.courts[r]._deleted); if(dr.length){ TD.rounds=TD.rounds.filter(r=>!dr.includes(r)); dr.forEach(r=>{ delete TD.courts[r]; }); } }
-    if(MODE==='operator'&&OP_SEC==='ta'&&!viewRound){ const tr=(td.rounds||[]).find(r=>(td.courts[r]||[]).some(isTA)); if(tr) viewRound=tr; }
+    if(MODE==='operator'&&OP_SEC==='ta'&&!viewRound){ const tr=(TD.rounds||[]).find(r=>Array.isArray(TD.courts[r])&&TD.courts[r].some(isTA)); if(tr) viewRound=tr; }
     // Firebaseは空配列を保存しないので、teamsがない場合は空配列に補完
     TD.rounds.forEach(r=>{
-      if(!TD.courts[r]) TD.courts[r]=[];
+      if(!Array.isArray(TD.courts[r])) TD.courts[r]=TD.courts[r]&&typeof TD.courts[r]==='object'?Object.values(TD.courts[r]).filter(c=>c&&typeof c==='object'):[];
       TD.courts[r].forEach(c=>{ if(!c.teams) c.teams=[]; });
     });
     PROG_DATA = { currentRound: TD.rounds[0], courts: {} };
