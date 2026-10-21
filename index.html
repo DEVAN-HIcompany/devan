@@ -1005,27 +1005,23 @@ function renderComingSoon(msg){
   startSoonPetals();
   splashHandoff();
 }
-// Coming soon の桜: 背景にずっと舞わせ、25〜45秒に1回くらい金色の花びらを1枚だけ流す（最初の1枚は10〜20秒後）
-let soonGoldTimer=null;
+// Coming soon の桜: 背景にずっと舞わせる。花びらが1枚落ちきるたびに 0.1% の確率で、金色の花びらを1枚だけ流す（平均で数分に1回）
+const SOON_GOLD_RATE=0.001;
 function startSoonPetals(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  let pc=$('soonpetals');
-  if(!pc){
-    pc=document.createElement('div'); pc.id='soonpetals'; pc.setAttribute('aria-hidden','true'); document.body.prepend(pc);
-    const rnd=(a,b)=>a+Math.random()*(b-a); const narrow=innerWidth<700; let ph='';
-    for(let i=0;i<(narrow?18:28);i++){ const far=Math.random()<.35; const sz=far?rnd(22,34):rnd(40,72);
-      ph+=`<i style="--x:${rnd(-4,100).toFixed(1)}vw;--s:${sz.toFixed(0)}px;--d:${rnd(far?13:9,far?19:14).toFixed(1)}s;--dl:${(-rnd(0,18)).toFixed(1)}s;--w:${rnd(1.8,3.2).toFixed(1)}s;--r:${rnd(0,360).toFixed(0)}deg;--dx:${rnd(-14,14).toFixed(0)}vw;--b:${far?'1.2px':'0px'}"><b></b></i>`; }
-    pc.innerHTML=ph;
-  }
-  if(soonGoldTimer) return;
-  const gold=()=>{
-    if(!document.body.classList.contains('soonmode')){ soonGoldTimer=null; return; }
-    const rnd=(a,b)=>a+Math.random()*(b-a); const g=document.createElement('i'); g.className='gold';
+  if($('soonpetals')) return;
+  const pc=document.createElement('div'); pc.id='soonpetals'; pc.setAttribute('aria-hidden','true'); document.body.prepend(pc);
+  const rnd=(a,b)=>a+Math.random()*(b-a); const narrow=innerWidth<700; let ph='';
+  for(let i=0;i<(narrow?18:28);i++){ const far=Math.random()<.35; const sz=far?rnd(22,34):rnd(40,72);
+    ph+=`<i style="--x:${rnd(-4,100).toFixed(1)}vw;--s:${sz.toFixed(0)}px;--d:${rnd(far?13:9,far?19:14).toFixed(1)}s;--dl:${(-rnd(0,18)).toFixed(1)}s;--w:${rnd(1.8,3.2).toFixed(1)}s;--r:${rnd(0,360).toFixed(0)}deg;--dx:${rnd(-14,14).toFixed(0)}vw;--b:${far?'1.2px':'0px'}"><b></b></i>`; }
+  pc.innerHTML=ph;
+  pc.addEventListener('animationiteration',e=>{
+    if(e.animationName!=='spFall'||e.target.tagName!=='I'||e.target.classList.contains('gold')) return;
+    if(!document.body.classList.contains('soonmode')||Math.random()>=SOON_GOLD_RATE||pc.querySelector('i.gold')) return;
+    const g=document.createElement('i'); g.className='gold';
     g.setAttribute('style',`--x:${rnd(8,88).toFixed(1)}vw;--s:${rnd(56,74).toFixed(0)}px;--d:${rnd(10,13).toFixed(1)}s;--dl:0s;--w:${rnd(2,3).toFixed(1)}s;--r:${rnd(0,360).toFixed(0)}deg;--dx:${rnd(-12,12).toFixed(0)}vw;--b:0px`);
-    g.innerHTML='<b></b>'; g.addEventListener('animationend',e=>{ if(e.target===g) g.remove(); }); pc.appendChild(g);
-    soonGoldTimer=setTimeout(gold,rnd(25000,45000));
-  };
-  soonGoldTimer=setTimeout(gold,10000+Math.random()*10000);
+    g.innerHTML='<b></b>'; g.addEventListener('animationend',ev=>{ if(ev.target===g) g.remove(); }); pc.appendChild(g);
+  });
 }
 function renderHome(){
   if(locked()){ renderComingSoon(); return; }
