@@ -1005,7 +1005,7 @@ function renderComingSoon(msg){
   startSoonPetals();
   splashHandoff();
 }
-// Coming soon の桜: 背景にずっと舞わせ、7〜14秒に1回くらい金色の花びらを1枚だけ流す
+// Coming soon の桜: 背景にずっと舞わせ、25〜45秒に1回くらい金色の花びらを1枚だけ流す（最初の1枚は10〜20秒後）
 let soonGoldTimer=null;
 function startSoonPetals(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1023,9 +1023,9 @@ function startSoonPetals(){
     const rnd=(a,b)=>a+Math.random()*(b-a); const g=document.createElement('i'); g.className='gold';
     g.setAttribute('style',`--x:${rnd(8,88).toFixed(1)}vw;--s:${rnd(56,74).toFixed(0)}px;--d:${rnd(10,13).toFixed(1)}s;--dl:0s;--w:${rnd(2,3).toFixed(1)}s;--r:${rnd(0,360).toFixed(0)}deg;--dx:${rnd(-12,12).toFixed(0)}vw;--b:0px`);
     g.innerHTML='<b></b>'; g.addEventListener('animationend',e=>{ if(e.target===g) g.remove(); }); pc.appendChild(g);
-    soonGoldTimer=setTimeout(gold,rnd(7000,14000));
+    soonGoldTimer=setTimeout(gold,rnd(25000,45000));
   };
-  soonGoldTimer=setTimeout(gold,2500);
+  soonGoldTimer=setTimeout(gold,10000+Math.random()*10000);
 }
 function renderHome(){
   if(locked()){ renderComingSoon(); return; }
