@@ -665,12 +665,12 @@ let MODE = null;      // 'admin' | 'operator' | 'view'
 // 公開停止中（2026-10-21 社長指示）: true の間は管理者・進行セク・立合セクのアカウントでログインした人だけが使える（受付・物販のアカウントは不可）。他の人には Coming soon 画面だけを出す。公開するときは false にする
 const LOCKDOWN = true;
 const locked = () => LOCKDOWN && !(auth.currentUser && (ROLE==='admin'||ROLE==='operator'||ROLE==='ta'));
-let ROLE = null;      // ログイン後の権限: 'admin' | 'operator' | 'ta'（立合セク） | 'gate' | 'shop'
+let ROLE = null;      // ログイン後の権限: 'admin' | 'operator' | 'ta'（立合セク） | 'taadmin'（立合セク管理者: 立合ラウンドの編集も） | 'gate' | 'shop'
 let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='ta'; }catch(e){} // 進行用の担当: shinko=進行セク（演武のコート）/ ta=立合セク（立合評価法のコート）
-const SEC_NAME=()=>OP_SEC==='ta'?'立合セク用':'進行セク用';
-// 立合セク（sj/roles='ta'）は、名前に「立合」が入ったラウンドのコート割だけ編集できる（読み込み・各コートの修正）。DBルールも同じ条件
+const SEC_NAME=()=>OP_SEC==='ta'?(ROLE==='taadmin'?'立合セク管理者':'立合セク用'):'進行セク用';
+// 立合セク管理者（sj/roles='taadmin'）は、名前に「立合」が入ったラウンドのコート割だけ編集できる（読み込み・各コートの修正）。DBルールも同じ条件。普通の立合セク（'ta'）は進行だけ
 const isTARound=r=>/立合/.test(r||'');
-function canEditTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='ta'||ROLE==='admin')&&!!auth.currentUser&&!!TD&&isTARound(curRound()); }
+function canEditTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin')&&!!auth.currentUser&&!!TD&&isTARound(curRound()); }
 function secOK(c){ if(MODE!=='operator') return true; if(OP_SEC==='ta'&&c&&!(c.teams||[]).length&&canEditTA()) return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる（立合セクは立合ラウンドの空きコートも設定できる）
 let OP_NAME=''; try{ OP_NAME=(localStorage.getItem('sj_opname')||'').trim(); }catch(e){} // 進行セクの担当者名（端末に記憶。学連の画面にだけ表示）
 let viewRound = null; // 進行用・閲覧用で見ているラウンド（端末内だけ。共有の currentRound は管理用だけが変える）
@@ -711,7 +711,7 @@ async function loadRole(){
   const u=auth.currentUser; if(!u){ ROLE=null; return null; }
   try{
     const snap=await ROLES.once('value'); const roles=snap.val();
-    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : ((roles[u.uid]==='gate'||roles[u.uid]==='shop'||roles[u.uid]==='ta') ? roles[u.uid] : 'operator'));
+    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : ((roles[u.uid]==='gate'||roles[u.uid]==='shop'||roles[u.uid]==='ta'||roles[u.uid]==='taadmin') ? roles[u.uid] : 'operator'));
   }catch(e){ console.error('roles',e); ROLE='operator'; }
   return ROLE;
 }
@@ -774,7 +774,7 @@ function isStarted(cs){ return !!(cs && (cs.started || cs.current>0));
 // ─────────────────────────────────────────
 // 保存
 // ─────────────────────────────────────────
-function saveTARound(r){ if(!canEditTA()||!isTARound(r)) return Promise.resolve(false); return META(CUR_ID).child('courts').child(r).set(TD.courts[r]||[]).then(()=>true).catch(e=>{ console.error('ta save',e); showToast('保存できませんでした（立合セクの書き込みルールが未設定の可能性があります。管理者に連絡してください）'); return false; }); }
+function saveTARound(r){ if(!canEditTA()||!isTARound(r)) return Promise.resolve(false); return META(CUR_ID).child('courts').child(r).set(TD.courts[r]||[]).then(()=>true).catch(e=>{ console.error('ta save',e); showToast('保存できませんでした（立合セク管理者のアカウントでログインしているか確認してください）'); return false; }); }
 function saveMeta(){ if(!isAdmin()) return; META(CUR_ID).set(TD).catch(e=>{ console.error('meta save',e); showToast('保存できませんでした（管理者としてログインしているか確認してください）'); }); }
 function saveProg(){ if(!canOperate()) return; PROG(CUR_ID).set(PROG_DATA).catch(e=>{ console.error('prog save',e); showToast('保存できませんでした（管理者としてログインしているか確認してください）'); }); }
 // ── 同時操作対策 ──
@@ -1106,7 +1106,7 @@ async function enterOperator(sec){
   await loadRole();
   if(locked()){ renderComingSoon('このアカウントでは使えません。'); return; }
   if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('進行用'); return; }
-  if(ROLE==='ta'){ OP_SEC='ta'; try{ sessionStorage.setItem('sj_opsec','ta'); }catch(e){} } // 立合セクのアカウントは常に立合セク
+  if(ROLE==='ta'||ROLE==='taadmin'){ OP_SEC='ta'; try{ sessionStorage.setItem('sj_opsec','ta'); }catch(e){} } // 立合セク（管理者を含む）のアカウントは常に立合セク
   else if(OP_SEC==='ta'&&ROLE!=='admin'){ // 立合セクは「立合セク」として許可したアカウントだけ
     const u=auth.currentUser; try{ await db.ref('tk/pending/'+u.uid).set({email:u.email||'',at:Date.now(),want:'ta'}); }catch(e){}
     renderTaNotAllowed(); return;
