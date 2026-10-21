@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4EF">
 <link rel="manifest" href="manifest.webmanifest?v=devan4">
 <link rel="icon" type="image/png" sizes="192x192" href="devan-192.png">
@@ -30,6 +30,11 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
+/* アプリとして使うため: ダブルタップ・ピンチで拡大しない、横に余白へずれない、端で画面全体が引っぱられない */
+html,body{overscroll-behavior:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@supports(overflow:clip){html,body{overflow-x:clip}}
+*{touch-action:manipulation}
+@media(max-width:768px){input,select,textarea{font-size:16px!important}}
 body{overflow-x:hidden;font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.55;font-weight:400;letter-spacing:.01em}
 button,input,textarea{font-family:inherit}
 button{cursor:pointer;transition:background .15s,border-color .15s,color .15s,box-shadow .15s,opacity .15s,transform .1s}
@@ -385,6 +390,7 @@ body.big .etaline{font-size:16px}
 .overlay.open{display:flex}
 .modal{background:#fff;border-radius:16px 16px 0 0;padding:1.2rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom));width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.15);animation:up .2s ease-out}
 @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+.modal,.overlay{overscroll-behavior:contain}
 @media(min-width:700px){.overlay{align-items:flex-start;padding:6vh 16px 16px}.modal{border-radius:14px;width:min(540px,100%);max-height:88vh;padding:1.6rem;animation:pop .18s ease-out}}
 @keyframes pop{from{transform:translateY(6px);opacity:.5}to{transform:none;opacity:1}}
 .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:8px}
@@ -2710,6 +2716,10 @@ function toggleAbsent(idx){
 // ─────────────────────────────────────────
 // ── アプリとして追加（PWA） ──
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+// iOS Safari は user-scalable=no を無視するので、ピンチの拡大をここで止める（ダブルタップは CSS の touch-action:manipulation で止める）
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
+document.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false});
+document.addEventListener('touchmove',e=>{ if(e.touches&&e.touches.length>1) e.preventDefault(); },{passive:false});
 let installPrompt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; const b=$('installbar'); if(b) b.hidden=false; const c=$('soonpwa-btn'); if(c) c.hidden=false; });
 function installHintHTML(){
