@@ -668,7 +668,10 @@ const locked = () => LOCKDOWN && !(auth.currentUser && (ROLE==='admin'||ROLE==='
 let ROLE = null;      // ログイン後の権限: 'admin' | 'operator' | 'ta'（立合セク） | 'gate' | 'shop'
 let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='ta'; }catch(e){} // 進行用の担当: shinko=進行セク（演武のコート）/ ta=立合セク（立合評価法のコート）
 const SEC_NAME=()=>OP_SEC==='ta'?'立合セク用':'進行セク用';
-function secOK(c){ if(MODE!=='operator') return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる
+// 立合セク（sj/roles='ta'）は、名前に「立合」が入ったラウンドのコート割だけ編集できる（読み込み・各コートの修正）。DBルールも同じ条件
+const isTARound=r=>/立合/.test(r||'');
+function canEditTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='ta'||ROLE==='admin')&&!!auth.currentUser&&!!TD&&isTARound(curRound()); }
+function secOK(c){ if(MODE!=='operator') return true; if(OP_SEC==='ta'&&c&&!(c.teams||[]).length&&canEditTA()) return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる（立合セクは立合ラウンドの空きコートも設定できる）
 let OP_NAME=''; try{ OP_NAME=(localStorage.getItem('sj_opname')||'').trim(); }catch(e){} // 進行セクの担当者名（端末に記憶。学連の画面にだけ表示）
 let viewRound = null; // 進行用・閲覧用で見ているラウンド（端末内だけ。共有の currentRound は管理用だけが変える）
 let isAdmin = () => MODE==='admin' && ROLE==='admin' && !!auth.currentUser;
@@ -771,6 +774,7 @@ function isStarted(cs){ return !!(cs && (cs.started || cs.current>0));
 // ─────────────────────────────────────────
 // 保存
 // ─────────────────────────────────────────
+function saveTARound(r){ if(!canEditTA()||!isTARound(r)) return Promise.resolve(false); return META(CUR_ID).child('courts').child(r).set(TD.courts[r]||[]).then(()=>true).catch(e=>{ console.error('ta save',e); showToast('保存できませんでした（立合セクの書き込みルールが未設定の可能性があります。管理者に連絡してください）'); return false; }); }
 function saveMeta(){ if(!isAdmin()) return; META(CUR_ID).set(TD).catch(e=>{ console.error('meta save',e); showToast('保存できませんでした（管理者としてログインしているか確認してください）'); }); }
 function saveProg(){ if(!canOperate()) return; PROG(CUR_ID).set(PROG_DATA).catch(e=>{ console.error('prog save',e); showToast('保存できませんでした（管理者としてログインしているか確認してください）'); }); }
 // ── 同時操作対策 ──
@@ -1950,6 +1954,8 @@ function _impCurRound(){ return importTarget==='live' ? curRound() : draftTD.rou
 function openImportPreview(fname){
   const live=importTarget==='live';
   const td=_impTD(), cur=_impCurRound();
+  const taOnly=live&&!isAdmin()&&canEditTA();
+  if(taOnly){ if(!(importResult.ta||[]).length){ importResult=null; alert('立合評価法の対戦表が見つかりませんでした。\n\n立合セクで読み込めるのは「白」「赤」の見出しがある対戦表のエクセルだけです。'); return; } importResult.rounds={}; }
   const R=importResult.rounds;
   const totalCourts=Object.values(R).reduce((s,c)=>s+Object.keys(c).length,0);
   const totalTeams =Object.values(R).reduce((s,c)=>s+Object.values(c).reduce((x,ct)=>x+ct.teams.length,0),0);
@@ -1962,13 +1968,13 @@ function openImportPreview(fname){
   const ta=importResult.ta||[];
   let taHTML='';
   if(ta.length){
-    const tr=defaultTaRound(td), arr=td.courts[tr]||[], used=new Set(); let nx=1;
+    const tr=taOnly?cur:defaultTaRound(td), arr=td.courts[tr]||[], used=new Set(); let nx=1;
     const free=()=>{ while(used.has(nx)||((arr.find(c=>c.id===nx)||{}).teams||[]).length) nx++; used.add(nx); return nx; };
     ta.forEach(g=>{ if(g.court) return; const hit=arr.find(c=>isTA(c)&&(c.cat||'').split('・').includes(g.cls)); if(hit){ g.court=hit.id; used.add(hit.id); } });
     ta.forEach(g=>{ if(!g.court) g.court=free(); });
     const N=Math.max(16,arr.length,...ta.map(g=>g.court));
     taHTML=`<div class="pvround">立合評価法の対戦表 <span style="font-size:10px;color:#A8894F;margin-left:6px">白・赤</span></div>
-      <div class="pvta"><span>読み込むラウンド</span><input class="inp" id="taround" value="${esc(tr)}" style="max-width:200px;padding:6px 10px;font-size:13px">${td.rounds.includes(tr)?'':'<span style="font-size:10px;color:#A8894F">新規追加</span>'}</div>
+      <div class="pvta"><span>読み込むラウンド</span><input class="inp" id="taround" value="${esc(tr)}" ${taOnly?'readonly':''} style="max-width:200px;padding:6px 10px;font-size:13px">${td.rounds.includes(tr)?'':'<span style="font-size:10px;color:#A8894F">新規追加</span>'}</div>
       <div class="pvlist">${ta.map((g,k)=>`<div class="pvrow" style="align-items:center"><span class="pvno" style="width:88px"><select class="pvsel" id="tac${k}">${Array.from({length:N},(_,j)=>`<option value="${j+1}"${j+1===g.court?' selected':''}>${j+1}コート</option>`).join('')}</select></span><span class="pvcat">${esc(g.cls)}</span><span class="pvcnt">${g.bouts.length}試合</span><span class="pvteams">${esc(g.bouts.slice(0,2).map(t=>`${t.n} 対 ${t.n2}`).join('／'))}${g.bouts.length>2?' …':''}</span></div>`).join('')}</div>
       <div style="font-size:11px;color:#888;margin-top:6px">階級ごとにコートを選べます。同じコートを選んだ階級は、上から順に続けて進行します。</div>`;
   }
@@ -2008,8 +2014,10 @@ function applyImport(){
   const td=_impTD(), cur=_impCurRound();
   const clear=$('impclear')?.checked;
   const ta=importResult.ta||[];
+  const taOnly=live&&!isAdmin()&&canEditTA(), taCur=cur;
+  if(taOnly) importResult.rounds={};
   if(ta.length){ // 立合: 選んだコートごとに階級をまとめる（同じコートは上から順に続ける）
-    const tr=($('taround')?.value||'').trim()||defaultTaRound(td);
+    const tr=taOnly?taCur:(($('taround')?.value||'').trim()||defaultTaRound(td));
     const byCourt={}; ta.forEach((g,k)=>{ const no=+($('tac'+k)?.value)||g.court||k+1; (byCourt[no]=byCourt[no]||[]).push(g); });
     const RR=importResult.rounds; RR[tr]=RR[tr]||{};
     Object.entries(byCourt).forEach(([no,gs])=>{ RR[tr][no]={cat:gs.map(g=>g.cls).join('・'),kind:'ta',teams:gs.flatMap(g=>g.bouts.map(t=>({...t})))}; });
@@ -2043,7 +2051,7 @@ function applyImport(){
   });
   importResult=null;
   if(live){
-    saveMeta(); if(Object.keys(progPatch).length) PROG(CUR_ID).update(progPatch).catch(_saveErr); closeModal(); renderDash();
+    if(taOnly) saveTARound(taCur); else saveMeta(); if(Object.keys(progPatch).length) PROG(CUR_ID).update(progPatch).catch(_saveErr); closeModal(); renderDash();
     showToast(added.length?`読み込みました。ラウンド「${added.join('」「')}」を追加しました（上のタブから開けます）`:'コート割を更新しました');
   }else{
     if(firstRound!==null) createRI=Math.max(0,td.rounds.indexOf(firstRound));
@@ -2053,7 +2061,7 @@ function applyImport(){
 
 // ── 開いている大会への読み込み ──
 function openLiveImport(){
-  if(!isAdmin()) return;
+  if(!isAdmin()&&!canEditTA()) return;
   $('mod').innerHTML=`
     <div class="mhead"><div class="mtitle">コート割を読み込む</div><button class="xbtn" onclick="closeModal()">×</button></div>
     <div style="font-size:12px;color:#666;line-height:1.7;margin-bottom:12px">本選など新しいラウンドはタブとして追加されます。すでにあるラウンドは、ファイルにあるコートだけを上書きし、進行中の記録は残します。</div>
@@ -2291,7 +2299,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  ).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -2412,7 +2420,7 @@ function buildGrid(){
     else if(st==='stopped'){ next=`<div class="cnext stop">${esc(cs.stopReason||'停止中')}</div>`; }
     else if(st==='done'){ next=`<div class="cnext fin">全 ${t} ${UNIT(c)} 終了</div>`; }
     const meta=fed&&t?[cs.call&&cs.call.kind?`<span class="badge bcall">連絡: ${esc(cs.call.kind)}</span>`:'', tm.elapsed?`<span class="${tm.late?'late':''}">${isTA(c)?'試合':'演武'} ${fmtMin(tm.elapsed)}</span>`:'', tm.eta?`<span>終了見込み <b>${fmtClock(tm.eta)}</b></span>`:''].filter(Boolean).join(''):'';
-    return `<div class="ccard ${st}${fed&&tm.late?' late':''}${favNow?' favnow':''}${MODE==='operator'&&t&&!secOK(c)?' othersec':''}" ${(MODE!=='admin'&&!t)?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
+    return `<div class="ccard ${st}${fed&&tm.late?' late':''}${favNow?' favnow':''}${MODE==='operator'&&t&&!secOK(c)?' othersec':''}" ${(MODE!=='admin'&&!t&&!canEditTA())?'style="cursor:default"':`onclick="openCourtModal(${c.id})"`}>
       <div class="ctop"><div class="cnum">${c.id}<small>コート</small>${fi.length?`<span class="cfav" title="お気に入りがあります">${ICO.star(true)}</span>`:''}</div>${badge}</div>
       ${favNow?`<div class="cfavnow">${ICO.star(true)}お気に入りが${NOWL(c)}</div>`:''}
       <div class="ccat">${esc(c.cat)||'（種目未設定）'}</div>
@@ -2512,6 +2520,16 @@ function drawModal(){
       ${drawViewTab(c,cs)}`;
     return;
   }
+  if(MODE==='operator'&&canEditTA()){
+    $('mod').innerHTML=`
+      <div class="mhead"><div class="mtitle">${c.id}コート<span>${esc(c.cat)||'種目未設定'}</span></div><button class="xbtn" onclick="closeModal()">×</button></div>
+      <div class="tabbar">
+        <button class="mtab${modalTab==='prog'?' on':''}" onclick="switchMTab('prog')">進行</button>
+        <button class="mtab${modalTab==='edit'?' on':''}" onclick="switchMTab('edit')">編集</button>
+      </div>
+      ${modalTab==='prog' ? drawProgTab(c,cs) : drawEditTab(c)}`;
+    return;
+  }
   if(MODE==='operator'){
     modalTab='prog';
     $('mod').innerHTML=`
@@ -2555,7 +2573,7 @@ function drawViewTab(c,cs){
 
 function drawProgTab(c,cs){
   const t=c.teams.length,dn=cs.current; let rem=0; for(let i=dn;i<t;i++) if(!isAbs(cs,i)) rem++;
-  if(!t) return `<div style="text-align:center;padding:2rem 1rem;color:#8A857C;font-size:13px">まだ出場組が登録されていません${MODE==='admin'?`<br><button class="mbtn p" style="margin-top:1rem" onclick="switchMTab('edit')">出場組を登録する</button>`:''}</div>`;
+  if(!t) return `<div style="text-align:center;padding:2rem 1rem;color:#8A857C;font-size:13px">まだ出場組が登録されていません${MODE==='admin'||canEditTA()?`<br><button class="mbtn p" style="margin-top:1rem" onclick="switchMTab('edit')">出場組を登録する</button>`:''}</div>`;
   const rows=c.teams.map((tm,i)=>{
     const ab=isAbs(cs,i), isDn=!ab&&i<dn,isCur=!ab&&!cs.stopped&&i===dn&&dn<t;
     return `<div class="teamrow${ab?' absent':isDn?' done':isCur?' cur':''}" onclick="toggleTeam(${i})">
@@ -2596,10 +2614,11 @@ function setEditKind(p,k){
   c.cat=$('cccat').value.trim(); c.teams=collectERows('cc'); if(k) c.kind=k; else delete c.kind; openCCModal(window._ccri,window._ccid);
 }
 function drawEditTab(c){
-  const n=Math.max(c.teams.length,2), ta=isTA(c);
+  const taEd=MODE==='operator'; // 立合セクの編集は立合の形だけ
+  const n=Math.max(c.teams.length,2), ta=isTA(c)||taEd;
   const rows=Array.from({length:n},(_,i)=>buildERow('et',i,c.teams[i]||{},ta)).join('');
   return `<div>
-    ${kindPickHTML('et',c)}
+    ${taEd?'<input type="hidden" id="etkind" value="ta">':kindPickHTML('et',c)}
     <label class="flabel">${ta?'階級':'種目名'}</label>
     <input class="inp" id="etcat" value="${esc(c.cat)}" placeholder="${ta?'例：女子軽量級':'例：男子初段'}" style="margin-bottom:12px">
     <label class="flabel">1${UNIT(c)}あたりの目安（分）<span style="font-size:10px;color:#bbb;font-weight:400;margin-left:6px">観客の「約○分後」に使います。空欄は ${MIN_PER_TEAM} 分</span></label>
@@ -2622,8 +2641,8 @@ function commitEdit(){
   const cs=progCS(curRound(),modalCourtId); if(cs.current>teams.length) cs.current=teams.length;
 }
 function saveEdit(){
-  if(!isAdmin()) return;
-  commitEdit(); saveMeta(); { const cs=progCS(curRound(),modalCourtId); writeCourt(courtKey(curRound(),modalCourtId),{current:cs.current}); } modalTab='prog'; drawModal(); renderDash();
+  if(!isAdmin()&&!canEditTA()) return;
+  commitEdit(); if(isAdmin()) saveMeta(); else saveTARound(curRound()); { const cs=progCS(curRound(),modalCourtId); writeCourt(courtKey(curRound(),modalCourtId),{current:cs.current}); } modalTab='prog'; drawModal(); renderDash();
 }
 
 // ─────────────────────────────────────────
