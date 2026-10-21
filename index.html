@@ -671,6 +671,7 @@ let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='
 const SEC_NAME=()=>OP_SEC==='ta'?(ROLE==='taadmin'?'立合セク管理者':'立合セク用'):'進行セク用';
 // 立合セク管理者（sj/roles='taadmin'）は、名前に「立合」が入ったラウンドのコート割だけ編集できる（読み込み・各コートの修正）。DBルールも同じ条件。普通の立合セク（'ta'）は進行だけ
 const isTARound=r=>/立合/.test(r||'');
+function canAddTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin')&&!!auth.currentUser&&!!TD; } // 立合ラウンドの追加（今どのラウンドを見ていても可）
 function canEditTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin')&&!!auth.currentUser&&!!TD&&isTARound(curRound()); }
 function secOK(c){ if(MODE!=='operator') return true; if(OP_SEC==='ta'&&c&&!(c.teams||[]).length&&canEditTA()) return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる（立合セクは立合ラウンドの空きコートも設定できる）
 let OP_NAME=''; try{ OP_NAME=(localStorage.getItem('sj_opname')||'').trim(); }catch(e){} // 進行セクの担当者名（端末に記憶。学連の画面にだけ表示）
@@ -2365,7 +2366,7 @@ function renderDash(){
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const rHTML = TD.rounds.map(r=>
     `<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`
-  ).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>${MODE!=='admin'&&TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteTARound()">このラウンドを削除</button>`:''}`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  ).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>${MODE!=='admin'&&TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteTARound()">このラウンドを削除</button>`:''}`:'') + (MODE!=='admin'&&canAddTA()?`<button class="rtabadd" onclick="openAddTARound()">＋ 立合ラウンド</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button>${TD.rounds.length>1?`<button class="rtabadd del" onclick="deleteCurrentRound()">このラウンドを削除</button>`:''}<button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -2511,6 +2512,41 @@ function openAddRoundModal(){
       <button class="mbtn p" onclick="doAddRound()">追加</button>
     </div>`;
   $('ov').classList.add('open');
+}
+// 立合セク管理者: 立合ラウンドの追加。DBルールは「rounds の末尾に、名前に『立合』が入ったものを足す」だけ許可
+function openAddTARound(){
+  if(!canAddTA()) return;
+  let n=1; while(TD.rounds.includes(`立合評価法の部 ${n}ラウンド`)) n++;
+  $('mod').innerHTML=`
+    <div class="mhead"><div class="mtitle">立合ラウンドを追加</div><button class="xbtn" onclick="closeModal()">×</button></div>
+    <label class="flabel" style="margin-top:.5rem">ラウンド名</label>
+    <input class="inp" id="newround" value="立合評価法の部 ${n}ラウンド" style="margin-bottom:.5rem">
+    <div style="font-size:11px;color:#888;margin-bottom:1rem">名前に「立合」が入ったラウンドだけ追加できます。追加したあと「立合の対戦表を読み込む」で対戦表を入れられます。</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="mbtn" onclick="closeModal()">キャンセル</button>
+      <button class="mbtn p" onclick="doAddTARound()">追加</button>
+    </div>`;
+  $('ov').classList.add('open');
+}
+function doAddTARound(){
+  if(!canAddTA()) return;
+  const n=($('newround').value||'').trim();
+  if(!n){ alert('ラウンド名を入力してください'); return; }
+  if(!/立合/.test(n)){ alert('立合セクで追加できるのは、名前に「立合」が入ったラウンドだけです'); return; }
+  if(/[.#$\[\]\/]/.test(n)){ alert('ラウンド名に . # $ [ ] / は使えません'); return; }
+  if(TD.rounds.includes(n)){ alert('同じ名前が既にあります'); return; }
+  const courts=Array.from({length:16},(_,i)=>({id:i+1,cat:'',teams:[]}));
+  const ref=META(CUR_ID);
+  // 削除済み（印だけ残っている）同名ラウンドがあれば印を上書きして復活、無ければ rounds の末尾に足す
+  ref.child('rounds').once('value').then(sn=>{
+    const raw=sn.val()||[]; const list=Array.isArray(raw)?raw:Object.values(raw);
+    const idx=Array.isArray(raw)?raw.length:Math.max(-1,...Object.keys(raw).map(Number))+1;
+    const step=list.includes(n)?Promise.resolve():ref.child('rounds').child(String(idx)).set(n);
+    return step.then(()=>ref.child('courts').child(n).set(courts));
+  }).then(()=>{
+    TD.rounds.push(n); TD.courts[n]=courts; viewRound=n;
+    closeModal(); renderDash(); showToast(`ラウンド「${n}」を追加しました`);
+  }).catch(e=>{ console.error('ta add',e); showToast('追加できませんでした（立合セク管理者のアカウントで入っているか確認してください）'); });
 }
 // 表示中のラウンドを削除（コート割と進行記録をまとめて消す）
 function deleteCurrentRound(){
