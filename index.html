@@ -579,6 +579,7 @@ body.beta .notices{top:47px}
 .sfav.on svg{color:#fff}
 .sshare{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:6px 10px;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--muted);white-space:nowrap}
 .sshare:hover{border-color:var(--ink);color:var(--ink)}
+.shead .sshare.sclear{margin-left:6px}.sshare.sclear:hover{border-color:var(--stop);color:var(--stop)}
 .ufav{display:flex;align-items:center;gap:10px;margin:0 0 .6rem;padding:10px 12px;background:var(--gold-bg);border:1px solid var(--gold2);border-radius:10px;font-size:12.5px;color:var(--ink2)}
 .ufav b{color:var(--ink)}
 .ufav .sfav{margin-left:auto}.ufav .sfav span{display:inline}
@@ -2290,6 +2291,7 @@ function setFavs(a){ try{ localStorage.setItem(favKey(), JSON.stringify(a)); }ca
 const entryId = e => e.r+'|'+e.c+'|'+e.i;
 function isFav(e){ return getFavs().includes(entryId(e)); }
 function toggleFav(id){ let f=getFavs(); const add=!f.includes(id); f = add ? [...f,id] : f.filter(x=>x!==id); setFavs(f); if(add) stat('favs'); renderSpectator(); }
+function clearFavs(){ const n=getFavs().length; if(!n) return; askConfirm({title:'お気に入りをすべて解除', desc:`お気に入りの ${n} 件をまとめて外します。`, okLabel:'すべて解除', danger:true, onOk:()=>{ setFavs([]); renderSpectator(); showToast('お気に入りをすべて解除しました'); }}); }
 function favUniv(u,add){ const ids=allEntries().filter(e=>e.a===u||e.a2===u).map(entryId); let f=getFavs(); if(add){ ids.forEach(id=>{ if(!f.includes(id)) f.push(id); }); stat('favs'); } else f=f.filter(x=>!ids.includes(x)); setFavs(f); renderSpectator(); showToast(add?`${u}の${ids.length}組をお気に入りに入れました`:`${u}をお気に入りから外しました`); }
 // 出番の共有: 開くとその大会の観客用が開き、共有された出番がお気に入りに入る
 function shareEntries(ids){
@@ -2395,7 +2397,7 @@ function renderSpectatorResultsHTML(results,favEntries,row,q){
   let favHTML;
   if(favEntries.length){
     const np=('Notification' in window && Notification.permission==='default')?`<button class="syncpill" onclick="askNotify()">通知を許可</button>`:'';
-    favHTML=`<div class="shead"><span class="sheadico">${ICO.star(true)}</span>お気に入り <small>${favEntries.length}件・出番が近づくと知らせます</small>${np}<button class="sshare" onclick="shareEntries(getFavs())">まとめて共有</button></div><div class="slist">${favEntries.map(row).join('')}</div>`;
+    favHTML=`<div class="shead"><span class="sheadico">${ICO.star(true)}</span>お気に入り <small>${favEntries.length}件・出番が近づくと知らせます</small>${np}<button class="sshare" onclick="shareEntries(getFavs())">まとめて共有</button><button class="sshare sclear" onclick="clearFavs()">すべて解除</button></div><div class="slist">${favEntries.map(row).join('')}</div>`;
   }else{
     favHTML=`<div class="favempty"><span class="sheadico">${ICO.star(false)}</span><div><b>お気に入りはまだありません</b><span>${searching?'下の一覧で星を押すと、ここに固定されて見逃しません':'さがした出番の星を押すと、ここに固定されます'}</span></div></div>`;
   }
