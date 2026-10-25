@@ -683,7 +683,7 @@ const auth = firebase.auth();
 // ─────────────────────────────────────────
 let MODE = null;      // 'admin' | 'operator' | 'view'
 // 公開停止中（2026-10-21 社長指示）: true の間は管理者・進行セク・立合セクのアカウントでログインした人だけが使える（受付・物販のアカウントは不可）。他の人には Coming soon 画面だけを出す。公開するときは false にする
-const LOCKDOWN = true;
+const LOCKDOWN = false; // 2026-10-25 社長指示で公開（Coming soon をやめる）。また止めるときは true に戻す
 const locked = () => LOCKDOWN && !(auth.currentUser && (ROLE==='admin'||ROLE==='operator'||ROLE==='ta'||ROLE==='taadmin'));
 let ROLE = null;      // ログイン後の権限: 'admin' | 'operator' | 'ta'（立合セク） | 'taadmin'（立合セク管理者: 立合ラウンドの編集も） | 'gate' | 'shop'
 let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='ta'; }catch(e){} // 進行用の担当: shinko=進行セク（演武のコート）/ ta=立合セク（立合評価法のコート）
