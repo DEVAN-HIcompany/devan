@@ -692,7 +692,7 @@ const SEC_NAME=()=>OP_SEC==='ta'?(ROLE==='taadmin'?'立合セク管理者':'立�
 const isTARound=r=>/立合/.test(r||'');
 function canAddTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin')&&!!auth.currentUser&&!!TD; } // 立合ラウンドの追加（今どのラウンドを見ていても可）
 function canEditTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin')&&!!auth.currentUser&&!!TD&&isTARound(curRound()); }
-function secOK(c){ if(MODE!=='operator') return true; if(OP_SEC==='ta'&&c&&!(c.teams||[]).length&&canEditTA()) return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる（立合セクは立合ラウンドの空きコートも設定できる）
+function secOK(c){ if(MODE!=='operator') return true; if(OP_SEC!=='ta') return !!c; /* 進行セクは演武・立合どちらのコートも進行できる（2026-10-25 社長指示。編集はできない） */ if(OP_SEC==='ta'&&c&&!(c.teams||[]).length&&canEditTA()) return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる（立合セクは立合ラウンドの空きコートも設定できる）
 let OP_NAME=''; try{ OP_NAME=(localStorage.getItem('sj_opname')||'').trim(); }catch(e){} // 進行セクの担当者名（端末に記憶。学連の画面にだけ表示）
 let viewRound = null; // 進行用・閲覧用で見ているラウンド（端末内だけ。共有の currentRound は管理用だけが変える）
 let isAdmin = () => MODE==='admin' && ROLE==='admin' && !!auth.currentUser;
@@ -1102,7 +1102,7 @@ function renderFedHome(){
       </button>
       <div class="hsmall">
         <button class="hbtn mini" onclick="enterOperator('shinko')">
-          <div><div class="hbtn-l">進行セク用</div><div class="hbtn-d">演武のコートの進行操作</div></div>
+          <div><div class="hbtn-l">進行セク用</div><div class="hbtn-d">演武・立合評価法のコートの進行操作</div></div>
         </button>
         <button class="hbtn mini" onclick="enterOperator('ta')">
           <div><div class="hbtn-l">立合セク用</div><div class="hbtn-d">立合評価法のコートの進行操作</div></div>
