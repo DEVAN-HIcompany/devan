@@ -807,18 +807,28 @@ const _saveErr=e=>{ console.error('court save',e); showToast('保存できませ
 function writeCourt(k,patch){ if(!canOperate()) return Promise.resolve(false); if(MODE==='operator'&&OP_NAME) patch.staff=OP_NAME; return courtRef(k).update(patch).then(()=>true).catch(e=>{ _saveErr(e); return false; }); }
 function txCourt(k,fn){
   if(!canOperate()) return Promise.resolve(false);
-  return courtRef(k).transaction(cur=>{
+  const tx=courtRef(k).transaction(cur=>{
     const cs=Object.assign({current:0,stopped:false,stopReason:'',started:false},cur||{});
     const out=fn(cs); if(out===undefined) return; // undefined = 中止
     if(MODE==='operator'&&OP_NAME) out.staff=OP_NAME;
     return out;
   }).then(r=>!!r.committed).catch(e=>{ _saveErr(e); return false; });
+  // 回線が悪いと返事が来るまでボタンが固まるので、7秒で手を離す（送信は裏で続き、届けば反映される）
+  return Promise.race([tx, new Promise(res=>setTimeout(()=>res('slow'),7000))]).then(ok=>{
+    if(ok==='slow') alertToast('通信が不安定です。画面の番号が変わったか確かめてから、必要ならもう一度押してください','alert',6000);
+    return ok;
+  });
 }
 // 欠場: cs.absent = {t0:true, t3:true}（番号は出番順の添字）
 const isAbs=(cs,i)=>!!(cs&&cs.absent&&cs.absent['t'+i]);
 const skipAbs=(cs,i,t)=>{ while(i<t&&isAbs(cs,i)) i++; return i; };
 const absCount=(cs,t)=>{ let n=0; for(let i=0;i<t;i++) if(isAbs(cs,i)) n++; return n; };
 let _busy=false; // 同じ端末での連打防止
+// ラウンドのボタン列は画面を描き直すたびに左端へ戻ってしまうので、横スクロール位置を覚えて戻す（スマホで後半のラウンドを選びやすく）
+let _rtScroll=0;
+const _keepRT=()=>{ const el=document.querySelector('.rtabs[data-rt]'); if(el) _rtScroll=el.scrollLeft; }; // 描き直す直前に呼ぶ
+document.addEventListener('scroll',e=>{ const t=e.target; if(t&&t.matches&&t.matches('.rtabs[data-rt]')) _rtScroll=t.scrollLeft; },true);
+new MutationObserver(()=>{ const el=document.querySelector('.rtabs[data-rt]'); if(el&&_rtScroll&&el.scrollLeft!==_rtScroll) el.scrollLeft=_rtScroll; }).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
 
 // ─────────────────────────────────────────
 // リアルタイムリスナー（進行状態のみ）
@@ -1296,6 +1306,7 @@ function doLogout(){ auth.signOut().finally(()=>renderHome()); }
 // ─────────────────────────────────────────
 let LIST_NAMES={}; // 大会一覧の id→大会名（一覧から名前を編集するとき使う）
 function renderList(){
+  _rtScroll=0;
   show(loadingHTML());
   METAS.once('value').then(snap=>{
     const val = snap.val();
@@ -2403,6 +2414,7 @@ function statusFromCS(cs,e){
 function specSortKey(e){ const s=entryStatus(e); return s.k==='now'?-1:(s.k==='done'||s.k==='absent')?1e6+e.ri*1000+e.i:s.ahead+e.ri*1000+(s.k==='standby'?0.5:0); }
 
 function renderSpectator(){
+  _keepRT();
   if(!TD||!PROG_DATA) return;
   const entries=allEntries();
   const univs=[...new Set(entries.flatMap(e=>[e.a,e.a2]).filter(Boolean))].sort(univSort);
@@ -2484,12 +2496,14 @@ function renderSpectatorResults(){
 }
 // コート一覧（閲覧用と同じ表示）を指定要素に描く
 function renderDashInto(id){
+  _keepRT();
   const el=$(id); if(!el) return;
   const rHTML = TD.rounds.map(r=>`<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`).join('');
-  el.innerHTML=`<div class="rtabs" style="margin:-.25rem 0 1rem">${rHTML}</div><div class="sumbar">${buildSummary()}</div><div class="alertwrap">${buildAlerts()}</div><div class="cgrid">${buildGrid()}</div>`;
+  el.innerHTML=`<div class="rtabs" data-rt style="margin:-.25rem 0 1rem">${rHTML}</div><div class="sumbar">${buildSummary()}</div><div class="alertwrap">${buildAlerts()}</div><div class="cgrid">${buildGrid()}</div>`;
 }
 
 function renderDash(){
+  _keepRT();
   if(!TD||!PROG_DATA) return;
   if(MODE==='spectator'){ if(specTab==='search'&&$('specres')){ renderSpectatorResults(); setSync(true); } else renderSpectator(); return; }
   const canDelR=r=>TD.rounds.length>1&&(MODE==='admin'?isAdmin():(canAddTA()&&isTARound(r))); // 右上の×（管理者は全ラウンド、立合セク管理者は立合ラウンドだけ）
@@ -2509,7 +2523,7 @@ function renderDash(){
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span class="bigclock">${fmtClock(Date.now())}</span>${MODE==='operator'?`<button class="oppill" onclick="changeOpName()" title="担当者名を変更">担当: ${esc(OP_NAME||'未入力')}</button>`:''}${(MODE==='view'||MODE==='admin')?`<button class="oppill" onclick="toggleBig()">${document.body.classList.contains('big')?'通常画面':'大画面'}</button>`:''}${notifyHTML()}<div class="syncpill"><span class="sdot" id="sdot"></span><span id="slabel">接続中...</span></div></div>
       </div>
-      <div class="rtabs${anyDel?' hasdel':''}">${rHTML}</div>
+      <div class="rtabs${anyDel?' hasdel':''}" data-rt>${rHTML}</div>
     </div>
     ${statsLineHTML()}${(()=>{ const e=roundEta(); return e?`<div class="cmeta etaline">このラウンドの終了見込み <b>${fmtClock(e)}</b><span>（残り組数×目安分。停止中のコートは含まず）</span></div>`:''; })()}
     <div class="sumbar">${buildSummary()}</div>
@@ -2907,7 +2921,22 @@ function drawEditTab(c){
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem">
       <button class="mbtn" onclick="closeModal()">キャンセル</button>
       <button class="mbtn p" onclick="saveEdit()">保存する</button>
+    </div>
+    <div style="border-top:1px solid var(--line2);margin-top:var(--s3);padding-top:var(--s2);display:flex;justify-content:flex-end">
+      <button class="mbtn d" style="white-space:nowrap" onclick="deleteCourt()">このコートを削除</button>
     </div></div>`;
+}
+// コートを丸ごと削除（このラウンドから外し、進行の記録も消す）
+function deleteCourt(){
+  if(!isAdmin()&&!canEditTA()) return;
+  const r=curRound(), id=modalCourtId; const list=TD.courts[r]||[]; const c=list.find(x=>x.id===id); if(!c) return;
+  askConfirm({title:`${id}コートを削除`, desc:`「${r}」の${id}コート（${c.cat||'種目未設定'}・${c.teams.length}${UNIT(c)}）と進行の記録がすべて消えます。元に戻せません。`, okLabel:'削除する', danger:true, onOk:()=>{
+    TD.courts[r]=list.filter(x=>x.id!==id);
+    const k=courtKey(r,id); if(PROG_DATA.courts) delete PROG_DATA.courts[k];
+    if(isAdmin()) saveMeta(); else saveTARound(r);
+    courtRef(k).remove().catch(_saveErr);
+    closeModal(); renderDash(); showToast(`${id}コートを削除しました`);
+  }});
 }
 
 function commitEdit(){
@@ -2991,7 +3020,7 @@ function nextTeam(){
     if(!isStarted(cs)){ cs.started=true; cs.current=skipAbs(cs,0,t); cs.at=Date.now(); return cs; } // 最初の1回は「競技を開始する」
     if(cs.current>=t) return;
     cs.current=skipAbs(cs,cs.current+1,t); cs.at=Date.now(); return cs;
-  }).then(ok=>{ if(!ok) alertToast('他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
+  }).then(ok=>{ if(ok===false) alertToast('すでに反映済みか、他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 function prevTeam(){
   if(!canOperate()||!secOK(_court())||_busy) return;
@@ -3002,7 +3031,7 @@ function prevTeam(){
     if(cs.current>0){ let j=cs.current-1; while(j>=0&&isAbs(cs,j)) j--; if(j>=0){ cs.current=j; cs.started=true; } else { cs.current=0; cs.started=false; } cs.at=Date.now(); return cs; }
     if(isStarted(cs)){ cs.started=false; cs.current=0; return cs; } // 開始前に戻す
     return;
-  }).then(ok=>{ if(!ok) alertToast('他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
+  }).then(ok=>{ if(ok===false) alertToast('すでに反映済みか、他の端末が先に操作しました。画面を確認してください','alert',4000); }).finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 function toggleTeam(idx){
   if(!canOperate()||!secOK(_court())||_busy) return;
@@ -3021,7 +3050,7 @@ function toggleAbsent(idx){
     if(cs.absent['t'+idx]) delete cs.absent['t'+idx]; else cs.absent['t'+idx]=true;
     if(isStarted(cs)&&(cs.current||0)<t) cs.current=skipAbs(cs,cs.current||0,t);
     return cs;
-  }).then(ok=>{ if(ok){ const cs=progCS(curRound(),modalCourtId); showToast(isAbs(cs,idx)?`${idx+1}番を欠場にしました`:`${idx+1}番の欠場を取り消しました`); } })
+  }).then(ok=>{ if(ok===true){ const cs=progCS(curRound(),modalCourtId); showToast(isAbs(cs,idx)?`${idx+1}番を欠場にしました`:`${idx+1}番の欠場を取り消しました`); } })
     .finally(()=>{ _busy=false; drawModal(); renderDash(); });
 }
 
