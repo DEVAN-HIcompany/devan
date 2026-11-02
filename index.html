@@ -832,9 +832,29 @@ const absCount=(cs,t)=>{ let n=0; for(let i=0;i<t;i++) if(isAbs(cs,i)) n++; retu
 let _busy=false; // 同じ端末での連打防止
 // ラウンドのボタン列は画面を描き直すたびに左端へ戻ってしまうので、横スクロール位置を覚えて戻す（スマホで後半のラウンドを選びやすく）
 let _rtScroll=0;
-const _keepRT=()=>{ const el=document.querySelector('.rtabs[data-rt]'); if(el) _rtScroll=el.scrollLeft; }; // 描き直す直前に呼ぶ
+// さらに、進行の更新（数秒ごと）や30秒ごとの描き直しでボタン列そのものが作り直されると、スマホで横に払っている途中の操作が切れる。
+// そこで ①中身が同じならボタン列は前の要素をそのまま使い（選択中の印だけ付け替える）②指が触れている間と払った直後は自動の描き直しを待たせる
+let _rtOld=null;
+const _keepRT=()=>{ const el=document.querySelector('.rtabs[data-rt]'); if(el){ _rtScroll=el.scrollLeft; _rtOld=el; } }; // 描き直す直前に呼ぶ
 document.addEventListener('scroll',e=>{ const t=e.target; if(t&&t.matches&&t.matches('.rtabs[data-rt]')) _rtScroll=t.scrollLeft; },true);
-new MutationObserver(()=>{ const el=document.querySelector('.rtabs[data-rt]'); if(el&&_rtScroll&&el.scrollLeft!==_rtScroll) el.scrollLeft=_rtScroll; }).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
+new MutationObserver(()=>{
+  const el=document.querySelector('.rtabs[data-rt]'); const old=_rtOld;
+  if(el&&old&&old!==el&&!old.isConnected){
+    _rtOld=null;
+    const strip=s=>s.replace(/ on"/g,'"'); const a=old.querySelectorAll('button'), b=el.querySelectorAll('button');
+    if(old.className===el.className&&a.length===b.length&&strip(old.innerHTML)===strip(el.innerHTML)){ a.forEach((x,i)=>{ x.className=b[i].className; }); el.replaceWith(old); return; }
+  }
+  if(el&&_rtScroll&&el.scrollLeft!==_rtScroll) el.scrollLeft=_rtScroll;
+}).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
+let _rtTouch=0, _rtPend=null;
+document.addEventListener('touchstart',e=>{ if(e.target&&e.target.closest&&e.target.closest('.rtabs[data-rt]')) _rtTouch=Infinity; },{passive:true,capture:true});
+const _rtUp=()=>{ if(_rtTouch) _rtTouch=Date.now()+700; }; // 払ったあとの慣性スクロールの分だけ待つ
+document.addEventListener('touchend',_rtUp,{passive:true,capture:true}); document.addEventListener('touchcancel',_rtUp,{passive:true,capture:true});
+function autoRender(){ // 自動の描き直し（進行の更新・30秒ごと）はこちらを通す
+  clearTimeout(_rtPend);
+  if(Date.now()<_rtTouch){ _rtPend=setTimeout(autoRender,250); return; }
+  _rtTouch=0; renderDash();
+}
 
 // ─────────────────────────────────────────
 // リアルタイムリスナー（進行状態のみ）
@@ -857,7 +877,7 @@ function startProgListener(id){
     // teamsがないコートを補完
     if(TD) TD.rounds.forEach(r=>{ (TD.courts[r]||[]).forEach(c=>{ if(!c.teams) c.teams=[]; }); });
     if(prev) notifyChanges(prev, PROG_DATA.courts);
-    renderDash();
+    autoRender();
     if(modalCourtId !== null) drawModal();
   }, () => setSync(false));
 }
@@ -2603,7 +2623,7 @@ function checkLate(){ // 進行セク: 自分が担当するコートの押し�
   (TD.courts[curRound()]||[]).forEach(c=>{ if(!secOK(c)) return; const cs=progCS(curRound(),c.id); if(cs.staff&&OP_NAME&&cs.staff!==OP_NAME) return; const tm=courtTiming(c,cs); if(!tm.late) return; const key=courtKey(curRound(),c.id)+'_'+cs.current; if(_lateNotified[key]) return; _lateNotified[key]=1;
     showNotice({key:'late_'+c.id,cid:c.id,lab:'押し忘れていませんか',title:`${c.cat||''} ${isTA(c)?'試合':'演武'} ${fmtMin(tm.elapsed)}経過`,reason:`この${UNIT(c)}が始まって${LATE_MIN}分を超えています。終わっていたら「${NEXTL(c)}」を押してください`,cls:'late',ms:30000,round:curRound()}); try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){} });
 }
-setInterval(()=>{ if(TD&&PROG_DATA&&MODE!=='spectator'&&!document.hidden&&$('app').querySelector('.cgrid')){ renderDash(); checkLate(); } }, 30000);
+setInterval(()=>{ if(TD&&PROG_DATA&&MODE!=='spectator'&&!document.hidden&&$('app').querySelector('.cgrid')){ autoRender(); checkLate(); } }, 30000);
 function buildAlerts(){
   const fed=MODE!=='spectator'; const out=[];
   (TD.courts[curRound()]||[]).forEach(c=>{ if(!c.teams.length) return; const cs=progCS(curRound(),c.id); const tm=courtTiming(c,cs);
