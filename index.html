@@ -8,8 +8,6 @@
 <link rel="icon" type="image/png" sizes="192x192" href="devan-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="devan-180.png">
 <link rel="apple-touch-icon" href="devan-180.png">
-<link rel="preload" as="image" href="splash-zennihon60.webp?v=1" media="(orientation: landscape)">
-<link rel="preload" as="image" href="splash-zennihon60-portrait.webp?v=1" media="(orientation: portrait)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -3085,7 +3083,7 @@ show(loadingHTML());
 // ── 起動アニメーション（1セッションに1回。ロゴがホームの定位置へ着地してそのままホームになる）──
 let splashHomeReady=null, _splashResolve=null, splashFallbackMs=3200;
 // 大会ポスター: until の日付まで起動時に全画面で見せる（大会が終わったら自動で出なくなる。差し替えは src と until を直す）
-const EVENT_POSTER={src:'splash-zennihon60.webp?v=1', srcPortrait:'splash-zennihon60-portrait.webp?v=1', until:'2026-11-08', hold:2800};
+const EVENT_POSTER={src:'', srcPortrait:'', until:'2026-11-08', hold:2800}; // 第60回全日本のオープニングは終了（2026-11-02 社長指示）。次の大会は画像を置いて src/until を入れる
 (function(){
   const sp=document.getElementById('splash'); if(!sp) return;
   if(ENTRY){ sp.remove(); return; }
