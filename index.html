@@ -141,6 +141,9 @@ body.beta .overlay{top:32px}
 .credit{margin-top:34px;padding-top:13px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);letter-spacing:.06em;display:flex;flex-direction:column;gap:2px;align-items:center}
 .credit a{color:var(--muted);text-decoration:none}
 .credit a:hover{color:var(--ink)}
+.ownerlink{margin-top:var(--s2);text-align:center}
+.ownerlink button{border:0;background:none;padding:6px 10px;font:inherit;font-size:10px;letter-spacing:.14em;color:var(--line2);cursor:pointer}
+.ownerlink button:hover{color:var(--muted)}
 .credit b{font-family:'Cormorant Garamond',var(--serif);font-size:14px;letter-spacing:.12em;color:var(--ink);font-weight:600}
 .credit span{font-size:10px;color:#B5B0A6}
 .installbar{margin-top:21px;padding:13px 21px;border:1px dashed var(--line2);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.8}
@@ -682,18 +685,22 @@ const auth = firebase.auth();
 let MODE = null;      // 'admin' | 'operator' | 'view'
 // 公開停止中（2026-10-21 社長指示）: true の間は管理者・進行セク・立合セクのアカウントでログインした人だけが使える（受付・物販のアカウントは不可）。他の人には Coming soon 画面だけを出す。公開するときは false にする
 const LOCKDOWN = false; // 2026-10-25 社長指示で公開（Coming soon をやめる）。また止めるときは true に戻す
-const locked = () => LOCKDOWN && !(auth.currentUser && (ROLE==='admin'||ROLE==='operator'||ROLE==='ta'||ROLE==='taadmin'));
-let ROLE = null;      // ログイン後の権限: 'admin' | 'operator' | 'ta'（立合セク） | 'taadmin'（立合セク管理者: 立合ラウンドの編集も） | 'gate' | 'shop'
+const locked = () => LOCKDOWN && !(auth.currentUser && (ROLE==='admin'||ROLE==='chair'||ROLE==='operator'||ROLE==='ta'||ROLE==='taadmin'));
+let ROLE = null;      // ログイン後の権限: 'admin'（管理用＝H.I. Company だけ） | 'chair'（委員長用: コート割の読み込み・編集） | 'operator' | 'ta'（立合セク） | 'taadmin'（立合セク管理者: 立合ラウンドの編集も） | 'gate' | 'shop'
 let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='ta'; }catch(e){} // 進行用の担当: shinko=進行セク（演武のコート）/ ta=立合セク（立合評価法のコート）
 const SEC_NAME=()=>OP_SEC==='ta'?(ROLE==='taadmin'?'立合セク管理者':'立合セク用'):'進行セク用';
 // 立合セク管理者（sj/roles='taadmin'）は、名前に「立合」が入ったラウンドのコート割だけ編集できる（読み込み・各コートの修正）。DBルールも同じ条件。普通の立合セク（'ta'）は進行だけ
 const isTARound=r=>/立合/.test(r||'');
-function canAddTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin')&&!!auth.currentUser&&!!TD; } // 立合ラウンドの追加（今どのラウンドを見ていても可）
-function canEditTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin')&&!!auth.currentUser&&!!TD&&isTARound(curRound()); }
+function canAddTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin'||ROLE==='chair')&&!!auth.currentUser&&!!TD; } // 立合ラウンドの追加（今どのラウンドを見ていても可）
+function canEditTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'||ROLE==='admin'||ROLE==='chair')&&!!auth.currentUser&&!!TD&&isTARound(curRound()); }
 function secOK(c){ if(MODE!=='operator') return true; if(OP_SEC!=='ta') return !!c; /* 進行セクは演武・立合どちらのコートも進行できる（2026-10-25 社長指示。編集はできない） */ if(OP_SEC==='ta'&&c&&!(c.teams||[]).length&&canEditTA()) return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる（立合セクは立合ラウンドの空きコートも設定できる）
 let OP_NAME=''; try{ OP_NAME=(localStorage.getItem('sj_opname')||'').trim(); }catch(e){} // 進行セクの担当者名（端末に記憶。学連の画面にだけ表示）
 let viewRound = null; // 進行用・閲覧用で見ているラウンド（端末内だけ。共有の currentRound は管理用だけが変える）
-let isAdmin = () => MODE==='admin' && ROLE==='admin' && !!auth.currentUser;
+// 管理用（MODE='admin'）の画面は2種類。ADMIN_AS='owner' は H.I. Company だけの管理用（大会の作成・終了・削除・名前の変更も）、
+// 'chair' は委員長用（コート割の読み込み・編集・ラウンドの追加と削除・会場案内など、開いた大会の中身だけ）。DBルールも同じ線引き
+let ADMIN_AS = 'owner';
+let isAdmin = () => MODE==='admin' && (ROLE==='admin'||ROLE==='chair') && !!auth.currentUser;
+let isOwner = () => isAdmin() && ROLE==='admin' && ADMIN_AS==='owner';
 let canOperate = () => (MODE==='admin'||MODE==='operator') && !!auth.currentUser;
 const ROLES = db.ref('sj/roles');
 
@@ -725,12 +732,12 @@ function statsLineHTML(){
   const c=STATS_CACHE;
   return `<div class="statline"><span class="statlab">観客用の利用</span><span><b>${c.devices}</b> 台</span><span><b>${c.opens}</b> 回表示</span><span><b>${c.searches}</b> 回検索</span><span><b>${c.favs}</b> お気に入り</span><span><b>${c.courtViews}</b> コート詳細</span><button class="implink" onclick="loadStats(CUR_ID).then(renderDash)">更新</button></div>`;
 }
-// 権限の判定: sj/roles が無ければログイン済み全員を管理者扱い（初期状態）。あれば sj/roles/{uid} が 'admin' の人だけ管理者
+// 権限の判定: sj/roles が無ければログイン済み全員を管理者扱い（初期状態）。あれば sj/roles/{uid} が 'admin' の人だけ管理者、'chair' は委員長
 async function loadRole(){
   const u=auth.currentUser; if(!u){ ROLE=null; return null; }
   try{
     const snap=await ROLES.once('value'); const roles=snap.val();
-    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : ((roles[u.uid]==='gate'||roles[u.uid]==='shop'||roles[u.uid]==='ta'||roles[u.uid]==='taadmin') ? roles[u.uid] : 'operator'));
+    ROLE = (!roles) ? 'admin' : (roles[u.uid]==='admin' ? 'admin' : ((roles[u.uid]==='chair'||roles[u.uid]==='gate'||roles[u.uid]==='shop'||roles[u.uid]==='ta'||roles[u.uid]==='taadmin') ? roles[u.uid] : 'operator'));
   }catch(e){ console.error('roles',e); ROLE='operator'; }
   return ROLE;
 }
@@ -1115,8 +1122,8 @@ function renderFedHome(){
         <button class="hbtn mini" onclick="enterOperator('ta')">
           <div><div class="hbtn-l">立合セク用</div><div class="hbtn-d">立合評価法のコートの進行操作</div></div>
         </button>
-        <button class="hbtn mini" onclick="enterAdmin()">
-          <div><div class="hbtn-l">管理用</div><div class="hbtn-d">コート割・運営</div></div>
+        <button class="hbtn mini" onclick="enterAdmin('chair')">
+          <div><div class="hbtn-l">委員長用</div><div class="hbtn-d">コート割の読み込み・編集</div></div>
         </button>
       </div>
       <div class="hsec">入場チケット</div>
@@ -1135,16 +1142,19 @@ function renderFedHome(){
       ${u?`<div class="hwho">ログイン中: <b>${esc(u.email||'')}</b></div>`:''}
       <div class="hactions"><button class="hact" onclick="renderHome()">‹ 最初の画面に戻る</button>${u?`<button class="hact quiet" onclick="doLogout()">ログアウト</button>`:''}</div>
       <div class="credit"><span>Produced by <b>H.I. Company</b></span></div>
+      <div class="ownerlink"><button onclick="enterAdmin('owner')">管理用</button></div>
     </div></div>`);
 }
 function enterView(){ if(locked()){ renderComingSoon(); return; } MODE='view'; viewRound=null; renderList(); }
 let pendingMode = null; // ログイン後に入るモード
-async function enterAdmin(){
+async function enterAdmin(as){
+  if(as) ADMIN_AS=as==='chair'?'chair':'owner';
+  const what=ADMIN_AS==='chair'?'委員長用':'管理用';
   if(!auth.currentUser){ pendingMode='admin'; renderLogin(); return; }
   show(loadingHTML('確認しています'));
   await loadRole();
-  if(ROLE==='gate'||ROLE==='shop'){ if(LOCKDOWN){ renderComingSoon('このアカウントでは使えません。'); return; } renderGateOnly('管理用'); return; }
-  if(ROLE!=='admin'){ renderNoAdmin(); return; }
+  if(ROLE==='gate'||ROLE==='shop'){ if(LOCKDOWN){ renderComingSoon('このアカウントでは使えません。'); return; } renderGateOnly(what); return; }
+  if(ADMIN_AS==='owner'?ROLE!=='admin':(ROLE!=='admin'&&ROLE!=='chair')){ renderNoAdmin(); return; }
   MODE='admin'; renderAdminHome();
 }
 async function enterOperator(sec){
@@ -1155,7 +1165,7 @@ async function enterOperator(sec){
   if(locked()){ renderComingSoon('このアカウントでは使えません。'); return; }
   if(ROLE==='gate'||ROLE==='shop'){ renderGateOnly('進行用'); return; }
   if(ROLE==='ta'||ROLE==='taadmin'){ OP_SEC='ta'; try{ sessionStorage.setItem('sj_opsec','ta'); }catch(e){} } // 立合セク（管理者を含む）のアカウントは常に立合セク
-  else if(OP_SEC==='ta'&&ROLE!=='admin'){ // 立合セクは「立合セク」として許可したアカウントだけ
+  else if(OP_SEC==='ta'&&ROLE!=='admin'&&ROLE!=='chair'){ // 立合セクは「立合セク」として許可したアカウントだけ
     const u=auth.currentUser; try{ await db.ref('tk/pending/'+u.uid).set({email:u.email||'',at:Date.now(),want:'ta'}); }catch(e){}
     renderTaNotAllowed(); return;
   }
@@ -1223,32 +1233,35 @@ function renderGateOnly(what){
     </div></div>`);
 }
 function renderNoAdmin(){
+  const ch=ADMIN_AS==='chair';
   show(`
     <div class="home"><div class="home-box">
       <div class="hero"></div>
-      <div class="org">管理用</div>
+      <div class="org">${ch?'委員長用':'管理用'}</div>
       <div class="htitle">権限がありません</div>
-      <div class="hsub">${esc(auth.currentUser?.email||'')} は進行用のアカウントです。<br>管理用の操作には管理者アカウントでログインしてください。</div>
+      <div class="hsub">${ch?`${esc(auth.currentUser?.email||'')} は委員長用のアカウントではありません。<br>委員長用のアカウントでログインしてください。`:ROLE==='chair'?`管理用（大会の作成・終了）は H.I. Company だけが使えます。<br>コート割の読み込みや編集は「委員長用」から行えます。`:`${esc(auth.currentUser?.email||'')} は進行用のアカウントです。<br>管理用の操作には管理者アカウントでログインしてください。`}</div>
+      ${ROLE==='chair'&&!ch?`<button class="hbtn primary" onclick="enterAdmin('chair')"><div><div class="hbtn-l">委員長用で開く</div><div class="hbtn-d">コート割の読み込み・編集</div></div><div class="hbtn-r">›</div></button>`:''}
       <button class="hbtn" onclick="enterOperator()"><div class="hicon">02</div><div><div class="hbtn-l">進行用で開く</div><div class="hbtn-d">このままの権限で進行の操作をする</div></div><div class="hbtn-r">›</div></button>
       <div class="hactions"><button class="hact" onclick="renderFedHome()">‹ 学生連盟の画面に戻る</button><button class="hact quiet" onclick="doLogout()">別のアカウントでログイン</button></div>
     </div></div>`);
 }
 function renderAdminHome(){
   stopProgListener(); TD=null; PROG_DATA=null; CUR_ID=null; MODE='admin';
+  const own=isOwner();
   show(`
     <div class="home"><div class="home-box">
       <div class="hero"></div>
-      <div class="org">管理用</div>
+      <div class="org">${own?'管理用':'委員長用'}</div>
       <div class="wordmark">DEVAN</div>
-      <div class="hsub">${esc(auth.currentUser?.email||'')} としてログイン中</div>
-      <button class="hbtn" onclick="renderNewTournament()">
+      <div class="hsub">${own?esc(auth.currentUser?.email||'')+' としてログイン中':'コート割の読み込み・編集、ラウンドの追加、会場案内の設定ができます。<br>大会の作成と終了は H.I. Company が行います。'}</div>
+      ${own?`<button class="hbtn" onclick="renderNewTournament()">
         <div class="hicon">01</div>
         <div><div class="hbtn-l">新規作成</div><div class="hbtn-d">大会名・ラウンド・コート割を設定する</div></div>
         <div class="hbtn-r">›</div>
-      </button>
-      <button class="hbtn" onclick="renderList()">
-        <div class="hicon">02</div>
-        <div><div class="hbtn-l">大会を開く</div><div class="hbtn-d">保存済みの大会を選んで進行を記録する</div></div>
+      </button>`:''}
+      <button class="hbtn${own?'':' primary'}" onclick="renderList()">
+        ${own?'<div class="hicon">02</div>':''}
+        <div><div class="hbtn-l">大会を開く</div><div class="hbtn-d">${own?'保存済みの大会を選んで進行を記録する':'コート割を読み込む・直す大会を選ぶ'}</div></div>
         <div class="hbtn-r">›</div>
       </button>
       <div class="hwho">ログイン中: <b>${esc(auth.currentUser?.email||'')}</b></div>
@@ -1259,9 +1272,9 @@ function renderLogin(msg){
   show(`
     <div class="home"><div class="home-box">
       <div class="hero"></div>
-      <div class="org">${pendingMode==='operator'?SEC_NAME():'管理用'}</div>
+      <div class="org">${pendingMode==='operator'?SEC_NAME():ADMIN_AS==='chair'?'委員長用':'管理用'}</div>
       <div class="htitle">ログイン</div>
-      <div class="hsub">${pendingMode==='operator'?'進行用':'管理者'}のメールアドレスとパスワードを入力してください</div>
+      <div class="hsub">${pendingMode==='operator'?'進行用':ADMIN_AS==='chair'?'委員長用':'管理者'}のメールアドレスとパスワードを入力してください</div>
       <div class="scard" style="text-align:left">
         <label class="flabel">メールアドレス</label>
         <input class="inp" id="lemail" type="email" autocomplete="username" placeholder="admin@example.com" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')$('lpass').focus()">
@@ -1311,8 +1324,8 @@ function renderList(){
     const all = val ? Object.values(val).filter(Boolean) : [];
     LIST_NAMES={}; all.forEach(td=>{ LIST_NAMES[td.id]=td.name; });
     const list = all.filter(td=>!td.deletedAt);
-    const trash = MODE==='admin' ? all.filter(td=>td.deletedAt).sort((a,b)=>b.deletedAt-a.deletedAt) : [];
-    if(MODE==='admin'&&isAdmin()) trash.filter(td=>Date.now()-td.deletedAt>TRASH_DAYS*864e5).forEach(td=>{ META(td.id).remove().catch(()=>{}); PROG(td.id).remove().catch(()=>{}); }); // 30日を過ぎたものは本当に消す
+    const trash = isOwner() ? all.filter(td=>td.deletedAt).sort((a,b)=>b.deletedAt-a.deletedAt) : [];
+    if(isOwner()) trash.filter(td=>Date.now()-td.deletedAt>TRASH_DAYS*864e5).forEach(td=>{ META(td.id).remove().catch(()=>{}); PROG(td.id).remove().catch(()=>{}); }); // 30日を過ぎたものは本当に消す
     const trashItem=td=>{ const left=Math.max(0,Math.ceil(TRASH_DAYS-(Date.now()-td.deletedAt)/864e5)); return `
                 <div class="titem ended trashed">
                   <div class="tinfo">
@@ -1330,7 +1343,7 @@ function renderList(){
                     ${MODE==='spectator'?'':`<div class="tmeta">${td.ended?(td.champion?`総合優勝 ${esc(td.champion)}`:'終了した大会'):`${(td.rounds||[]).length}ラウンド ・ ${esc((td.rounds||[]).join(' / '))}`}</div>`}
                   </div>
                   ${td.ended?'<span class="endtag">終了</span>':''}
-                  ${MODE==='admin'?`<button class="tdel" onclick="event.stopPropagation();openRenameTournament('${esc(td.id)}')">名前を編集</button><button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>`:''}
+                  ${isOwner()?`<button class="tdel" onclick="event.stopPropagation();openRenameTournament('${esc(td.id)}')">名前を編集</button><button class="tdel" onclick="event.stopPropagation();deleteTournament('${esc(td.id)}')">削除</button>`:''}
                   <div class="tarr">›</div>
                 </div>`;
     show(`
@@ -1465,7 +1478,7 @@ function popConfetti(){
 
 // 管理用: 大会を終了（アーカイブ）／取り消し。終了すると観客・閲覧・進行用は「終了しました」の画面になる
 function toggleEnded(){
-  if(!isAdmin()||!TD) return;
+  if(!isOwner()||!TD) return;
   if(TD.ended){
     askConfirm({title:'終了を取り消す', desc:`「${TD.name}」を開催中に戻します。`, okLabel:'開催中に戻す', onOk:()=>{
       delete TD.ended; delete TD.endedAt; saveMeta(); renderDash(); showToast('開催中に戻しました');
@@ -1481,7 +1494,7 @@ function toggleEnded(){
 }
 // 管理用: 総合優勝の大学名を入力・変更（終了画面に表示）
 function setChampion(){
-  if(!isAdmin()||!TD) return;
+  if(!isOwner()||!TD) return;
   askText({title:'総合優勝の大学名', desc:'終了画面に表示します。空欄にすると表示を消します。', value:TD.champion||'', placeholder:'例：明治大学', okLabel:'保存する', allowEmpty:true, onOk:v=>{
     if(v) TD.champion=v; else delete TD.champion;
     saveMeta(); renderDash(); showToast(v?`総合優勝: ${v}`:'総合優勝の表示を消しました');
@@ -1489,21 +1502,21 @@ function setChampion(){
 }
 
 function goHome(){ if(MODE==='admin'&&auth.currentUser) renderAdminHome(); else if(MODE==='view'||MODE==='operator') renderFedHome(); else renderHome(); }
-const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?`<span class="modetag">${SEC_NAME()}</span>`:MODE==='spectator'?'<span class="modetag">観客用</span>':'';
+const modeTag=()=>MODE==='view'?'<span class="modetag">閲覧用</span>':MODE==='operator'?`<span class="modetag">${SEC_NAME()}</span>`:MODE==='spectator'?'<span class="modetag">観客用</span>':(MODE==='admin'&&!isOwner())?'<span class="modetag">委員長用</span>':'';
 // 大会の削除は「削除済み」の印（sj/meta/{id}/deletedAt）を付けるだけ。コート割も進行の記録も残るので、30日間は一覧の「削除した大会」から元に戻せる
 const TRASH_DAYS=30;
 function deleteTournament(id){
-  if(!isAdmin()) return;
+  if(!isOwner()) return;
   askConfirm({title:'大会を削除', desc:`「${LIST_NAMES[id]||''}」を一覧から外します。${TRASH_DAYS}日間は、一覧のいちばん下の「削除した大会」から元に戻せます。`, okLabel:'削除する', danger:true, onOk:()=>{
     META(id).child('deletedAt').set(Date.now()).then(()=>{ renderList(); showToast('大会を削除しました（元に戻せます）'); }).catch(_saveErr);
   }});
 }
 function restoreTournament(id){
-  if(!isAdmin()) return;
+  if(!isOwner()) return;
   META(id).child('deletedAt').remove().then(()=>{ renderList(); showToast(`「${LIST_NAMES[id]||'大会'}」を元に戻しました`); }).catch(_saveErr);
 }
 function purgeTournament(id){
-  if(!isAdmin()) return;
+  if(!isOwner()) return;
   askConfirm({title:'大会を完全に削除', desc:`「${LIST_NAMES[id]||''}」のコート割と進行の記録をすべて消します。これは元に戻せません。`, okLabel:'完全に削除', danger:true, onOk:()=>{
     Promise.all([META(id).remove(),PROG(id).remove()]).then(()=>{ renderList(); showToast('完全に削除しました'); }).catch(_saveErr);
   }});
@@ -1638,7 +1651,7 @@ function delDraftRound(i){
 }
 
 function saveDraftAndOpen(){
-  if(!isAdmin()){ alert('管理者としてログインしていません'); return; }
+  if(!isOwner()){ alert('大会の作成は管理用（H.I. Company）だけができます'); return; }
   const el=$('dname'); if(el) draftTD.name=el.value.trim();
   if(!draftTD.name){ alert('大会名を入力してください'); $('dname')?.focus(); return; }
   draftTD.rounds.forEach(r=>{
@@ -2509,7 +2522,7 @@ function renderDash(){
   const rHTML = TD.rounds.map(r=>{
     const b=`<button class="rtab${r===curRound()?' on':''}" onclick="setRound('${esc(r)}')">${esc(r)}</button>`;
     return canDelR(r)?`<span class="rtabw">${b}<button class="rtabx" title="このラウンドを削除" aria-label="${esc(r)}を削除" onclick="${MODE==='admin'?'deleteCurrentRound':'deleteTARound'}('${esc(r)}')">×</button></span>`:b;
-  }).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>`:'') + (MODE!=='admin'&&canAddTA()?`<button class="rtabadd" onclick="openAddTARound()">＋ 立合ラウンド</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button><button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button><button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:'');
+  }).join('') + (canEditTA()?`<button class="rtabadd" onclick="openLiveImport()">立合の対戦表を読み込む</button>`:'') + (MODE!=='admin'&&canAddTA()?`<button class="rtabadd" onclick="openAddTARound()">＋ 立合ラウンド</button>`:'') + (MODE==='admin'?`<button class="rtabadd" onclick="openAddRoundModal()">＋ ラウンド</button><button class="rtabadd" onclick="openLiveImport()">コート割を読み込む</button><button class="rtabadd" onclick="openPrecheck()">開始前チェック</button><button class="rtabadd" onclick="openGuideEdit()">会場案内${(TD.guide&&(TD.guide.text||TD.guide.img))?'を変更':''}</button>${isOwner()?`<button class="rtabadd end" onclick="toggleEnded()">${TD.ended?'終了を取り消す':'大会を終了する'}</button>${TD.ended?`<button class="rtabadd end" onclick="setChampion()">${TD.champion?`総合優勝: ${esc(TD.champion)}`:'総合優勝を入力'}</button>`:''}`:''}`:'');
 
   $('app').innerHTML=`
     <div class="dtop">
@@ -2659,7 +2672,7 @@ function openAddRoundModal(){
 // 管理者: 大会名の変更（一覧・各画面の見出しに反映。開いている他の端末は開き直すと反映）
 let RENAME_ID=null;
 function openRenameTournament(id){
-  if(!isAdmin()) return;
+  if(!isOwner()) return;
   RENAME_ID=id||CUR_ID; if(!RENAME_ID) return;
   const cur=(TD&&CUR_ID===RENAME_ID)?TD.name:(LIST_NAMES[RENAME_ID]||'');
   modalCourtId=null; stopFormOpen=false;
@@ -2674,7 +2687,7 @@ function openRenameTournament(id){
   $('ov').classList.add('open'); setTimeout(()=>{ const el=$('tname'); if(el){ el.focus(); el.select(); } },50);
 }
 function doRenameTournament(){
-  const id=RENAME_ID; if(!isAdmin()||!id) return;
+  const id=RENAME_ID; if(!isOwner()||!id) return;
   const n=($('tname').value||'').trim();
   if(!n){ alert('大会名を入力してください'); return; }
   if(n===((TD&&CUR_ID===id)?TD.name:LIST_NAMES[id])){ closeModal(); return; }
@@ -3077,7 +3090,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
 function loadingHTML(msg,err){ return `<div class="loader${err?' err':''}"><div class="ld-mark">DEVAN</div><div class="ld-rule"></div><div class="ld-msg">${msg||'読み込んでいます'}</div></div>`; }
 let _booted=false;
 // 直行URL（学連スタッフ用）: ?m=fed=学生連盟の画面 / op=進行セク用 / view=閲覧用 / admin=管理用 / spec=観客用。起動ポスターと最初の画面を飛ばす
-const ENTRY=(()=>{ try{ const m=new URLSearchParams(location.search).get('m'); return ['fed','op','view','admin','spec'].includes(m)?m:null; }catch(e){ return null; } })();
+const ENTRY=(()=>{ try{ const m=new URLSearchParams(location.search).get('m'); return ['fed','op','view','admin','chair','spec'].includes(m)?m:null; }catch(e){ return null; } })();
 const SHARE=(()=>{ try{ const q=new URLSearchParams(location.search); return {t:q.get('t')||'', e:(q.get('e')||'').split(',').filter(Boolean)}; }catch(e){ return {t:'',e:[]}; } })();
 show(loadingHTML());
 // ── 起動アニメーション（1セッションに1回。ロゴがホームの定位置へ着地してそのままホームになる）──
@@ -3123,7 +3136,7 @@ const EVENT_POSTER={src:'', srcPortrait:'', until:'2026-11-08', hold:2800}; // �
   (posterOn?poster():Promise.resolve()).then(()=>fontReady).then(start);
 })();
 
-async function bootEntry(){ if(LOCKDOWN){ if(auth.currentUser) await loadRole(); if(locked()){ if(ENTRY==='admin') enterAdmin(); else if(ENTRY==='op') enterOperator(); else renderComingSoon(); return; } } if(ENTRY==='fed') renderFedHome(); else if(ENTRY==='op') enterOperator(); else if(ENTRY==='view') enterView(); else if(ENTRY==='admin') enterAdmin(); else if(ENTRY==='spec'){ enterSpectator(); if(SHARE.t) openTournament(SHARE.t); } else renderHome(); }
+async function bootEntry(){ if(LOCKDOWN){ if(auth.currentUser) await loadRole(); if(locked()){ if(ENTRY==='admin'||ENTRY==='chair') enterAdmin(ENTRY==='chair'?'chair':'owner'); else if(ENTRY==='op') enterOperator(); else renderComingSoon(); return; } } if(ENTRY==='fed') renderFedHome(); else if(ENTRY==='op') enterOperator(); else if(ENTRY==='view') enterView(); else if(ENTRY==='admin') enterAdmin('owner'); else if(ENTRY==='chair') enterAdmin('chair'); else if(ENTRY==='spec'){ enterSpectator(); if(SHARE.t) openTournament(SHARE.t); } else renderHome(); }
 auth.onAuthStateChanged(()=>{ if(!_booted){ _booted=true; bootEntry(); } else if(!auth.currentUser && (MODE==='admin'||MODE==='operator')){ renderHome(); } });
 </script>
 </body>
