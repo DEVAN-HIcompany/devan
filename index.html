@@ -1253,7 +1253,7 @@ function renderAdminHome(){
       <div class="hero"></div>
       <div class="org">${own?'管理用':'委員長用'}</div>
       <div class="wordmark">DEVAN</div>
-      <div class="hsub">${own?esc(auth.currentUser?.email||'')+' としてログイン中':'コート割の読み込み・編集、ラウンドの追加、会場案内の設定ができます。<br>大会の作成と終了は H.I. Company が行います。'}</div>
+      <div class="hsub">${own?esc(auth.currentUser?.email||'')+' としてログイン中':'コート割の読み込み・編集、ラウンドの追加、会場案内の設定ができます。'}</div>
       ${own?`<button class="hbtn" onclick="renderNewTournament()">
         <div class="hicon">01</div>
         <div><div class="hbtn-l">新規作成</div><div class="hbtn-d">大会名・ラウンド・コート割を設定する</div></div>
