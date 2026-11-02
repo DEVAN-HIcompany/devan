@@ -712,7 +712,8 @@ const STATS = id => db.ref('sj/stats/'+id);
 function deviceId(){ try{ let d=localStorage.getItem('sj_dev'); if(!d){ d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); localStorage.setItem('sj_dev',d); } return d; }catch(e){ return 'd'+Math.random().toString(36).slice(2,10); } }
 function stat(key){
   if(MODE!=='spectator'||!CUR_ID) return;
-  try{ STATS(CUR_ID).child(key).transaction(v=>(v||0)+1).catch(()=>{}); }catch(e){}
+  // transaction は先に読む必要があり、stats は未ログインでは読めないので観客の分が数えられていなかった（11/2 判明）。increment は読まずに足せる
+  try{ STATS(CUR_ID).child(key).set(firebase.database.ServerValue.increment(1)).catch(()=>{}); }catch(e){}
 }
 function statDevice(){
   if(MODE!=='spectator'||!CUR_ID) return;
