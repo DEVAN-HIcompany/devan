@@ -686,7 +686,7 @@ let MODE = null;      // 'admin' | 'operator' | 'view'
 // 公開停止中（2026-10-21 社長指示）: true の間は管理者・進行セク・立合セクのアカウントでログインした人だけが使える（受付・物販のアカウントは不可）。他の人には Coming soon 画面だけを出す。公開するときは false にする
 const LOCKDOWN = false; // 2026-10-25 社長指示で公開（Coming soon をやめる）。また止めるときは true に戻す
 const locked = () => LOCKDOWN && !(auth.currentUser && (ROLE==='admin'||ROLE==='chair'||ROLE==='operator'||ROLE==='ta'||ROLE==='taadmin'));
-let ROLE = null;      // ログイン後の権限: 'admin'（管理用＝H.I. Company だけ） | 'chair'（大会代表者用: コート割の読み込み・編集） | 'operator' | 'ta'（立合セク） | 'taadmin'（立合セク管理者: 立合ラウンドの編集も） | 'gate' | 'shop'
+let ROLE = null;      // ログイン後の権限: 'admin'（管理用＝HIC だけ） | 'chair'（大会代表者用: コート割の読み込み・編集） | 'operator' | 'ta'（立合セク） | 'taadmin'（立合セク管理者: 立合ラウンドの編集も） | 'gate' | 'shop'
 let OP_SEC='shinko'; try{ if(sessionStorage.getItem('sj_opsec')==='ta') OP_SEC='ta'; }catch(e){} // 進行用の担当: shinko=進行セク（演武のコート）/ ta=立合セク（立合評価法のコート）
 const SEC_NAME=()=>OP_SEC==='ta'?(ROLE==='taadmin'?'立合セク管理者':'立合セク用'):'進行セク用';
 // 立合セク管理者（sj/roles='taadmin'）は、名前に「立合」が入ったラウンドのコート割だけ編集できる（読み込み・各コートの修正）。DBルールも同じ条件。普通の立合セク（'ta'）は進行だけ
@@ -696,7 +696,7 @@ function canEditTA(){ return MODE==='operator'&&OP_SEC==='ta'&&(ROLE==='taadmin'
 function secOK(c){ if(MODE!=='operator') return true; if(OP_SEC!=='ta') return !!c; /* 進行セクは演武・立合どちらのコートも進行できる（2026-10-25 社長指示。編集はできない） */ if(OP_SEC==='ta'&&c&&!(c.teams||[]).length&&canEditTA()) return true; return !!c&&((OP_SEC==='ta')===isTA(c)); } // 進行用は自分のセクのコートだけ操作できる（立合セクは立合ラウンドの空きコートも設定できる）
 let OP_NAME=''; try{ OP_NAME=(localStorage.getItem('sj_opname')||'').trim(); }catch(e){} // 進行セクの担当者名（端末に記憶。学連の画面にだけ表示）
 let viewRound = null; // 進行用・閲覧用で見ているラウンド（端末内だけ。共有の currentRound は管理用だけが変える）
-// 管理用（MODE='admin'）の画面は2種類。ADMIN_AS='owner' は H.I. Company だけの管理用（大会の新規作成と名前の変更も）、
+// 管理用（MODE='admin'）の画面は2種類。ADMIN_AS='owner' は HIC だけの管理用（大会の新規作成と名前の変更も）、
 // 'chair' は大会代表者用（コート割の読み込み・編集・ラウンド・会場案内・大会の終了と削除。2026-11-02 社長指示）。DBルールも同じ線引き
 let ADMIN_AS = 'owner';
 let isAdmin = () => MODE==='admin' && (ROLE==='admin'||ROLE==='chair') && !!auth.currentUser;
@@ -1035,7 +1035,7 @@ function renderComingSoon(msg){
       ${soonInstallHTML()}
       ${msg?`<div class="pvwarn" style="margin-bottom:21px">${esc(msg)}</div>`:''}
       <div class="soonlogins">${u?`<button class="soonlogin" onclick="doLogout()">ログアウト（${esc(u.email||'')}）</button>`:`<button class="soonlogin" onclick="enterAdmin()">管理者</button><button class="soonlogin" onclick="enterOperator('shinko')">進行セク</button><button class="soonlogin" onclick="enterOperator('ta')">立合セク</button>`}</div>
-      <div class="credit"><span>Produced by <b>H.I. Company</b></span></div>
+      <div class="credit"><span>Produced by <b>HIC</b></span></div>
     </div></div>`);
   document.body.classList.add('soonmode');
   startSoonPetals();
@@ -1086,7 +1086,7 @@ function renderHome(){
         </button>
       </div>
       ${installHintHTML()}
-      <div class="credit"><span>Produced by <b>H.I. Company</b></span></div>
+      <div class="credit"><span>Produced by <b>HIC</b></span></div>
     </div></div>`);
   splashHandoff();
   applyTicketClosed();
@@ -1162,7 +1162,7 @@ function renderFedHome(){
       <div class="hnote">閲覧用以外はログインが必要です</div>
       ${u?`<div class="hwho">ログイン中: <b>${esc(u.email||'')}</b></div>`:''}
       <div class="hactions"><button class="hact" onclick="renderHome()">‹ 最初の画面に戻る</button>${u?`<button class="hact quiet" onclick="doLogout()">ログアウト</button>`:''}</div>
-      <div class="credit"><span>Produced by <b>H.I. Company</b></span></div>
+      <div class="credit"><span>Produced by <b>HIC</b></span></div>
       <div class="ownerlink"><button onclick="enterAdmin('owner')">管理用</button></div>
     </div></div>`);
 }
@@ -1260,7 +1260,7 @@ function renderNoAdmin(){
       <div class="hero"></div>
       <div class="org">${ch?'大会代表者用':'管理用'}</div>
       <div class="htitle">権限がありません</div>
-      <div class="hsub">${ch?`${esc(auth.currentUser?.email||'')} は大会代表者用のアカウントではありません。<br>大会代表者用のアカウントでログインしてください。`:ROLE==='chair'?`管理用（大会の新規作成・名前の変更）は H.I. Company だけが使えます。<br>コート割の読み込みや編集、大会の終了は「大会代表者用」から行えます。`:`${esc(auth.currentUser?.email||'')} は進行用のアカウントです。<br>管理用の操作には管理者アカウントでログインしてください。`}</div>
+      <div class="hsub">${ch?`${esc(auth.currentUser?.email||'')} は大会代表者用のアカウントではありません。<br>大会代表者用のアカウントでログインしてください。`:ROLE==='chair'?`管理用（大会の新規作成・名前の変更）は HIC だけが使えます。<br>コート割の読み込みや編集、大会の終了は「大会代表者用」から行えます。`:`${esc(auth.currentUser?.email||'')} は進行用のアカウントです。<br>管理用の操作には管理者アカウントでログインしてください。`}</div>
       ${ROLE==='chair'&&!ch?`<button class="hbtn primary" onclick="enterAdmin('chair')"><div><div class="hbtn-l">大会代表者用で開く</div><div class="hbtn-d">コート割の読み込み・編集</div></div><div class="hbtn-r">›</div></button>`:''}
       <button class="hbtn" onclick="enterOperator()"><div class="hicon">02</div><div><div class="hbtn-l">進行用で開く</div><div class="hbtn-d">このままの権限で進行の操作をする</div></div><div class="hbtn-r">›</div></button>
       <div class="hactions"><button class="hact" onclick="renderFedHome()">‹ 学生連盟の画面に戻る</button><button class="hact quiet" onclick="doLogout()">別のアカウントでログイン</button></div>
@@ -1672,7 +1672,7 @@ function delDraftRound(i){
 }
 
 function saveDraftAndOpen(){
-  if(!isOwner()){ alert('大会の作成は管理用（H.I. Company）だけができます'); return; }
+  if(!isOwner()){ alert('大会の作成は管理用（HIC）だけができます'); return; }
   const el=$('dname'); if(el) draftTD.name=el.value.trim();
   if(!draftTD.name){ alert('大会名を入力してください'); $('dname')?.focus(); return; }
   draftTD.rounds.forEach(r=>{
@@ -2378,7 +2378,7 @@ function openSpecGuide(){
     ${specGuideHTML(false)}
     <div class="glegend"><span class="schip standby">待機中</span><span>コートがまだ始まっていない（1組目）</span><span class="schip now">演武中</span><span>いま演武している（立合評価法は「試合中」）</span><span class="schip wait">あと3組</span><span>3組あとに出番（立合評価法は「あと3試合」）</span><span class="schip done">終了</span><span>演武が終わった</span><span class="schip stopped">停止中</span><span>コートが一時中断</span></div>
     <div class="gnote">出番の行を押すと、そのコートの全出場組と進み具合が見られます。<br>お気に入りはこのスマホにだけ記憶されます。</div>
-    <div class="gnote" style="margin-top:.6rem;font-size:11px">このアプリ「DEVAN」は H.I. Company が開発・提供しています。</div>
+    <div class="gnote" style="margin-top:.6rem;font-size:11px">このアプリ「DEVAN」は HIC が開発・提供しています。</div>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="mbtn p" onclick="closeModal()">わかりました</button></div>`;
   $('ov').classList.add('open');
 }
