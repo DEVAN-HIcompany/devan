@@ -172,6 +172,7 @@ body.big .spad{display:none}
 #adview .avbar{flex:none;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 8px max(8px,env(safe-area-inset-left));background:rgba(246,244,239,.97);border-bottom:1px solid var(--line2)}
 #adview .avback{flex:none;display:flex;align-items:center;gap:4px;min-height:44px;padding:0 13px;border:1px solid var(--line2);border-radius:999px;background:#fff;color:var(--ink);font-size:14px;font-weight:600}
 #adview .avtitle{flex:1;min-width:0;text-align:center;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#adview .avzoom{flex:none;min-height:44px;padding:0 13px;border:1px solid var(--line2);border-radius:999px;background:#fff;color:var(--ink);font-size:13px;font-weight:600;white-space:nowrap}
 #adview .avx{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:#fff;color:var(--ink);font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center}
 #adview .avbody{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:13px max(13px,env(safe-area-inset-right)) calc(21px + env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left))}
 #adview .avbody img{display:block;width:100%;max-width:1100px;height:auto;margin:0 auto;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.12)}
@@ -1293,11 +1294,27 @@ let _avPushed=false;
 function openAdView(src,name){
   if(document.getElementById('adview')) closeAdView(true);
   const el=document.createElement('div'); el.id='adview'; el.setAttribute('role','dialog'); el.setAttribute('aria-label',(name||'協賛')+'の広告');
-  el.innerHTML=`<div class="avbar"><button class="avback" onclick="closeAdView()">‹ 戻る</button><div class="avtitle">${esc(name||'')}</div><button class="avx" aria-label="閉じる" onclick="closeAdView()">×</button></div>
-    <div class="avbody"><img src="${esc(src)}" alt="${esc((name||'協賛')+'の広告')}"><div class="avhint">画像をダブルタップで拡大・縮小</div></div>`;
-  el.querySelector('img').addEventListener('dblclick',()=>el.classList.toggle('zoom'));
+  el.innerHTML=`<div class="avbar"><button class="avback" onclick="closeAdView()">‹ 戻る</button><div class="avtitle">${esc(name||'')}</div><button class="avzoom" onclick="adViewZoom()">＋ 拡大</button><button class="avx" aria-label="閉じる" onclick="closeAdView()">×</button></div>
+    <div class="avbody"><img src="${esc(src)}" alt="${esc((name||'協賛')+'の広告')}"><div class="avhint">ダブルタップか「拡大」ボタンで大きくなります。もう一度で元の大きさに戻ります</div></div>`;
+  // ダブルタップ: アプリ全体で touch-action:manipulation（ダブルタップ拡大を止める設定）なので、2回のタップを自分で見分ける
+  const im=el.querySelector('img'); let last=0, lx=0, ly=0, moved=false;
+  im.addEventListener('touchstart',e=>{ moved=false; },{passive:true});
+  im.addEventListener('touchmove',()=>{ moved=true; },{passive:true});
+  im.addEventListener('touchend',e=>{ if(moved||e.changedTouches.length!==1) return; const t=e.changedTouches[0], now=Date.now();
+    if(now-last<350&&Math.abs(t.clientX-lx)<30&&Math.abs(t.clientY-ly)<30){ e.preventDefault(); last=0; adViewZoom(t.clientX,t.clientY); } else { last=now; lx=t.clientX; ly=t.clientY; } },{passive:false});
+  im.addEventListener('dblclick',e=>adViewZoom(e.clientX,e.clientY));
   document.body.appendChild(el); document.body.style.overflow='hidden';
   try{ history.pushState({adview:1},''); _avPushed=true; }catch(e){ _avPushed=false; }
+}
+// 拡大・縮小。(x,y) を渡すと、その場所が画面の同じ位置に来るようにスクロールする
+function adViewZoom(x,y){
+  const el=document.getElementById('adview'); if(!el) return; const body=el.querySelector('.avbody'), im=body.querySelector('img');
+  const r=im.getBoundingClientRect(), br=body.getBoundingClientRect();
+  if(x==null){ x=br.left+br.width/2; y=br.top+br.height/2; }
+  const fx=(x-r.left)/r.width, fy=(y-r.top)/r.height; // 画像の中のどこか（0〜1）
+  const on=el.classList.toggle('zoom'); const b=el.querySelector('.avzoom'); if(b) b.textContent=on?'－ 縮小':'＋ 拡大';
+  const r2=im.getBoundingClientRect();
+  body.scrollLeft+= (r2.left+fx*r2.width)-x; body.scrollTop+= (r2.top+fy*r2.height)-y;
 }
 function closeAdView(noHist){
   const el=document.getElementById('adview'); if(!el) return;
