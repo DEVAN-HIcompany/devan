@@ -1232,13 +1232,13 @@ function sponsorAdHTML(){
   return SPONSOR_ADS.map(x=>{ const img=`<img src="${esc(x.img)}" alt="${esc(x.alt)}" loading="lazy" width="1080" height="1530">`;
     return `<div class="spad"><span class="splab">協賛広告</span>${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener sponsored">${img}</a>`:`<div class="spadimg">${img}</div>`}</div>`; }).join('');
 }
-// 起動したら最初に1回だけ協賛広告をポップアップ（起動演出が終わってから。直行URL・学連スタッフの画面では出さない）
+// 起動したら最初に1回だけ協賛広告をポップアップ（起動演出が終わってから。直行URL・学生連盟側の画面では出さない）
 let _adPopTried=false;
 function maybeAdPopup(){
   if(_adPopTried||!SPONSOR_ADS.length||ENTRY) return; _adPopTried=true;
   try{ if(sessionStorage.getItem('sj_adpop')==='1') return; }catch(e){}
-  let n=0; const wait=()=>{ if(MODE!==null||!document.querySelector('#app .home')) return; // ホームから離れたら出さない
-    if(document.getElementById('splash')&&n++<60){ setTimeout(wait,200); return; } setTimeout(()=>{ if(MODE===null&&document.querySelector('#app .home')) showAdPopup(); },700); };
+  let n=0; const wait=()=>{ if(MODE!==null||!$('tophome')) return; // トップから離れたら出さない
+    if(document.getElementById('splash')&&n++<60){ setTimeout(wait,200); return; } setTimeout(()=>{ if(MODE===null&&$('tophome')) showAdPopup(); },700); };
   wait();
 }
 function showAdPopup(){
@@ -1252,7 +1252,8 @@ function showAdPopup(){
   const im=el.querySelector('img'); const go=()=>{ document.body.appendChild(el); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('on'))); };
   if(im.complete) go(); else { im.onload=go; im.onerror=()=>{}; }
 }
-// 定期表示: 観客用・閲覧用・トップを見ている間、AD_EVERY_MIN 分ごとにもう一度出す（2026-11-03 社長指示）
+// 定期表示: 観客用・トップを見ている間、AD_EVERY_MIN 分ごとにもう一度出す（2026-11-03 社長指示）
+// 学生連盟側（学生連盟の画面・ログイン・閲覧用・進行・管理）には出さない（同日 社長指示）
 // 進行・管理の画面、大画面モード、入力中、ほかの画面（コート詳細など）を開いている間、画面が裏にあるときは出さない
 const AD_EVERY_MIN=20; // 多すぎると鬱陶しいので20分に1回（社長指示「適宜」）
 let _adLast=(()=>{ try{ return +sessionStorage.getItem('sj_adlast')||Date.now(); }catch(e){ return Date.now(); } })();
@@ -1261,7 +1262,7 @@ function adPopupOK(){
   if(document.body.classList.contains('big')||document.body.classList.contains('soonmode')) return false;
   if($('ov')&&$('ov').classList.contains('open')) return false;
   const a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return false;
-  return MODE==='spectator'||MODE==='view'||(MODE===null&&!!document.querySelector('#app .home'));
+  return MODE==='spectator'||(MODE===null&&!!$('tophome'));
 }
 setInterval(()=>{ if(Date.now()-_adLast>=AD_EVERY_MIN*60000&&adPopupOK()) showAdPopup(); },20000);
 function closeAdPopup(){ const el=document.getElementById('adpop'); if(!el) return; el.classList.remove('on'); setTimeout(()=>el.remove(),350); }
@@ -1275,7 +1276,7 @@ function renderHome(){
   stopProgListener();
   TD = null; PROG_DATA = null; CUR_ID = null; MODE = null; viewRound = null;
   show(`
-    <div class="home"><div class="home-box">
+    <div class="home" id="tophome"><div class="home-box">
       <div class="hero"></div>
       <div class="org">関東学生少林寺拳法連盟</div>
       <div class="wordmark">DEVAN</div>
