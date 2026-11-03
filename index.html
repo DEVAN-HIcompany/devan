@@ -671,6 +671,8 @@ body.big .spbar,body.big .spbarpad{display:none}
 .splogos{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s2) var(--s3);margin-bottom:var(--s2)}
 .splogos .spl{display:block;height:55px;max-width:220px}
 .splogos .spl img{height:100%;max-width:100%;object-fit:contain;display:block}
+.splogos.spmain .spl{height:89px;max-width:300px}
+.splogos.spmain .spl span{font-family:var(--serif);font-size:21px;font-weight:600;line-height:89px}
 .spnames{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0 var(--s3);text-align:left}
 .spnames>*{font-family:var(--serif);font-size:13px;font-weight:500;color:var(--ink2);letter-spacing:.04em;padding:7px 4px;border-bottom:1px solid var(--line);line-height:1.5;word-break:break-word;text-decoration:none}
 .spnames a{color:var(--ink)}
@@ -1022,12 +1024,14 @@ function spNameHTML(n){ return esc(n).replace(/([\u4E00-\u9FFF々]+)[(（]([\u30
 function sponsorListHTML(){
   if(MODE!=='spectator'&&MODE!=='view') return '';
   const l=spList().filter(x=>x.tier==='list'); if(!l.length) return '';
-  const homeImg=x=>{ const h=HOME_SPONSORS.find(h=>h.img&&spCleanName(h.name)===spCleanName(x.name)); return h?h.img:''; }; // トップに載せている社は同じロゴを使う
+  const homeImg=x=>{ const h=HOME_SPONSORS.concat(LIST_LOGOS).find(h=>h.img&&spCleanName(h.name)===spCleanName(x.name)); return h?h.img:''; }; // トップに載せている社・LIST_LOGOS の社は同じロゴを使う
   const imgOf=x=>spSafeImg(x.img)||homeImg(x);
-  const logos=l.filter(imgOf), names=l.filter(x=>!imgOf(x));
+  const isMain=x=>HOME_SPONSORS.some(h=>h.main&&spCleanName(h.name)===spCleanName(x.name));
+  const mains=l.filter(isMain), logos=l.filter(x=>!isMain(x)&&imgOf(x)), names=l.filter(x=>!isMain(x)&&!imgOf(x));
   const homeUrl=x=>{ const h=HOME_SPONSORS.find(h=>h.url&&spCleanName(h.name)===spCleanName(x.name)); return h?h.url:''; };
   const lk=(x,inner,cls)=>{ const u=spSafeUrl(x.url)||spSafeUrl(homeUrl(x)); return u?`<a class="${cls}" href="${esc(u)}" target="_blank" rel="noopener sponsored">${inner}</a>`:`<div class="${cls}">${inner}</div>`; };
   return `<div class="splist"><h3>ご協賛</h3><div class="sprule"></div><div class="spsub">本大会は次の皆さまのご協賛をいただいています</div>
+    ${mains.length?`<div class="splogos spmain">${mains.map(x=>lk(x,imgOf(x)?`<img src="${esc(imgOf(x))}" alt="${esc(x.name)}" loading="lazy">`:`<span>${spNameHTML(x.name)}</span>`,'spl')).join('')}</div>`:''}
     ${logos.length?`<div class="splogos">${logos.map(x=>lk(x,`<img src="${esc(imgOf(x))}" alt="${esc(x.name)}" loading="lazy">`,'spl')).join('')}</div>`:''}
     ${names.length?`<div class="spnames">${names.map(x=>lk(x,spNameHTML(x.name),'')).join('')}</div>`:''}</div>`;
 }
@@ -1224,7 +1228,9 @@ function startSoonPetals(){
   });
 }
 // トップページの協賛（大会に関係なく出す）。img はリポジトリに置いたロゴ画像のパス。空なら名前を文字で出す
-const HOME_SPONSORS=[{name:'大正製薬', img:'./sponsor-taisho.svg', url:'https://www.taisho.co.jp/'},{name:'リポビタンD', img:'./sponsor-lipovitan-d.png', url:'https://brand.taisho.co.jp/lipovitan/', h:28}]; // h: ロゴの高さ(px)。省略は55
+// 協賛一覧のロゴ（全大会共通。社名が一致したらロゴで出す。画像はリポジトリに置く。テーブル広告から作成 2026-11-04）
+const LIST_LOGOS=[{name:'少林寺拳法関東学生OBOG会連合会', img:'./sponsor-kanto-obog-rengokai.png'},{name:'少林寺拳法全日本学生OBOG連合会', img:'./sponsor-zennihon-obog-rengokai.png'},{name:'伏見屋地所株式会社', img:'./sponsor-fushimiya.png'},{name:'株式会社オザキ', img:'./sponsor-ozaki.png'}];
+const HOME_SPONSORS=[{name:'大正製薬', img:'./sponsor-taisho.svg', url:'https://www.taisho.co.jp/', main:true},{name:'リポビタンD', img:'./sponsor-lipovitan-d.png', url:'https://brand.taisho.co.jp/lipovitan/', h:28}]; // h: ロゴの高さ(px)。省略は55。main: いちばん大きい協賛（協賛一覧で先頭・大きく出す）
 // 協賛広告（画像はリポジトリに置く）。観客用・閲覧用に全大会共通で出す
 const SPONSOR_ADS=[{img:'./ad-lipovitan-days.jpg', alt:'リポビタンDays つづけ、夢中。（大正製薬）', url:'https://brand.taisho.co.jp/lipovitan/'}];
 function sponsorAdHTML(){
