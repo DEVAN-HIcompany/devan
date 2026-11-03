@@ -143,8 +143,8 @@ body.beta .overlay{top:32px}
 /* トップの協賛（全大会共通。HOME_SPONSORS） */
 .hsponsor{margin-top:34px;text-align:center}
 .hsponsor .hsplab{font-size:10px;font-weight:600;color:var(--gold);letter-spacing:.24em;margin-bottom:8px}
-.hsponsor .hsplist{display:flex;flex-wrap:wrap;justify-content:center;gap:13px 21px}
-.hsponsor .hspi{display:flex;align-items:center;justify-content:center;min-height:55px;color:var(--ink);text-decoration:none;font-family:var(--serif);font-size:17px;font-weight:600;letter-spacing:.1em}
+.hsponsor .hsplist{display:flex;flex-direction:column;align-items:center;gap:13px}
+.hsponsor .hspi{display:flex;align-items:center;justify-content:center;color:var(--ink);text-decoration:none;font-family:var(--serif);font-size:17px;font-weight:600;letter-spacing:.1em}
 .hsponsor .hspi img{height:55px;max-width:220px;object-fit:contain;display:block}
 /* 協賛広告（全大会共通。SPONSOR_ADS。観客用・閲覧用の協賛欄の上に出す） */
 .spad{margin:var(--s4) auto var(--s3);max-width:420px;text-align:center}
@@ -1222,7 +1222,7 @@ function startSoonPetals(){
   });
 }
 // トップページの協賛（大会に関係なく出す）。img はリポジトリに置いたロゴ画像のパス。空なら名前を文字で出す
-const HOME_SPONSORS=[{name:'大正製薬', img:'./sponsor-taisho.svg', url:'https://www.taisho.co.jp/'}];
+const HOME_SPONSORS=[{name:'大正製薬', img:'./sponsor-taisho.svg', url:'https://www.taisho.co.jp/'},{name:'リポビタンD', img:'./sponsor-lipovitan-d.png', url:'https://brand.taisho.co.jp/lipovitan/', h:28}]; // h: ロゴの高さ(px)。省略は55
 // 協賛広告（画像はリポジトリに置く）。観客用・閲覧用に全大会共通で出す
 const SPONSOR_ADS=[{img:'./ad-lipovitan-days.jpg', alt:'リポビタンDays つづけ、夢中。（大正製薬）', url:'https://brand.taisho.co.jp/lipovitan/'}];
 function sponsorAdHTML(){
@@ -1253,7 +1253,7 @@ function closeAdPopup(){ const el=document.getElementById('adpop'); if(!el) retu
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAdPopup(); });
 function homeSponsorHTML(){
   if(!HOME_SPONSORS.length) return '';
-  return `<div class="hsponsor"><div class="hsplab">協 賛</div><div class="hsplist">${HOME_SPONSORS.map(x=>{ const inner=x.img?`<img src="${esc(x.img)}" alt="${esc(x.name)}">`:esc(x.name); return x.url?`<a class="hspi" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">${inner}</a>`:`<div class="hspi">${inner}</div>`; }).join('')}</div></div>`;
+  return `<div class="hsponsor"><div class="hsplab">協 賛</div><div class="hsplist">${HOME_SPONSORS.map(x=>{ const inner=x.img?`<img src="${esc(x.img)}" alt="${esc(x.name)}"${x.h?` style="height:${+x.h}px"`:''}>`:esc(x.name); return x.url?`<a class="hspi" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">${inner}</a>`:`<div class="hspi">${inner}</div>`; }).join('')}</div></div>`;
 }
 function renderHome(){
   if(locked()){ renderComingSoon(); return; }
