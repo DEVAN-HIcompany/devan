@@ -152,6 +152,8 @@ body.beta .overlay{top:32px}
 .spad a,.spad div.spadimg{display:block;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh2);border:1px solid var(--line);background:#fff}
 .spad img{width:100%;height:auto;display:block}
 .spad+.splist{margin-top:var(--s3)}
+.endsp{max-width:640px;margin:var(--s4) auto 0}
+.endsp>.splist:first-child,.endsp>.spband:first-child,.endsp>.spspecial:first-child{margin-top:0}
 body.big .spad{display:none}
 /* 起動時の協賛広告ポップアップ（1回の起動につき1回） */
 #adpop{position:fixed;inset:0;z-index:950;display:flex;align-items:center;justify-content:center;padding:calc(21px + env(safe-area-inset-top)) 21px calc(21px + env(safe-area-inset-bottom));background:rgba(28,27,26,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .35s ease}
@@ -1649,7 +1651,8 @@ function renderEnded(){
         ${TD.champion?`<div class="echamp"><div class="elab">総合優勝</div><div class="euni">${esc(TD.champion)}</div></div>`:''}
         <div class="ebtn"><button class="backbtn" onclick="renderList()">大会一覧へ戻る</button></div>
       </div>
-    </div>`);
+      <div class="endsp">${sponsorTopHTML()}${sponsorListHTML()}${sponsorAdHTML()}</div>${sponsorBarHTML()}
+    </div>`); // 終了後も協賛は出す（2026-11-03 社長指示）
   if(TD.champion) setTimeout(popConfetti,250);
 }
 // クラッカー: 左右の下隅から金・桜色・紺・緑・生成りの紙片を打ち上げ、重力と空気抵抗でひらひら落ちる（約4秒で消える）
