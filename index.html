@@ -1035,7 +1035,10 @@ function sponsorListHTML(){
     ${logos.length?`<div class="splogos">${logos.map(x=>lk(x,`<img src="${esc(imgOf(x))}" alt="${esc(x.name)}" loading="lazy">`,'spl')).join('')}</div>`:''}
     ${names.length?`<div class="spnames">${names.map(x=>lk(x,spNameHTML(x.name),'')).join('')}</div>`:''}</div>`;
 }
-function spList(){ return (TD&&Array.isArray(TD.sponsors))?TD.sponsors.filter(x=>x&&(x.name||x.img)):[]; }
+// データベースの協賛一覧に足す社（大会IDごと。データベースは書き換えない。同じ名前が既にあれば足さない）
+const EXTRA_LIST={t1792600995578:['Zeal Communications']}; // 第60回全日本（2026-11-04 社長指示）
+function spList(){ const l=(TD&&Array.isArray(TD.sponsors))?TD.sponsors.filter(x=>x&&(x.name||x.img)):[];
+  const ex=(TD&&EXTRA_LIST[TD.id])||[]; return l.concat(ex.filter(n=>!l.some(x=>spCleanName(x.name)===n)).map(n=>({tier:'list',name:n}))); }
 function spOf(t){ return spList().filter(x=>x.tier===t).slice(0,SP_TIERS[t].max); }
 function spSafeUrl(u){ u=String(u||'').trim(); return /^https?:\/\//i.test(u)?u:''; }
 function spSafeImg(u){ u=String(u||'').trim(); return (/^https?:\/\//i.test(u)||/^data:image\/(png|jpeg|webp|gif);base64,/i.test(u))?u:''; }
