@@ -140,6 +140,12 @@ body.beta .overlay{top:32px}
 .soonlogin{background:none;border:none;color:var(--muted);font-size:11px;letter-spacing:.08em;cursor:pointer;padding:8px 13px;opacity:.7;text-decoration:underline;text-underline-offset:3px}
 .credit{margin-top:34px;padding-top:13px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);letter-spacing:.06em;display:flex;flex-direction:column;gap:2px;align-items:center}
 .credit a{color:var(--muted);text-decoration:none}
+/* トップの協賛（全大会共通。HOME_SPONSORS） */
+.hsponsor{margin-top:34px;text-align:center}
+.hsponsor .hsplab{font-size:10px;font-weight:600;color:var(--gold);letter-spacing:.24em;margin-bottom:8px}
+.hsponsor .hsplist{display:flex;flex-wrap:wrap;justify-content:center;gap:13px 21px}
+.hsponsor .hspi{display:flex;align-items:center;justify-content:center;min-height:55px;color:var(--ink);text-decoration:none;font-family:var(--serif);font-size:17px;font-weight:600;letter-spacing:.1em}
+.hsponsor .hspi img{height:55px;max-width:220px;object-fit:contain;display:block}
 .credit a:hover{color:var(--ink)}
 .ownerlink{margin-top:var(--s2);text-align:center}
 .ownerlink button{border:0;background:none;padding:6px 10px;font:inherit;font-size:10px;letter-spacing:.14em;color:var(--line2);cursor:pointer}
@@ -220,9 +226,9 @@ body.beta .overlay{top:32px}
 /* ホーム側: 見出しは着地の瞬間まで隠し（二重表示を防ぐ）、ボタン類は着地中に順に浮かぶ */
 .home.enter .hero,.home.enter .org,.home.enter .wordmark,.home.enter .hsub{opacity:0}
 .home.enter.landed .hero,.home.enter.landed .org,.home.enter.landed .wordmark,.home.enter.landed .hsub{opacity:1}
-.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .hwho,.home.enter .hactions,.home.enter .credit,.home.enter .installbar,.home.enter .soon,.home.enter .soonnote,.home.enter .soonpwa,.home.enter .soonlogin,.home.enter .pvwarn{opacity:0;transform:translateY(14px)}
-.home.enter.go .hbtn,.home.enter.go .hsmall,.home.enter.go .hsec,.home.enter.go .hnote,.home.enter.go .hwho,.home.enter.go .hactions,.home.enter.go .credit,.home.enter.go .installbar,.home.enter.go .soon,.home.enter.go .soonnote,.home.enter.go .soonpwa,.home.enter.go .soonlogin,.home.enter.go .pvwarn{opacity:1;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
-@media(prefers-reduced-motion:reduce){#splash{display:none}.home.enter .hero,.home.enter .org,.home.enter .wordmark,.home.enter .hsub{opacity:1}.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .credit,.home.enter .installbar,.home.enter .soon,.home.enter .soonnote,.home.enter .soonpwa,.home.enter .soonlogin,.home.enter .pvwarn{opacity:1;transform:none}}
+.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .hwho,.home.enter .hactions,.home.enter .credit,.home.enter .hsponsor,.home.enter .installbar,.home.enter .soon,.home.enter .soonnote,.home.enter .soonpwa,.home.enter .soonlogin,.home.enter .pvwarn{opacity:0;transform:translateY(14px)}
+.home.enter.go .hbtn,.home.enter.go .hsmall,.home.enter.go .hsec,.home.enter.go .hnote,.home.enter.go .hwho,.home.enter.go .hactions,.home.enter.go .credit,.home.enter.go .hsponsor,.home.enter.go .installbar,.home.enter.go .soon,.home.enter.go .soonnote,.home.enter.go .soonpwa,.home.enter.go .soonlogin,.home.enter.go .pvwarn{opacity:1;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+@media(prefers-reduced-motion:reduce){#splash{display:none}.home.enter .hero,.home.enter .org,.home.enter .wordmark,.home.enter .hsub{opacity:1}.home.enter .hbtn,.home.enter .hsmall,.home.enter .hsec,.home.enter .hnote,.home.enter .credit,.home.enter .hsponsor,.home.enter .installbar,.home.enter .soon,.home.enter .soonnote,.home.enter .soonpwa,.home.enter .soonlogin,.home.enter .pvwarn{opacity:1;transform:none}}
 
 .empty{text-align:center;padding:3rem;color:var(--muted);font-size:13px}
 
@@ -1194,6 +1200,12 @@ function startSoonPetals(){
     g.innerHTML='<b></b>'; g.addEventListener('animationend',ev=>{ if(ev.target===g) g.remove(); }); pc.appendChild(g);
   });
 }
+// トップページの協賛（大会に関係なく出す）。img はリポジトリに置いたロゴ画像のパス。空なら名前を文字で出す
+const HOME_SPONSORS=[{name:'大正製薬', img:'', url:''}];
+function homeSponsorHTML(){
+  if(!HOME_SPONSORS.length) return '';
+  return `<div class="hsponsor"><div class="hsplab">協 賛</div><div class="hsplist">${HOME_SPONSORS.map(x=>{ const inner=x.img?`<img src="${esc(x.img)}" alt="${esc(x.name)}">`:esc(x.name); return x.url?`<a class="hspi" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">${inner}</a>`:`<div class="hspi">${inner}</div>`; }).join('')}</div></div>`;
+}
 function renderHome(){
   if(locked()){ renderComingSoon(); return; }
   stopProgListener();
@@ -1221,6 +1233,7 @@ function renderHome(){
         </button>
       </div>
       ${installHintHTML()}
+      ${homeSponsorHTML()}
       <div class="credit"><span>Produced by <b>HIC</b></span></div>
     </div></div>`);
   splashHandoff();
@@ -3288,7 +3301,7 @@ const EVENT_POSTER={src:'', srcPortrait:'', until:'2026-11-08', hold:2800}; // �
     if(to){ const a=from.getBoundingClientRect(), b=to.getBoundingClientRect(); const dx=(b.left+b.width/2)-(a.left+a.width/2), dy=b.top-a.top;
       inner.style.transition='transform .8s cubic-bezier(.2,.7,.2,1)'; inner.style.transform=`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px)`; }
     sp.classList.add('dock');
-    const home=document.querySelector('#app .home'); if(home){ home.classList.add('enter'); const els=home.querySelectorAll('.hbtn,.hsmall,.hsec,.hnote,.hwho,.hactions,.soon,.soonnote,.soonpwa,.pvwarn,.soonlogin,.credit,.installbar'); els.forEach((el,i)=>{ el.style.transitionDelay=(0.35+i*0.07)+'s'; }); requestAnimationFrame(()=>requestAnimationFrame(()=>home.classList.add('go'))); }
+    const home=document.querySelector('#app .home'); if(home){ home.classList.add('enter'); const els=home.querySelectorAll('.hbtn,.hsmall,.hsec,.hnote,.hwho,.hactions,.soon,.soonnote,.soonpwa,.pvwarn,.soonlogin,.hsponsor,.credit,.installbar'); els.forEach((el,i)=>{ el.style.transitionDelay=(0.35+i*0.07)+'s'; }); requestAnimationFrame(()=>requestAnimationFrame(()=>home.classList.add('go'))); }
     setTimeout(()=>{ const h=document.querySelector('#app .home'); if(h) h.classList.add('landed'); sp.remove(); }, 830);
   };
   const start=()=>{ sp.classList.add('go'); setTimeout(()=>{ Promise.race([splashHomeReady, new Promise(r=>setTimeout(r,2500))]).then(()=>setTimeout(dock,50)); }, 1650); };
