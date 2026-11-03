@@ -1243,7 +1243,8 @@ function maybeAdPopup(){
 }
 function showAdPopup(){
   const x=SPONSOR_ADS[0]; if(!x||document.getElementById('adpop')) return;
-  try{ sessionStorage.setItem('sj_adpop','1'); }catch(e){}
+  try{ sessionStorage.setItem('sj_adpop','1'); sessionStorage.setItem('sj_adlast',String(Date.now())); }catch(e){}
+  _adLast=Date.now();
   const img=`<img src="${esc(x.img)}" alt="${esc(x.alt)}" width="1080" height="1530">`;
   const el=document.createElement('div'); el.id='adpop'; el.setAttribute('role','dialog'); el.setAttribute('aria-label','協賛広告');
   el.innerHTML=`<div class="apbox"><div class="aplab">協賛広告</div>${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener sponsored">${img}</a>`:`<div class="apimg">${img}</div>`}<button class="apx" aria-label="閉じる" onclick="closeAdPopup()">×</button><button class="apclose" onclick="closeAdPopup()">閉じる</button></div>`;
@@ -1251,6 +1252,18 @@ function showAdPopup(){
   const im=el.querySelector('img'); const go=()=>{ document.body.appendChild(el); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('on'))); };
   if(im.complete) go(); else { im.onload=go; im.onerror=()=>{}; }
 }
+// 定期表示: 観客用・閲覧用・トップを見ている間、AD_EVERY_MIN 分ごとにもう一度出す（2026-11-03 社長指示）
+// 進行・管理の画面、大画面モード、入力中、ほかの画面（コート詳細など）を開いている間、画面が裏にあるときは出さない
+const AD_EVERY_MIN=20; // 多すぎると鬱陶しいので20分に1回（社長指示「適宜」）
+let _adLast=(()=>{ try{ return +sessionStorage.getItem('sj_adlast')||Date.now(); }catch(e){ return Date.now(); } })();
+function adPopupOK(){
+  if(!SPONSOR_ADS.length||document.hidden||document.getElementById('splash')||document.getElementById('adpop')) return false;
+  if(document.body.classList.contains('big')||document.body.classList.contains('soonmode')) return false;
+  if($('ov')&&$('ov').classList.contains('open')) return false;
+  const a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return false;
+  return MODE==='spectator'||MODE==='view'||(MODE===null&&!!document.querySelector('#app .home'));
+}
+setInterval(()=>{ if(Date.now()-_adLast>=AD_EVERY_MIN*60000&&adPopupOK()) showAdPopup(); },20000);
 function closeAdPopup(){ const el=document.getElementById('adpop'); if(!el) return; el.classList.remove('on'); setTimeout(()=>el.remove(),350); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAdPopup(); });
 function homeSponsorHTML(){
