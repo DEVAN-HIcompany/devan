@@ -1040,7 +1040,7 @@ const EXTRA_LIST={t1792600995578:['Zeal Communications']}; // 第60回全日本�
 function spList(){ const l=(TD&&Array.isArray(TD.sponsors))?TD.sponsors.filter(x=>x&&(x.name||x.img)):[];
   const ex=(TD&&EXTRA_LIST[TD.id])||[]; return l.concat(ex.filter(n=>!l.some(x=>spCleanName(x.name)===n)).map(n=>({tier:'list',name:n}))); }
 function spOf(t){ return spList().filter(x=>x.tier===t).slice(0,SP_TIERS[t].max); }
-function spSafeUrl(u){ u=String(u||'').trim(); return /^https?:\/\//i.test(u)?u:''; }
+function spSafeUrl(u){ u=String(u||'').trim(); return (/^https?:\/\//i.test(u)||/^\.\/[\w.-]+$/.test(u))?u:''; } // ./ はリポジトリ内のファイル（広告ページの画像など）
 function spSafeImg(u){ u=String(u||'').trim(); return (/^https?:\/\//i.test(u)||/^data:image\/(png|jpeg|webp|gif);base64,/i.test(u))?u:''; }
 function spItemHTML(x,cls){
   const url=spSafeUrl(x.url), img=spSafeImg(x.img);
@@ -1232,7 +1232,8 @@ function startSoonPetals(){
 }
 // トップページの協賛（大会に関係なく出す）。img はリポジトリに置いたロゴ画像のパス。空なら名前を文字で出す
 // 協賛一覧のロゴ（全大会共通。社名が一致したらロゴで出す。画像はリポジトリに置く。テーブル広告から作成 2026-11-04）
-const LIST_LOGOS=[{name:'少林寺拳法関東学生OBOG会連合会', img:'./sponsor-kanto-obog-rengokai.png'},{name:'少林寺拳法全日本学生OBOG連合会', img:'./sponsor-zennihon-obog-rengokai.png'},{name:'伏見屋地所株式会社', img:'./sponsor-fushimiya.png', url:'https://remax-fushimiya.fg-s.jp/'},{name:'株式会社オザキ', img:'./sponsor-ozaki.png', url:'https://www.ozaki-sk.co.jp/'},{name:'Zeal Communications', img:'./sponsor-zeal.svg', url:'https://zeal-c.jp/'},{name:'株式会社ジールコミュニケーションズ', img:'./sponsor-zeal.svg', url:'https://zeal-c.jp/'}];
+// url: ロゴを押したときに開くページ。連合会2つはホームページが無いので、パンフレットの広告ページ（画像）を開く
+const LIST_LOGOS=[{name:'少林寺拳法関東学生OBOG会連合会', img:'./sponsor-kanto-obog-rengokai.png', url:'./ad-kanto-obog-rengokai.jpg'},{name:'少林寺拳法全日本学生OBOG連合会', img:'./sponsor-zennihon-obog-rengokai.png', url:'./ad-zennihon-obog-rengokai.jpg'},{name:'伏見屋地所株式会社', img:'./sponsor-fushimiya.png', url:'https://remax-fushimiya.fg-s.jp/'},{name:'株式会社オザキ', img:'./sponsor-ozaki.png', url:'https://www.ozaki-sk.co.jp/'},{name:'Zeal Communications', img:'./sponsor-zeal.svg', url:'https://zeal-c.jp/'},{name:'株式会社ジールコミュニケーションズ', img:'./sponsor-zeal.svg', url:'https://zeal-c.jp/'}];
 const HOME_SPONSORS=[{name:'大正製薬', img:'./sponsor-taisho.svg', url:'https://www.taisho.co.jp/', main:true},{name:'リポビタンD', img:'./sponsor-lipovitan-d.png', url:'https://brand.taisho.co.jp/lipovitan/', h:28}]; // h: ロゴの高さ(px)。省略は55。main: いちばん大きい協賛（協賛一覧で先頭・大きく出す）
 // 協賛広告（画像はリポジトリに置く）。観客用・閲覧用に全大会共通で出す
 const SPONSOR_ADS=[{img:'./ad-lipovitan-days.jpg', alt:'リポビタンDays つづけ、夢中。（大正製薬）', url:'https://brand.taisho.co.jp/lipovitan/'}];
