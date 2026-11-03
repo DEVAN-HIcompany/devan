@@ -1233,8 +1233,8 @@ function startSoonPetals(){
 }
 // トップページの協賛（大会に関係なく出す）。img はリポジトリに置いたロゴ画像のパス。空なら名前を文字で出す
 // 協賛一覧のロゴ（全大会共通。社名が一致したらロゴで出す。画像はリポジトリに置く。テーブル広告から作成 2026-11-04）
-// url: ロゴを押したときに開くページ。ホームページが無い社（連合会2つ・龍国観光）はパンフレットの広告ページ（画像）を開く
-const LIST_LOGOS=[{name:'伏見屋地所株式会社', img:'./sponsor-fushimiya.png', url:'https://remax-fushimiya.fg-s.jp/'},{name:'株式会社オザキ', img:'./sponsor-ozaki.png', url:'https://www.ozaki-sk.co.jp/'},{name:'Zeal Communications', img:'./sponsor-zeal.svg', url:'https://zeal-c.jp/'},{name:'株式会社ジールコミュニケーションズ', img:'./sponsor-zeal.svg', url:'https://zeal-c.jp/'}];
+// url: ロゴを押したときに開くページ。ホームページが無い社（連合会2つ・龍国観光・実業団・同友会）はパンフレットの広告ページ（画像）を開く
+const LIST_LOGOS=[{name:'全日本実業団少林寺拳法連盟', img:'./sponsor-jitsugyodan.png', url:'./ad-jitsugyodan.jpg'},{name:'少林寺拳法全日本学生OBOG同友会', img:'./sponsor-zennihon-obog-doyukai.png', url:'./ad-zennihon-obog-doyukai.jpg'},{name:'伏見屋地所株式会社', img:'./sponsor-fushimiya.png', url:'https://remax-fushimiya.fg-s.jp/'},{name:'株式会社オザキ', img:'./sponsor-ozaki.png', url:'https://www.ozaki-sk.co.jp/'},{name:'Zeal Communications', img:'./sponsor-zeal.svg', url:'https://zeal-c.jp/'},{name:'株式会社ジールコミュニケーションズ', img:'./sponsor-zeal.svg', url:'https://zeal-c.jp/'}];
 const HOME_SPONSORS=[{name:'大正製薬', img:'./sponsor-taisho.svg', url:'https://www.taisho.co.jp/', main:true},{name:'リポビタンD', img:'./sponsor-lipovitan-d.png', url:'https://brand.taisho.co.jp/lipovitan/', h:28},{name:'少林寺拳法関東学生OBOG会連合会', img:'./sponsor-kanto-obog-rengokai.png', url:'./ad-kanto-obog-rengokai.jpg', h:40},{name:'少林寺拳法全日本学生OBOG連合会', img:'./sponsor-zennihon-obog-rengokai.png', url:'./ad-zennihon-obog-rengokai.jpg', h:27, row:1},{name:'龍国観光株式会社', img:'./sponsor-ryukoku.png', url:'./ad-ryukoku.jpg', h:20, row:1}];
 // 並び順＝優先度（2026-11-04 社長指示: 大正製薬＞関東学生OBOG会連合会＞全日本学生OBOG連合会・龍国観光）。h: ロゴの高さ(px)。省略は55。main: いちばん大きい協賛（協賛一覧で先頭・大きく出す）。row: 同じ値の社は横に並べる（同格）
 // 協賛広告（画像はリポジトリに置く）。観客用・閲覧用に全大会共通で出す
