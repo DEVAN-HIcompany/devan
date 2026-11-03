@@ -1002,10 +1002,12 @@ function spNameHTML(n){ return esc(n).replace(/([\u4E00-\u9FFF々]+)[(（]([\u30
 function sponsorListHTML(){
   if(MODE!=='spectator'&&MODE!=='view') return '';
   const l=spList().filter(x=>x.tier==='list'); if(!l.length) return '';
-  const logos=l.filter(x=>spSafeImg(x.img)), names=l.filter(x=>!spSafeImg(x.img));
+  const homeImg=x=>{ const h=HOME_SPONSORS.find(h=>h.img&&spCleanName(h.name)===spCleanName(x.name)); return h?h.img:''; }; // トップに載せている社は同じロゴを使う
+  const imgOf=x=>spSafeImg(x.img)||homeImg(x);
+  const logos=l.filter(imgOf), names=l.filter(x=>!imgOf(x));
   const lk=(x,inner,cls)=>{ const u=spSafeUrl(x.url); return u?`<a class="${cls}" href="${esc(u)}" target="_blank" rel="noopener sponsored">${inner}</a>`:`<div class="${cls}">${inner}</div>`; };
   return `<div class="splist"><h3>ご協賛</h3><div class="sprule"></div><div class="spsub">本大会は次の皆さまのご協賛をいただいています</div>
-    ${logos.length?`<div class="splogos">${logos.map(x=>lk(x,`<img src="${esc(spSafeImg(x.img))}" alt="${esc(x.name)}" loading="lazy">`,'spl')).join('')}</div>`:''}
+    ${logos.length?`<div class="splogos">${logos.map(x=>lk(x,`<img src="${esc(imgOf(x))}" alt="${esc(x.name)}" loading="lazy">`,'spl')).join('')}</div>`:''}
     ${names.length?`<div class="spnames">${names.map(x=>lk(x,spNameHTML(x.name),'')).join('')}</div>`:''}</div>`;
 }
 function spList(){ return (TD&&Array.isArray(TD.sponsors))?TD.sponsors.filter(x=>x&&(x.name||x.img)):[]; }
@@ -1201,7 +1203,7 @@ function startSoonPetals(){
   });
 }
 // トップページの協賛（大会に関係なく出す）。img はリポジトリに置いたロゴ画像のパス。空なら名前を文字で出す
-const HOME_SPONSORS=[{name:'大正製薬', img:'', url:''}];
+const HOME_SPONSORS=[{name:'大正製薬', img:'./sponsor-taisho.svg', url:''}];
 function homeSponsorHTML(){
   if(!HOME_SPONSORS.length) return '';
   return `<div class="hsponsor"><div class="hsplab">協 賛</div><div class="hsplist">${HOME_SPONSORS.map(x=>{ const inner=x.img?`<img src="${esc(x.img)}" alt="${esc(x.name)}">`:esc(x.name); return x.url?`<a class="hspi" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">${inner}</a>`:`<div class="hspi">${inner}</div>`; }).join('')}</div></div>`;
