@@ -167,6 +167,16 @@ body.big .spad{display:none}
 #adpop .apx{position:absolute;top:-8px;right:-8px;width:44px;height:44px;border-radius:50%;border:none;background:#fff;color:var(--ink);font-size:24px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
 #adpop .apclose{background:none;border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:999px;padding:10px 34px;font-size:13px;letter-spacing:.12em}
 @media(prefers-reduced-motion:reduce){#adpop,#adpop .apbox{transition:none}}
+/* 協賛の広告ページ（パンフレットの画像）をアプリの中で開く。上に「戻る」と「×」 */
+#adview{position:fixed;inset:0;z-index:960;display:flex;flex-direction:column;background:var(--bg)}
+#adview .avbar{flex:none;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 8px max(8px,env(safe-area-inset-left));background:rgba(246,244,239,.97);border-bottom:1px solid var(--line2)}
+#adview .avback{flex:none;display:flex;align-items:center;gap:4px;min-height:44px;padding:0 13px;border:1px solid var(--line2);border-radius:999px;background:#fff;color:var(--ink);font-size:14px;font-weight:600}
+#adview .avtitle{flex:1;min-width:0;text-align:center;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#adview .avx{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:#fff;color:var(--ink);font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center}
+#adview .avbody{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:13px max(13px,env(safe-area-inset-right)) calc(21px + env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left))}
+#adview .avbody img{display:block;width:100%;max-width:1100px;height:auto;margin:0 auto;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+#adview.zoom .avbody img{width:220%;max-width:none}
+#adview .avhint{text-align:center;font-size:11px;color:var(--ink2);margin-top:13px}
 .credit a:hover{color:var(--ink)}
 .ownerlink{margin-top:var(--s2);text-align:center}
 .ownerlink button{border:0;background:none;padding:6px 10px;font:inherit;font-size:10px;letter-spacing:.14em;color:var(--line2);cursor:pointer}
@@ -1270,15 +1280,35 @@ function showAdPopup(){
 const AD_EVERY_MIN=20; // 多すぎると鬱陶しいので20分に1回（社長指示「適宜」）
 let _adLast=(()=>{ try{ return +sessionStorage.getItem('sj_adlast')||Date.now(); }catch(e){ return Date.now(); } })();
 function adPopupOK(){
-  if(!SPONSOR_ADS.length||document.hidden||document.getElementById('splash')||document.getElementById('adpop')) return false;
+  if(!SPONSOR_ADS.length||document.hidden||document.getElementById('splash')||document.getElementById('adpop')||document.getElementById('adview')) return false;
   if(document.body.classList.contains('big')||document.body.classList.contains('soonmode')) return false;
   if($('ov')&&$('ov').classList.contains('open')) return false;
   const a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return false;
   return MODE==='spectator'||(MODE===null&&!!$('tophome'));
 }
 setInterval(()=>{ if(Date.now()-_adLast>=AD_EVERY_MIN*60000&&adPopupOK()) showAdPopup(); },20000);
+// 協賛の広告ページ（./ad-*.jpg）は別タブではなくアプリの中で開く。戻る・×・スマホの「戻る」操作で閉じる
+function isAdPage(u){ return /^\.\/ad-[\w.-]+\.(jpe?g|png|webp)$/i.test(String(u||'')); }
+let _avPushed=false;
+function openAdView(src,name){
+  if(document.getElementById('adview')) closeAdView(true);
+  const el=document.createElement('div'); el.id='adview'; el.setAttribute('role','dialog'); el.setAttribute('aria-label',(name||'協賛')+'の広告');
+  el.innerHTML=`<div class="avbar"><button class="avback" onclick="closeAdView()">‹ 戻る</button><div class="avtitle">${esc(name||'')}</div><button class="avx" aria-label="閉じる" onclick="closeAdView()">×</button></div>
+    <div class="avbody"><img src="${esc(src)}" alt="${esc((name||'協賛')+'の広告')}"><div class="avhint">画像をダブルタップで拡大・縮小</div></div>`;
+  el.querySelector('img').addEventListener('dblclick',()=>el.classList.toggle('zoom'));
+  document.body.appendChild(el); document.body.style.overflow='hidden';
+  try{ history.pushState({adview:1},''); _avPushed=true; }catch(e){ _avPushed=false; }
+}
+function closeAdView(noHist){
+  const el=document.getElementById('adview'); if(!el) return;
+  el.remove(); document.body.style.overflow='';
+  if(_avPushed&&!noHist){ _avPushed=false; try{ history.back(); }catch(e){} } else _avPushed=false;
+}
+window.addEventListener('popstate',()=>{ if(document.getElementById('adview')){ _avPushed=false; closeAdView(true); } });
+document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a||!isAdPage(a.getAttribute('href'))) return;
+  e.preventDefault(); const im=a.querySelector('img'); openAdView(a.getAttribute('href'),im?im.alt:a.textContent.trim()); });
 function closeAdPopup(){ const el=document.getElementById('adpop'); if(!el) return; el.classList.remove('on'); setTimeout(()=>el.remove(),350); }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAdPopup(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeAdPopup(); closeAdView(); } });
 function homeSponsorHTML(){
   if(!HOME_SPONSORS.length) return '';
   const one=x=>{ const inner=x.img?`<img src="${esc(x.img)}" alt="${esc(x.name)}"${x.h?` style="height:${+x.h}px"`:''}>`:esc(x.name); return x.url?`<a class="hspi" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">${inner}</a>`:`<div class="hspi">${inner}</div>`; };
